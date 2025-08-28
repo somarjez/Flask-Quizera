@@ -6,26 +6,59 @@
     <!-- Hero Section -->
     <section class="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
         <div class="container mx-auto px-4 text-center">
-            <h1 class="text-5xl font-bold text-gray-800 mb-6">Welcome to Quizera</h1>
-            <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-                The ultimate e-learning platform designed specifically for Computer Science students. 
-                Learn, practice, and excel with interactive quizzes and comprehensive study materials.
-            </p>
-            <div class="flex justify-center space-x-4">
-                <a href="{{ url_for('signup') }}" class="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors">
-                    Get Started
-                </a>
-                <a href="#features" class="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg border border-blue-600 hover:bg-blue-50 transition-colors">
-                    Learn More
-                </a>
-            </div>
+            {% if username %}
+                <!-- Logged in user hero -->
+                <h1 class="text-5xl font-bold text-gray-800 mb-6">Welcome back, {{ username }}!</h1>
+                <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                    Ready to continue your Computer Science learning journey? 
+                    Explore new subjects or continue with your enrolled courses.
+                </p>
+                <div class="flex justify-center space-x-4">
+                    {% if role == 'student' %}
+                        <a href="{{ url_for('dashboard') }}" class="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors">
+                            My Dashboard
+                        </a>
+                        <a href="#features" class="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg border border-blue-600 hover:bg-blue-50 transition-colors">
+                            Browse Subjects
+                        </a>
+                    {% elif role == 'teacher' %}
+                        <a href="{{ url_for('dashboard') }}" class="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors">
+                            My Dashboard
+                        </a>
+                        <a href="{{ url_for('create_subject') if url_for('create_subject') else '#' }}" class="bg-green-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-green-700 transition-colors">
+                            Create Subject
+                        </a>
+                    {% endif %}
+                </div>
+            {% else %}
+                <!-- Not logged in user hero -->
+                <h1 class="text-5xl font-bold text-gray-800 mb-6">Welcome to Quizera</h1>
+                <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                    The ultimate e-learning platform designed specifically for Computer Science students. 
+                    Learn, practice, and excel with interactive quizzes and comprehensive study materials.
+                </p>
+                <div class="flex justify-center space-x-4">
+                    <a href="{{ url_for('signup') }}" class="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors">
+                        Get Started
+                    </a>
+                    <a href="#features" class="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg border border-blue-600 hover:bg-blue-50 transition-colors">
+                        Learn More
+                    </a>
+                </div>
+            {% endif %}
         </div>
     </section>
 
     <!-- Features Section -->
     <section id="features" class="py-16">
         <div class="container mx-auto px-4">
-            <h2 class="text-4xl font-bold text-center text-gray-800 mb-12">Why Choose Quizera?</h2>
+            <h2 class="text-4xl font-bold text-center text-gray-800 mb-12">
+                {% if username %}
+                    Platform Features
+                {% else %}
+                    Why Choose Quizera?
+                {% endif %}
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Feature 1 -->
                 <div class="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow">
@@ -66,7 +99,15 @@
     <!-- Available Subjects Section with Enhanced Search -->
     <section class="py-16 bg-white">
         <div class="container mx-auto px-4">
-            <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">Available Subjects</h2>
+            <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">
+                {% if username and role == 'student' %}
+                    Available Subjects
+                {% elif username and role == 'teacher' %}
+                    All Subjects
+                {% else %}
+                    Available Subjects
+                {% endif %}
+            </h2>
             
             <!-- Enhanced Search and Filter Section -->
             <div class="max-w-4xl mx-auto mb-8">
@@ -163,7 +204,11 @@
                                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                                         </svg>
-                                        {{ subject.get('topic_count', 0) }} Enroll to view Topics
+                                        {% if username %}
+                                            {{ subject.get('topic_count', 0) }} Topics
+                                        {% else %}
+                                            Sign up to view topics
+                                        {% endif %}
                                     </span>
                                     <span class="flex items-center">
                                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
@@ -185,16 +230,23 @@
                                     </div>
                                     
                                     <div class="flex space-x-2">
-                                        <a href="{{ url_for('view_subject', subject_id=subject.id) }}" 
-                                           class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 transition-colors">
-                                            View Details
-                                        </a>
-                                        {% if username and role == 'student' and not subject.is_enrolled %}
-                                            <button class="quick-enroll-btn bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600 transition-colors"
-                                                    data-subject-id="{{ subject.id }}"
-                                                    data-subject-name="{{ subject.name }}">
-                                                Quick Enroll
-                                            </button>
+                                        {% if username %}
+                                            <a href="{{ url_for('view_subject', subject_id=subject.id) }}" 
+                                               class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 transition-colors">
+                                                View Details
+                                            </a>
+                                            {% if role == 'student' and not subject.is_enrolled %}
+                                                <button class="quick-enroll-btn bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600 transition-colors"
+                                                        data-subject-id="{{ subject.id }}"
+                                                        data-subject-name="{{ subject.name }}">
+                                                    Quick Enroll
+                                                </button>
+                                            {% endif %}
+                                        {% else %}
+                                            <a href="{{ url_for('signup') }}" 
+                                               class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 transition-colors">
+                                                Sign Up to Access
+                                            </a>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -233,22 +285,35 @@
                                                 </div>
                                                 <span class="subject-teacher">{{ subject.teacher_name }}</span>
                                             </span>
-                                            <span>{{ subject.get('topic_count', 0) }} Enroll to View Topics</span>
+                                            <span>
+                                                {% if username %}
+                                                    {{ subject.get('topic_count', 0) }} Topics
+                                                {% else %}
+                                                    Sign up to view topics
+                                                {% endif %}
+                                            </span>
                                             <span>{{ subject.created_at.strftime('%B %d, %Y') if subject.created_at else 'Recently' }}</span>
                                         </div>
                                     </div>
                                     
                                     <div class="flex flex-col space-y-2">
-                                        <a href="{{ url_for('view_subject', subject_id=subject.id) }}" 
-                                           class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 transition-colors text-center">
-                                            View Details
-                                        </a>
-                                        {% if username and role == 'student' and not subject.is_enrolled %}
-                                            <button class="quick-enroll-btn bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600 transition-colors"
-                                                    data-subject-id="{{ subject.id }}"
-                                                    data-subject-name="{{ subject.name }}">
-                                                Quick Enroll
-                                            </button>
+                                        {% if username %}
+                                            <a href="{{ url_for('view_subject', subject_id=subject.id) }}" 
+                                               class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 transition-colors text-center">
+                                                View Details
+                                            </a>
+                                            {% if role == 'student' and not subject.is_enrolled %}
+                                                <button class="quick-enroll-btn bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600 transition-colors"
+                                                        data-subject-id="{{ subject.id }}"
+                                                        data-subject-name="{{ subject.name }}">
+                                                    Quick Enroll
+                                                </button>
+                                            {% endif %}
+                                        {% else %}
+                                            <a href="{{ url_for('signup') }}" 
+                                               class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 transition-colors text-center">
+                                                Sign Up to Access
+                                            </a>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -278,44 +343,50 @@
                         </svg>
                         <h3 class="text-xl font-semibold text-gray-600 mb-2">No Subjects Available Yet</h3>
                         <p class="text-gray-500 mb-4">Teachers haven't created any subjects yet. Check back soon!</p>
-                        <a href="{{ url_for('signup') }}" class="text-blue-600 hover:text-blue-800 font-medium">
-                            Sign up to get notified when subjects are available
-                        </a>
+                        {% if not username %}
+                            <a href="{{ url_for('signup') }}" class="text-blue-600 hover:text-blue-800 font-medium">
+                                Sign up to get notified when subjects are available
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
             {% endif %}
         </div>
     </section>
 
-    <!-- Quick Enrollment Modal -->
-    <div id="quickEnrollModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 class="text-lg font-semibold mb-4">Quick Enrollment</h3>
-            <p id="quickEnrollText" class="text-gray-600 mb-6"></p>
-            <div class="flex justify-end space-x-3">
-                <button id="cancelQuickEnroll" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
-                <button id="confirmQuickEnroll" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Enroll</button>
+    <!-- Quick Enrollment Modal (only show for logged in students) -->
+    {% if username and role == 'student' %}
+        <div id="quickEnrollModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 class="text-lg font-semibold mb-4">Quick Enrollment</h3>
+                <p id="quickEnrollText" class="text-gray-600 mb-6"></p>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancelQuickEnroll" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                    <button id="confirmQuickEnroll" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Enroll</button>
+                </div>
             </div>
         </div>
-    </div>
+    {% endif %}
 
-    <!-- Call to Action -->
-    <section class="py-16 bg-blue-600 text-white">
-        <div class="container mx-auto px-4 text-center">
-            <h2 class="text-3xl font-bold mb-6">Ready to Start Learning?</h2>
-            <p class="text-xl mb-8 max-w-2xl mx-auto">
-                Join thousands of Computer Science students who are already improving their skills with Quizera.
-            </p>
-            <div class="flex justify-center space-x-4">
-                <a href="{{ url_for('signup') }}" class="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg hover:bg-gray-100 transition-colors">
-                    Sign Up Now
-                </a>
-                <a href="{{ url_for('login') }}" class="border border-white text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors">
-                    I Have an Account
-                </a>
+    <!-- Call to Action (only show for non-logged in users) -->
+    {% if not username %}
+        <section class="py-16 bg-blue-600 text-white">
+            <div class="container mx-auto px-4 text-center">
+                <h2 class="text-3xl font-bold mb-6">Ready to Start Learning?</h2>
+                <p class="text-xl mb-8 max-w-2xl mx-auto">
+                    Join thousands of Computer Science students who are already improving their skills with Quizera.
+                </p>
+                <div class="flex justify-center space-x-4">
+                    <a href="{{ url_for('signup') }}" class="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg hover:bg-gray-100 transition-colors">
+                        Sign Up Now
+                    </a>
+                    <a href="{{ url_for('login') }}" class="border border-white text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors">
+                        I Have an Account
+                    </a>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
+    {% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -333,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultsCount = document.getElementById('resultsCount');
     const resetFilters = document.getElementById('resetFilters');
     
-    // Quick enrollment elements
+    // Quick enrollment elements (only for students)
     const quickEnrollModal = document.getElementById('quickEnrollModal');
     const quickEnrollText = document.getElementById('quickEnrollText');
     const confirmQuickEnroll = document.getElementById('confirmQuickEnroll');
@@ -527,57 +598,57 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Quick enrollment functionality
-    document.addEventListener('click', function(e) {
-        if (e.target.matches('.quick-enroll-btn')) {
-            const subjectId = e.target.dataset.subjectId;
-            const subjectName = e.target.dataset.subjectName;
-            
-            quickEnrollText.textContent = `Enroll in "${subjectName}"? You'll gain immediate access to all topics and quizzes.`;
-            confirmQuickEnroll.dataset.subjectId = subjectId;
-            confirmQuickEnroll.dataset.subjectName = subjectName;
-            quickEnrollModal.classList.remove('hidden');
-        }
-    });
-    
-    if (confirmQuickEnroll) {
-        confirmQuickEnroll.addEventListener('click', function() {
-            const subjectId = this.dataset.subjectId;
-            const subjectName = this.dataset.subjectName;
-            
-            fetch(`/subject/${subjectId}/enroll`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update enrollment badges and buttons
-                    updateEnrollmentStatus(subjectId, true);
-                    showMessage(data.message, 'success');
-                } else {
-                    showMessage(data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('An error occurred while enrolling.', 'error');
-            });
-            
-            quickEnrollModal.classList.add('hidden');
-        });
-    }
-    
-    if (cancelQuickEnroll) {
-        cancelQuickEnroll.addEventListener('click', () => {
-            quickEnrollModal.classList.add('hidden');
-        });
-    }
-    
-    // Close modal on backdrop click
+    // Quick enrollment functionality (only for students)
     if (quickEnrollModal) {
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('.quick-enroll-btn')) {
+                const subjectId = e.target.dataset.subjectId;
+                const subjectName = e.target.dataset.subjectName;
+                
+                quickEnrollText.textContent = `Enroll in "${subjectName}"? You'll gain immediate access to all topics and quizzes.`;
+                confirmQuickEnroll.dataset.subjectId = subjectId;
+                confirmQuickEnroll.dataset.subjectName = subjectName;
+                quickEnrollModal.classList.remove('hidden');
+            }
+        });
+        
+        if (confirmQuickEnroll) {
+            confirmQuickEnroll.addEventListener('click', function() {
+                const subjectId = this.dataset.subjectId;
+                const subjectName = this.dataset.subjectName;
+                
+                fetch(`/subject/${subjectId}/enroll`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update enrollment badges and buttons
+                        updateEnrollmentStatus(subjectId, true);
+                        showMessage(data.message, 'success');
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('An error occurred while enrolling.', 'error');
+                });
+                
+                quickEnrollModal.classList.add('hidden');
+            });
+        }
+        
+        if (cancelQuickEnroll) {
+            cancelQuickEnroll.addEventListener('click', () => {
+                quickEnrollModal.classList.add('hidden');
+            });
+        }
+        
+        // Close modal on backdrop click
         quickEnrollModal.addEventListener('click', function(e) {
             if (e.target === this) {
                 this.classList.add('hidden');

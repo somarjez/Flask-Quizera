@@ -10,8 +10,9 @@ import json
 from flask import request, jsonify
 from flask_mail import Mail, Message
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta 
 import hashlib
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -23,6 +24,50 @@ class User:
         self.username = username
         self.email = email
         self.role = role
+
+@app.template_filter('get_animal_emoji')
+def get_animal_emoji(animal_id):
+    """Template filter to get animal emoji"""
+    animal_emojis = {
+        'cat': '🐱', 'dog': '🐶', 'fox': '🦊', 'bear': '🐻', 'panda': '🐼', 'koala': '🐨',
+        'lion': '🦁', 'tiger': '🐯', 'wolf': '🐺', 'rabbit': '🐰', 'monkey': '🐵', 'elephant': '🐘',
+        'penguin': '🐧', 'owl': '🦉', 'turtle': '🐢', 'unicorn': '🦄'
+    }
+    return animal_emojis.get(animal_id, '🐱')
+
+@app.route('/update-avatar', methods=['POST'])
+def update_avatar():
+    print(f"DEBUG: Update avatar called")  # Debug line
+    
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please log in'}), 401
+    
+    try:
+        data = request.get_json()
+        avatar_type = data.get('avatar_type')
+        avatar_id = data.get('avatar_id')
+        
+        print(f"DEBUG: Avatar type: {avatar_type}, Avatar ID: {avatar_id}")  # Debug line
+        
+        if not avatar_type or not avatar_id:
+            return jsonify({'success': False, 'message': 'Invalid avatar data'}), 400
+        
+        # Update user document
+        user_ref = db.collection('users').document(session['user_id'])
+        update_data = {
+            'avatar_type': avatar_type,
+            'avatar_id': avatar_id,
+            'updated_at': datetime.now()
+        }
+        
+        user_ref.update(update_data)
+        print(f"DEBUG: User avatar updated successfully")  # Debug line
+        
+        return jsonify({'success': True, 'message': 'Avatar updated successfully'})
+        
+    except Exception as e:
+        print(f"ERROR updating avatar: {e}")
+        return jsonify({'success': False, 'message': 'Error updating avatar'}), 500
 @app.route('/')
 def home():
     # Get all subjects from teachers
@@ -54,13 +99,68 @@ def home():
                          username=username, 
                          role=role)
 
+# @app.route('/signup', methods=['GET', 'POST'])
+# def signup():
+#     if request.method == 'POST':
+#         username = request.form['username']
+#         email = request.form['email']
+#         password = request.form['password']
+#         role = request.form['role']
+        
+#         # Check if user already exists
+#         users_ref = db.collection('users')
+#         existing_user = users_ref.where('email', '==', email).get()
+        
+#         if existing_user:
+#             flash('Email already exists. Please use a different email.')
+#             return render_template('signup.html')
+        
+#         # Hash password
+#         hashed_password = generate_password_hash(password)
+        
+#         # Create user document
+#         user_data = {
+#             'username': username,
+#             'email': email,
+#             'password': hashed_password,
+#             'role': role,
+#             'created_at': datetime.now()
+#         }
+        
+#         try:
+#             doc_ref = users_ref.add(user_data)
+#             flash('Account created successfully! Please log in.')
+#             return redirect(url_for('login'))
+#         except Exception as e:
+#             flash(f'Error creating account: {e}')
+#             return render_template('signup.html')
+    
+#     return render_template('signup.html')
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
+        confirm_password = request.form['confirm_password']
         role = request.form['role']
+        
+        # Validation
+        if not username or not email or not password or not confirm_password:
+            flash('Please fill in all fields.')
+            return render_template('signup.html')
+        
+        if len(username) < 3:
+            flash('Username must be at least 3 characters long.')
+            return render_template('signup.html')
+        
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long.')
+            return render_template('signup.html')
+        
+        if password != confirm_password:
+            flash('Passwords do not match.')
+            return render_template('signup.html')
         
         # Check if user already exists
         users_ref = db.collection('users')
@@ -70,27 +170,316 @@ def signup():
             flash('Email already exists. Please use a different email.')
             return render_template('signup.html')
         
-        # Hash password
-        hashed_password = generate_password_hash(password)
-        
-        # Create user document
-        user_data = {
-            'username': username,
-            'email': email,
-            'password': hashed_password,
-            'role': role,
-            'created_at': datetime.now()
-        }
+        # Check if username already exists
+        existing_username = users_ref.where('username', '==', username).get()
+        if existing_username:
+            flash('Username already exists. Please choose a different username.')
+            return render_template('signup.html')
         
         try:
-            doc_ref = users_ref.add(user_data)
-            flash('Account created successfully! Please log in.')
+            # Hash password
+            hashed_password = generate_password_hash(password)
+            
+            # Generate email confirmation token
+            confirmation_token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(confirmation_token.encode()).hexdigest()
+            
+            # Set token expiration (24 hours from now)
+            current_time = datetime.now(timezone.utc)
+            expires_at = current_time + timedelta(hours=24)
+            
+            # Create pending user document (not activated yet)
+            user_data = {
+                'username': username,
+                'email': email,
+                'password': hashed_password,
+                'role': role,
+                'is_verified': False,
+                'verification_token_hash': token_hash,
+                'token_expires_at': expires_at,
+                'created_at': current_time
+            }
+            
+            # Save user to 'pending_users' collection instead of 'users'
+            pending_users_ref = db.collection('pending_users')
+            doc_ref = pending_users_ref.add(user_data)
+            
+            # Send confirmation email
+            confirmation_url = url_for('confirm_email', token=confirmation_token, _external=True)
+            
+            msg = Message(
+                'Welcome to Quizera - Confirm Your Email',
+                recipients=[email],
+                html=f'''
+                <html>
+                <body>
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <div style="background-color: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                            <h1 style="margin: 0; font-size: 28px;">Welcome to Quizera!</h1>
+                        </div>
+                        <div style="padding: 30px; border: 1px solid #e5e5e5; border-radius: 0 0 10px 10px;">
+                            <h2 style="color: #2563eb;">Confirm Your Email Address</h2>
+                            <p>Hello {username},</p>
+                            <p>Thank you for signing up for Quizera! To complete your registration and activate your account, please click the button below to confirm your email address:</p>
+                            
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="{confirmation_url}" 
+                                   style="background-color: #2563eb; color: white; padding: 15px 30px; 
+                                          text-decoration: none; border-radius: 8px; display: inline-block;
+                                          font-weight: bold; font-size: 16px;">
+                                    Confirm Email Address
+                                </a>
+                            </div>
+                            
+                            <p>Or copy and paste this link into your browser:</p>
+                            <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace;">
+                                <a href="{confirmation_url}">{confirmation_url}</a>
+                            </p>
+                            
+                            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                <p style="margin: 0; color: #856404;"><strong>Important:</strong> This confirmation link will expire in 24 hours. If you don't confirm your email within this time, you'll need to sign up again.</p>
+                            </div>
+                            
+                            <p>Once you confirm your email, you'll be able to:</p>
+                            <ul style="color: #555;">
+                                <li>Access your personalized dashboard</li>
+                                <li>{"Create and manage quizzes and subjects" if role == "teacher" else "Enroll in subjects and take quizzes"}</li>
+                                <li>Track your progress and achievements</li>
+                            </ul>
+                            
+                            <p>If you didn't create an account with Quizera, please ignore this email.</p>
+                            
+                            <hr style="margin: 30px 0; border: 1px solid #e5e5e5;">
+                            <p style="color: #666; font-size: 12px; text-align: center;">
+                                This is an automated message from Quizera. Please do not reply to this email.<br>
+                                Need help? Contact our support team.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                '''
+            )
+            
+            mail.send(msg)
+            flash('Account created successfully! Please check your email and click the confirmation link to activate your account.')
             return redirect(url_for('login'))
+            
         except Exception as e:
+            print(f"Error creating account: {e}")
             flash(f'Error creating account: {e}')
             return render_template('signup.html')
     
     return render_template('signup.html')
+
+# Add this new route for email confirmation
+@app.route('/confirm-email/<token>')
+def confirm_email(token):
+    try:
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        
+        # Find pending user with this token
+        pending_users_ref = db.collection('pending_users')
+        pending_docs = list(pending_users_ref.where('verification_token_hash', '==', token_hash).where('is_verified', '==', False).get())
+        
+        if not pending_docs:
+            flash('Invalid or expired confirmation link. Please sign up again.')
+            return redirect(url_for('signup'))
+        
+        pending_doc = pending_docs[0]
+        pending_data = pending_doc.to_dict()
+        
+        # Check if token is expired
+        current_time = datetime.now(timezone.utc)
+        expires_at = pending_data['token_expires_at']
+        
+        # Handle timezone conversion
+        if hasattr(expires_at, 'timestamp'):
+            expires_at_dt = expires_at.replace(tzinfo=timezone.utc)
+        elif isinstance(expires_at, datetime):
+            if expires_at.tzinfo is None:
+                expires_at_dt = expires_at.replace(tzinfo=timezone.utc)
+            else:
+                expires_at_dt = expires_at.astimezone(timezone.utc)
+        else:
+            expires_at_dt = datetime.fromisoformat(str(expires_at)).replace(tzinfo=timezone.utc)
+        
+        if current_time > expires_at_dt:
+            # Delete expired pending user
+            pending_doc.reference.delete()
+            flash('Confirmation link has expired. Please sign up again.')
+            return redirect(url_for('signup'))
+        
+        # Move user from pending_users to users collection
+        user_data = {
+            'username': pending_data['username'],
+            'email': pending_data['email'],
+            'password': pending_data['password'],
+            'role': pending_data['role'],
+            'is_verified': True,
+            'created_at': pending_data['created_at'],
+            'verified_at': current_time
+        }
+        
+        # Add to users collection
+        users_ref = db.collection('users')
+        users_ref.add(user_data)
+        
+        # Delete from pending_users collection
+        pending_doc.reference.delete()
+        
+        flash(f'Email confirmed successfully! Welcome to Quizera, {pending_data["username"]}! You can now log in.')
+        return redirect(url_for('login'))
+        
+    except Exception as e:
+        print(f"Error confirming email: {e}")
+        flash('An error occurred during email confirmation. Please try again or contact support.')
+        return redirect(url_for('signup'))
+
+# Add a cleanup route for expired pending users (run this periodically)
+@app.route('/admin/cleanup-pending-users', methods=['POST'])
+def cleanup_pending_users():
+    """Admin route to clean up expired pending user registrations"""
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        current_time = datetime.now(timezone.utc)
+        
+        # Delete expired pending users
+        pending_users_ref = db.collection('pending_users')
+        expired_docs = list(pending_users_ref.where('token_expires_at', '<', current_time).get())
+        
+        deleted_count = 0
+        for doc in expired_docs:
+            doc.reference.delete()
+            deleted_count += 1
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Cleaned up {deleted_count} expired pending registrations'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False, 
+            'message': f'Error cleaning up pending users: {e}'
+        }), 500
+
+# Optional: Add a route to resend confirmation email
+@app.route('/resend-confirmation', methods=['GET', 'POST'])
+def resend_confirmation():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        
+        if not email:
+            flash('Please enter your email address.')
+            return render_template('resend_confirmation.html')
+        
+        try:
+            # Find pending user
+            pending_users_ref = db.collection('pending_users')
+            pending_docs = list(pending_users_ref.where('email', '==', email).where('is_verified', '==', False).get())
+            
+            if not pending_docs:
+                flash('No pending registration found for this email address.')
+                return render_template('resend_confirmation.html')
+            
+            pending_doc = pending_docs[0]
+            pending_data = pending_doc.to_dict()
+            
+            # Generate new confirmation token
+            confirmation_token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(confirmation_token.encode()).hexdigest()
+            
+            # Update token expiration (24 hours from now)
+            current_time = datetime.now(timezone.utc)
+            expires_at = current_time + timedelta(hours=24)
+            
+            # Update pending user with new token
+            pending_doc.reference.update({
+                'verification_token_hash': token_hash,
+                'token_expires_at': expires_at
+            })
+            
+            # Send confirmation email
+            confirmation_url = url_for('confirm_email', token=confirmation_token, _external=True)
+            username = pending_data['username']
+            role = pending_data['role']
+            
+            msg = Message(
+                'Quizera - Confirmation Email Resent',
+                recipients=[email],
+                html=f'''
+                <html>
+                <body>
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <div style="background-color: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                            <h1 style="margin: 0; font-size: 28px;">Confirm Your Email</h1>
+                        </div>
+                        <div style="padding: 30px; border: 1px solid #e5e5e5; border-radius: 0 0 10px 10px;">
+                            <p>Hello {username},</p>
+                            <p>You requested a new confirmation email for your Quizera account. Please click the button below to confirm your email address:</p>
+                            
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="{confirmation_url}" 
+                                   style="background-color: #2563eb; color: white; padding: 15px 30px; 
+                                          text-decoration: none; border-radius: 8px; display: inline-block;
+                                          font-weight: bold; font-size: 16px;">
+                                    Confirm Email Address
+                                </a>
+                            </div>
+                            
+                            <p>This link will expire in 24 hours.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                '''
+            )
+            
+            mail.send(msg)
+            flash('Confirmation email has been resent. Please check your email.')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            print(f"Error resending confirmation: {e}")
+            flash('An error occurred. Please try again later.')
+    
+    return render_template('resend_confirmation.html')
+
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if request.method == 'POST':
+#         email = request.form['email']
+#         password = request.form['password']
+        
+#         # Find user by email
+#         users_ref = db.collection('users')
+#         user_docs = users_ref.where('email', '==', email).get()
+        
+#         if not user_docs:
+#             flash('Invalid email or password.')
+#             return render_template('login.html')
+        
+#         user_doc = user_docs[0]
+#         user_data = user_doc.to_dict()
+        
+#         # Check password
+#         if check_password_hash(user_data['password'], password):
+#             # Store user info in session
+#             session['user_id'] = user_doc.id
+#             session['username'] = user_data['username']
+#             session['email'] = user_data['email']
+#             session['role'] = user_data['role']
+            
+#             flash(f'Welcome back, {user_data["username"]}!')
+#             return redirect(url_for('dashboard'))
+#         else:
+#             flash('Invalid email or password.')
+#             return render_template('login.html')
+    
+#     return render_template('login.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -103,11 +492,23 @@ def login():
         user_docs = users_ref.where('email', '==', email).get()
         
         if not user_docs:
-            flash('Invalid email or password.')
+            # Check if user is in pending_users (not yet verified)
+            pending_users_ref = db.collection('pending_users')
+            pending_docs = list(pending_users_ref.where('email', '==', email).get())
+            
+            if pending_docs:
+                flash('Please check your email and click the confirmation link to activate your account. <a href="/resend-confirmation" class="text-blue-600 hover:text-blue-800">Resend confirmation email</a>')
+            else:
+                flash('Invalid email or password.')
             return render_template('login.html')
         
         user_doc = user_docs[0]
         user_data = user_doc.to_dict()
+        
+        # Check if user is verified
+        if not user_data.get('is_verified', True):  # Default to True for existing users
+            flash('Please confirm your email address before logging in. <a href="/resend-confirmation" class="text-blue-600 hover:text-blue-800">Resend confirmation email</a>')
+            return render_template('login.html')
         
         # Check password
         if check_password_hash(user_data['password'], password):
@@ -140,6 +541,205 @@ def login():
 #                          username=username, 
 #                          email=email, 
 #                          role=role)
+
+# @app.route('/profile', methods=['GET', 'POST'])
+# def profile():
+#     if 'user_id' not in session:
+#         flash('Please log in to view your profile.')
+#         return redirect(url_for('login'))
+    
+#     user_id = session['user_id']
+    
+#     # Get user data from Firestore
+#     try:
+#         user_doc = db.collection('users').document(user_id).get()
+#         if not user_doc.exists:
+#             flash('User profile not found.')
+#             return redirect(url_for('login'))
+        
+#         user_data = user_doc.to_dict()
+#         user_data['id'] = user_doc.id
+        
+#         # Handle POST request for profile updates
+#         if request.method == 'POST':
+#             # Update profile information
+#             updated_data = {}
+            
+#             # Basic profile fields
+#             if request.form.get('username'):
+#                 updated_data['username'] = request.form['username']
+#                 session['username'] = request.form['username']  # Update session
+            
+#             if request.form.get('full_name'):
+#                 updated_data['full_name'] = request.form['full_name']
+            
+#             if request.form.get('email'):
+#                 updated_data['email'] = request.form['email']
+#                 session['email'] = request.form['email']  # Update session
+            
+#             if request.form.get('bio'):
+#                 updated_data['bio'] = request.form['bio']
+            
+#             if request.form.get('institution'):
+#                 updated_data['institution'] = request.form['institution']
+            
+#             # Handle password change
+#             current_password = request.form.get('current_password')
+#             new_password = request.form.get('new_password')
+#             confirm_new_password = request.form.get('confirm_new_password')
+            
+#             if current_password and new_password:
+#                 if check_password_hash(user_data['password'], current_password):
+#                     if new_password == confirm_new_password:
+#                         updated_data['password'] = generate_password_hash(new_password)
+#                         flash('Password updated successfully!', 'success')
+#                     else:
+#                         flash('New passwords do not match.', 'error')
+#                         return redirect(url_for('profile'))
+#                 else:
+#                     flash('Current password is incorrect.', 'error')
+#                     return redirect(url_for('profile'))
+            
+#             # Update user document
+#             if updated_data:
+#                 updated_data['updated_at'] = datetime.now()
+#                 db.collection('users').document(user_id).update(updated_data)
+#                 flash('Profile updated successfully!', 'success')
+#                 return redirect(url_for('profile'))
+        
+#         # Create a proper user object with default values for missing properties
+#         class UserProfile:
+#             def __init__(self, data):
+#                 self.id = data.get('id')
+#                 self.username = data.get('username', '')
+#                 self.email = data.get('email', '')
+#                 self.role = data.get('role', '')
+#                 self.full_name = data.get('full_name', '')
+#                 self.bio = data.get('bio', '')
+#                 self.institution = data.get('institution', '')
+#                 self.profile_picture = data.get('profile_picture', None)
+#                 self.created_at = data.get('created_at', None)
+#                 self.updated_at = data.get('updated_at', None)
+        
+#         user = UserProfile(user_data)
+        
+#         # Get user statistics
+#         stats = {}
+#         recent_activities = []
+        
+#         try:
+#             if user_data['role'] == 'teacher':
+#                 # Calculate teacher statistics
+#                 subjects_query = db.collection('subjects').where('teacher_id', '==', user_id)
+#                 subjects_docs = list(subjects_query.stream())
+#                 subjects_count = len(subjects_docs)
+                
+#                 quizzes_query = db.collection('quizzes').where('teacher_id', '==', user_id)
+#                 quizzes_docs = list(quizzes_query.stream())
+#                 quizzes_count = len(quizzes_docs)
+                
+#                 # Calculate topics count
+#                 topics_count = 0
+#                 for subject_doc in subjects_docs:
+#                     subject_data = subject_doc.to_dict()
+#                     topics_count += subject_data.get('topic_count', 0)
+                
+#                 # Calculate quiz attempts and student engagement
+#                 total_attempts = 0
+#                 total_score = 0
+#                 unique_students = set()
+                
+#                 for quiz_doc in quizzes_docs:
+#                     quiz_id = quiz_doc.id
+#                     attempts_query = db.collection('quiz_attempts').where('quiz_id', '==', quiz_id)
+#                     attempts_docs = list(attempts_query.stream())
+                    
+#                     for attempt_doc in attempts_docs:
+#                         attempt_data = attempt_doc.to_dict()
+#                         total_attempts += 1
+#                         total_score += attempt_data.get('percentage', 0)
+#                         unique_students.add(attempt_data.get('user_id'))
+                
+#                 avg_score = (total_score / total_attempts) if total_attempts > 0 else 0
+#                 total_students = len(unique_students)
+                
+#                 stats = {
+#                     'subjects_count': subjects_count,
+#                     'quizzes_count': quizzes_count,
+#                     'topics_count': topics_count,
+#                     'total_students': total_students,
+#                     'avg_completion_rate': 85,  # Placeholder - calculate based on your needs
+#                     'total_attempts': total_attempts,
+#                     'avg_score': round(avg_score, 1),
+#                     'active_students': total_students,
+#                     'monthly_views': total_attempts * 3,  # Rough estimate
+#                     'teaching_hours': topics_count * 2  # Rough estimate
+#                 }
+#             else:
+#                 # Calculate student statistics
+#                 attempts_query = db.collection('quiz_attempts').where('user_id', '==', user_id)
+#                 attempts_docs = list(attempts_query.stream())
+                
+#                 quizzes_taken = len(attempts_docs)
+#                 total_score = sum(attempt.to_dict().get('percentage', 0) for attempt in attempts_docs)
+#                 average_score = (total_score / quizzes_taken) if quizzes_taken > 0 else 0
+                
+#                 # Get unique subjects from taken quizzes
+#                 unique_subjects = set()
+#                 for attempt_doc in attempts_docs:
+#                     attempt_data = attempt_doc.to_dict()
+#                     quiz_id = attempt_data.get('quiz_id')
+#                     if quiz_id:
+#                         quiz_doc = db.collection('quizzes').document(quiz_id).get()
+#                         if quiz_doc.exists:
+#                             quiz_data = quiz_doc.to_dict()
+#                             subject_id = quiz_data.get('subject_id')
+#                             if subject_id:
+#                                 unique_subjects.add(subject_id)
+                
+#                 stats = {
+#                     'quizzes_taken': quizzes_taken,
+#                     'average_score': round(average_score, 1),
+#                     'subjects_enrolled': len(unique_subjects),
+#                     'study_hours': quizzes_taken * 0.5  # Rough estimate
+#                 }
+                
+#         except Exception as e:
+#             print(f"Error calculating stats: {e}")
+#             # Provide default empty stats
+#             if user_data['role'] == 'teacher':
+#                 stats = {
+#                     'subjects_count': 0,
+#                     'quizzes_count': 0,
+#                     'topics_count': 0,
+#                     'total_students': 0,
+#                     'avg_completion_rate': 0,
+#                     'total_attempts': 0,
+#                     'avg_score': 0,
+#                     'active_students': 0,
+#                     'monthly_views': 0,
+#                     'teaching_hours': 0
+#                 }
+#             else:
+#                 stats = {
+#                     'quizzes_taken': 0,
+#                     'average_score': 0,
+#                     'subjects_enrolled': 0,
+#                     'study_hours': 0
+#                 }
+        
+#         return render_template('profile.html', 
+#                              user=user,
+#                              username=user.username,
+#                              role=user.role,
+#                              stats=stats,
+#                              recent_activities=recent_activities)
+    
+#     except Exception as e:
+#         print(f"Error loading profile: {e}")
+#         flash('Error loading profile.')
+#         return redirect(url_for('dashboard'))
+
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'user_id' not in session:
@@ -147,16 +747,19 @@ def profile():
         return redirect(url_for('login'))
     
     user_id = session['user_id']
+    print(f"Loading profile for user_id: {user_id}")  # Debug line
     
     # Get user data from Firestore
     try:
         user_doc = db.collection('users').document(user_id).get()
         if not user_doc.exists:
+            print(f"User document not found for user_id: {user_id}")  # Debug line
             flash('User profile not found.')
             return redirect(url_for('login'))
         
         user_data = user_doc.to_dict()
         user_data['id'] = user_doc.id
+        print(f"User data loaded: {user_data.keys()}")  # Debug line
         
         # Handle POST request for profile updates
         if request.method == 'POST':
@@ -181,6 +784,13 @@ def profile():
             if request.form.get('institution'):
                 updated_data['institution'] = request.form['institution']
             
+            # Handle avatar update
+            avatar_type = request.form.get('avatar_type')
+            avatar_id = request.form.get('avatar_id')
+            if avatar_type and avatar_id:
+                updated_data['avatar_type'] = avatar_type
+                updated_data['avatar_id'] = avatar_id
+            
             # Handle password change
             current_password = request.form.get('current_password')
             new_password = request.form.get('new_password')
@@ -189,8 +799,12 @@ def profile():
             if current_password and new_password:
                 if check_password_hash(user_data['password'], current_password):
                     if new_password == confirm_new_password:
-                        updated_data['password'] = generate_password_hash(new_password)
-                        flash('Password updated successfully!', 'success')
+                        if len(new_password) >= 6:
+                            updated_data['password'] = generate_password_hash(new_password)
+                            flash('Password updated successfully!', 'success')
+                        else:
+                            flash('Password must be at least 6 characters long.', 'error')
+                            return redirect(url_for('profile'))
                     else:
                         flash('New passwords do not match.', 'error')
                         return redirect(url_for('profile'))
@@ -216,10 +830,13 @@ def profile():
                 self.bio = data.get('bio', '')
                 self.institution = data.get('institution', '')
                 self.profile_picture = data.get('profile_picture', None)
+                self.avatar_type = data.get('avatar_type', 'initial')  # Add this
+                self.avatar_id = data.get('avatar_id', 'blue')        # Add this
                 self.created_at = data.get('created_at', None)
                 self.updated_at = data.get('updated_at', None)
         
         user = UserProfile(user_data)
+        print(f"UserProfile created with avatar_type: {user.avatar_type}, avatar_id: {user.avatar_id}")  # Debug line
         
         # Get user statistics
         stats = {}
@@ -335,8 +952,11 @@ def profile():
     
     except Exception as e:
         print(f"Error loading profile: {e}")
+        import traceback
+        traceback.print_exc()  # Print full error traceback
         flash('Error loading profile.')
         return redirect(url_for('dashboard'))
+
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -436,6 +1056,7 @@ def dashboard():
                              enrolled_subjects=enrolled_subjects,
                              available_subjects=available_subjects, 
                              quizzes=enrolled_quizzes)
+    
     
 # Subject Management Routes
 @app.route('/create-subject', methods=['GET', 'POST'])

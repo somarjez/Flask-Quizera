@@ -4,3 +4,4 @@ firebase-admin==6.2.0
 python-dotenv==1.0.0
 Werkzeug==2.3.7
 Flask-Mail==0.9.1
+flask-mail

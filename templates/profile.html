@@ -7,19 +7,26 @@
     <!-- Profile Header -->
     <div class="bg-white rounded-lg shadow-md p-8 mb-6">
         <div class="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-            <!-- Profile Picture -->
+            <!-- Profile Avatar -->
             <div class="relative">
-                <img id="profileImagePreview" 
-                     src="{{ user.profile_picture if user.profile_picture else '/static/images/default-avatar.png' }}" 
-                     alt="Profile Picture" 
-                     class="w-24 h-24 rounded-full object-cover border-4 border-blue-200">
-                <label for="profileImageInput" class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors">
+                <div id="currentAvatar" 
+     class="w-24 h-24 rounded-full flex items-center justify-center border-4 border-blue-200 cursor-pointer hover:border-blue-300 transition-colors"
+     onclick="showAvatarSelector()">
+    {% if user and user.avatar_type == 'animal' and user.avatar_id %}
+        <div class="w-full h-full rounded-full bg-gray-100 flex items-center justify-center text-4xl animal-avatar" data-animal="{{ user.avatar_id }}">
+            {{ user.avatar_id | get_animal_emoji }}
+        </div>
+    {% else %}
+        <div class="w-full h-full rounded-full bg-{{ user.avatar_id if user and user.avatar_id and user.avatar_type == 'initial' else 'blue' }}-500 flex items-center justify-center text-white text-2xl font-bold initial-avatar">
+            {{ (user.username[0] if user and user.username else 'U') | upper }}
+        </div>
+    {% endif %}
+</div>
+                <button onclick="showAvatarSelector()" class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path>
                     </svg>
-                </label>
-                <input type="file" id="profileImageInput" accept="image/*" class="hidden" onchange="previewProfileImage(this)">
+                </button>
             </div>
             
             <!-- User Info -->
@@ -38,6 +45,94 @@
             <button onclick="toggleEditMode()" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
                 Edit Profile
             </button>
+        </div>
+    </div>
+
+    <!-- Avatar Selector Modal -->
+    <div id="avatarModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Choose Your Avatar</h3>
+                <button onclick="hideAvatarSelector()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Avatar Options -->
+            <div class="space-y-4">
+                <!-- Initial Avatar -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Initial Avatar</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <div class="avatar-option w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white text-lg font-bold cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('initial', 'blue')" data-type="initial" data-id="blue">
+                            {{ user.username[0]|upper if user.username else 'U' }}
+                        </div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white text-lg font-bold cursor-pointer hover:ring-2 hover:ring-green-300"
+                             onclick="selectAvatar('initial', 'green')" data-type="initial" data-id="green">
+                            {{ user.username[0]|upper if user.username else 'U' }}
+                        </div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white text-lg font-bold cursor-pointer hover:ring-2 hover:ring-purple-300"
+                             onclick="selectAvatar('initial', 'purple')" data-type="initial" data-id="purple">
+                            {{ user.username[0]|upper if user.username else 'U' }}
+                        </div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white text-lg font-bold cursor-pointer hover:ring-2 hover:ring-red-300"
+                             onclick="selectAvatar('initial', 'red')" data-type="initial" data-id="red">
+                            {{ user.username[0]|upper if user.username else 'U' }}
+                        </div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white text-lg font-bold cursor-pointer hover:ring-2 hover:ring-orange-300"
+                             onclick="selectAvatar('initial', 'orange')" data-type="initial" data-id="orange">
+                            {{ user.username[0]|upper if user.username else 'U' }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Animal Avatars -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Animal Avatars</h4>
+                    <div class="grid grid-cols-6 gap-2">
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'cat')" data-type="animal" data-id="cat">🐱</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'dog')" data-type="animal" data-id="dog">🐶</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'fox')" data-type="animal" data-id="fox">🦊</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'bear')" data-type="animal" data-id="bear">🐻</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'panda')" data-type="animal" data-id="panda">🐼</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'koala')" data-type="animal" data-id="koala">🐨</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'lion')" data-type="animal" data-id="lion">🦁</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'tiger')" data-type="animal" data-id="tiger">🐯</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'wolf')" data-type="animal" data-id="wolf">🐺</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'rabbit')" data-type="animal" data-id="rabbit">🐰</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'monkey')" data-type="animal" data-id="monkey">🐵</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'elephant')" data-type="animal" data-id="elephant">🐘</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'penguin')" data-type="animal" data-id="penguin">🐧</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'owl')" data-type="animal" data-id="owl">🦉</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'turtle')" data-type="animal" data-id="turtle">🐢</div>
+                        <div class="avatar-option w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl cursor-pointer hover:ring-2 hover:ring-blue-300"
+                             onclick="selectAvatar('animal', 'unicorn')" data-type="animal" data-id="unicorn">🦄</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end mt-6 space-x-3">
+                <button onclick="hideAvatarSelector()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                <button onclick="saveAvatar()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">Save</button>
+            </div>
         </div>
     </div>
 
@@ -151,7 +246,7 @@
 
             <!-- Settings Tab -->
             <div id="settings-tab" class="tab-content hidden">
-                <form method="POST" enctype="multipart/form-data">
+                <form method="POST">
                     <div class="space-y-6">
                         <!-- Profile Information -->
                         <div>
@@ -167,11 +262,13 @@
                                     <input type="text" name="full_name" value="{{ user.full_name if user.full_name else '' }}" 
                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                    <input type="email" name="email" value="{{ user.email if user.email else '' }}" 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                </div>
+                               <div class="md:col-span-2">
+    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+    <input type="email" name="email" value="{{ user.email if user.email else '' }}" 
+           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-600 cursor-not-allowed" 
+           readonly disabled>
+    <p class="text-xs text-gray-500 mt-1">Email cannot be changed. Contact support if needed.</p>
+                               </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Bio</label>
                                     <textarea name="bio" rows="3" 
@@ -183,6 +280,21 @@
                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Avatar Selection -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Avatar</h3>
+                            <div class="flex items-center space-x-4">
+                                <div id="settingsAvatar" class="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-300">
+                                    <!-- Current avatar preview -->
+                                </div>
+                                <button type="button" onclick="showAvatarSelector()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                                    Change Avatar
+                                </button>
+                            </div>
+                            <input type="hidden" name="avatar_type" id="avatarType" value="{{ user.avatar_type or 'initial' }}">
+                            <input type="hidden" name="avatar_id" id="avatarId" value="{{ user.avatar_id or 'blue' }}">
                         </div>
 
                         <!-- Change Password -->
@@ -317,6 +429,27 @@
 </div>
 
 <script>
+// Avatar system variables
+let selectedAvatarType = '{{ user.avatar_type or "initial" }}';
+let selectedAvatarId = '{{ user.avatar_id or "blue" }}';
+const username = '{{ user.username or "U" }}';
+
+// Animal emoji mapping
+const animalEmojis = {
+    'cat': '🐱', 'dog': '🐶', 'fox': '🦊', 'bear': '🐻', 'panda': '🐼', 'koala': '🐨',
+    'lion': '🦁', 'tiger': '🐯', 'wolf': '🐺', 'rabbit': '🐰', 'monkey': '🐵', 'elephant': '🐘',
+    'penguin': '🐧', 'owl': '🦉', 'turtle': '🐢', 'unicorn': '🦄'
+};
+
+// Color mapping for initial avatars
+const colorClasses = {
+    'blue': 'bg-blue-500',
+    'green': 'bg-green-500',
+    'purple': 'bg-purple-500',
+    'red': 'bg-red-500',
+    'orange': 'bg-orange-500'
+};
+
 // Tab switching functionality
 function switchTab(tabName) {
     // Hide all tab contents
@@ -338,31 +471,141 @@ function switchTab(tabName) {
     event.target.classList.remove('border-transparent', 'text-gray-500');
 }
 
-// Profile image preview functionality
-function previewProfileImage(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('profileImagePreview').src = e.target.result;
-        };
-        reader.readAsDataURL(input.files[0]);
+// Avatar selector functions
+function showAvatarSelector() {
+    document.getElementById('avatarModal').classList.remove('hidden');
+    updateAvatarSelection();
+}
+
+function hideAvatarSelector() {
+    document.getElementById('avatarModal').classList.add('hidden');
+}
+
+function selectAvatar(type, id) {
+    selectedAvatarType = type;
+    selectedAvatarId = id;
+    
+    // Remove selection from all avatar options
+    document.querySelectorAll('.avatar-option').forEach(option => {
+        option.classList.remove('ring-2', 'ring-blue-500');
+    });
+    
+    // Add selection to clicked avatar
+    event.target.classList.add('ring-2', 'ring-blue-500');
+}
+
+function updateAvatarSelection() {
+    // Remove all selections first
+    document.querySelectorAll('.avatar-option').forEach(option => {
+        option.classList.remove('ring-2', 'ring-blue-500');
+    });
+    
+    // Find and select current avatar
+    const currentOption = document.querySelector(`[data-type="${selectedAvatarType}"][data-id="${selectedAvatarId}"]`);
+    if (currentOption) {
+        currentOption.classList.add('ring-2', 'ring-blue-500');
+    }
+}
+function saveAvatar() {
+    // Update hidden form fields
+    document.getElementById('avatarType').value = selectedAvatarType;
+    document.getElementById('avatarId').value = selectedAvatarId;
+    
+    // Save avatar to backend immediately
+    fetch('/update-avatar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            avatar_type: selectedAvatarType,
+            avatar_id: selectedAvatarId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update current avatar display
+            updateAvatarDisplay(document.getElementById('currentAvatar'), selectedAvatarType, selectedAvatarId);
+            
+            // Update settings avatar preview
+            const settingsAvatar = document.getElementById('settingsAvatar');
+            if (settingsAvatar) {
+                updateAvatarDisplay(settingsAvatar, selectedAvatarType, selectedAvatarId, true);
+            }
+            
+            // Show success message
+            showNotification('Avatar updated successfully!', 'success');
+        } else {
+            showNotification('Error updating avatar: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error updating avatar', 'error');
+    });
+    
+    hideAvatarSelector();
+}
+
+// Add notification function
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+        type === 'success' ? 'bg-green-500 text-white' : 
+        type === 'error' ? 'bg-red-500 text-white' : 
+        'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function updateAvatarDisplay(element, avatarType, avatarId, isSmall = false) {
+    const sizeClasses = isSmall ? 'w-16 h-16' : 'w-24 h-24';
+    
+    if (avatarType === 'animal' && animalEmojis[avatarId]) {
+        element.innerHTML = `
+            <div class="${sizeClasses} rounded-full bg-gray-100 flex items-center justify-center text-${isSmall ? '2xl' : '4xl'} animal-avatar" data-animal="${avatarId}">
+                ${animalEmojis[avatarId]}
+            </div>
+        `;
+    } else {
+        const colorClass = colorClasses[avatarId] || 'bg-blue-500';
+        element.innerHTML = `
+            <div class="${sizeClasses} rounded-full ${colorClass} flex items-center justify-center text-white text-${isSmall ? 'xl' : '2xl'} font-bold initial-avatar">
+                ${username[0].toUpperCase()}
+            </div>
+        `;
     }
 }
 
-// Edit mode toggle functionality
 function toggleEditMode() {
     switchTab('settings');
 }
 
-// Initialize default tab
+// Initialize avatars on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Set overview tab as active by default
-    const overviewButton = document.querySelector('button[onclick="switchTab(\'overview\')"]');
-    if (overviewButton) {
-        overviewButton.classList.add('active', 'border-blue-500', 'text-blue-600');
-        overviewButton.classList.remove('border-transparent', 'text-gray-500');
+    // Update current avatar display
+    const currentAvatar = document.getElementById('currentAvatar');
+    if (currentAvatar) {
+        updateAvatarDisplay(currentAvatar, selectedAvatarType, selectedAvatarId);
+    }
+    
+    // Update settings avatar preview
+    const settingsAvatar = document.getElementById('settingsAvatar');
+    if (settingsAvatar) {
+        updateAvatarDisplay(settingsAvatar, selectedAvatarType, selectedAvatarId, true);
     }
 });
+
 </script>
 
 {% endblock %}
