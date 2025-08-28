@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Questions - {{ quiz.title }} - Quizera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('home') }}" class="text-2xl font-bold">Quizera</a>
+                    <span class="text-blue-200">Add Questions</span>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('dashboard') }}" class="hover:text-blue-200 transition-colors">
+                        <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="hover:text-blue-200 transition-colors">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mx-auto px-4 pt-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-message bg-blue-50 border border-blue-200 text-blue-800 p-3 mb-4 rounded-lg">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container mx-auto px-4 py-6">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="mb-6">
+                <div class="flex items-center space-x-2 text-sm text-gray-600 mb-4">
+                    <a href="{{ url_for('dashboard') }}" class="hover:text-blue-600">Dashboard</a>
+                    <i class="fas fa-chevron-right text-xs"></i>
+                    <a href="{{ url_for('manage_quiz', quiz_id=quiz_id) }}" class="hover:text-blue-600">{{ quiz.title }}</a>
+                    <i class="fas fa-chevron-right text-xs"></i>
+                    <span class="text-gray-800">Add Questions</span>
+                </div>
+                <h1 class="text-2xl font-medium text-gray-900 mb-2">Add questions to quiz</h1>
+                <p class="text-gray-600 text-sm">Quiz: {{ quiz.title }}</p>
+            </div>
+
+            <!-- Method Selection -->
+            <div class="bg-white rounded-lg border border-gray-200 mb-6">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex space-x-4">
+                        <button id="singleMethodBtn" class="method-btn active px-4 py-2 text-sm font-medium rounded-md bg-purple-100 text-purple-700 border border-purple-200">
+                            <i class="fas fa-plus mr-2"></i>Single Question
+                        </button>
+                        <button id="bulkMethodBtn" class="method-btn px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 border border-gray-200">
+                            <i class="fas fa-list mr-2"></i>Multiple Questions
+                        </button>
+                        <button id="csvMethodBtn" class="method-btn px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 border border-gray-200">
+                            <i class="fas fa-upload mr-2"></i>CSV Upload
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Single Question Method -->
+                <div id="singleMethod" class="method-content">
+                    <form method="POST" id="singleQuestionForm">
+                        <!-- Question Text Section -->
+                        <div class="p-6 border-b border-gray-200">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-2">
+                                    <i class="fas fa-question text-purple-600 text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <textarea name="question_text" 
+                                             placeholder="Question" 
+                                             class="w-full text-lg border-0 border-b-2 border-gray-200 focus:border-purple-500 focus:ring-0 resize-none outline-none p-2 bg-transparent placeholder-gray-400" 
+                                             rows="2" 
+                                             required></textarea>
+                                    <div class="mt-4">
+                                        <select name="question_type" id="questionType" class="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" required>
+                                            <option value="">Question Type</option>
+                                            <option value="multiple_choice">Multiple choice</option>
+                                            <option value="true_false">True/False</option>
+                                            <option value="identification">Short answer</option>
+                                            <option value="enumeration">Paragraph</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Answer Options Section -->
+                        <div class="p-6">
+                            <!-- Multiple Choice Options -->
+                            <div id="multipleChoiceOptions" class="hidden">
+                                <div class="space-y-4">
+                                    <div class="flex items-center space-x-3">
+                                        <input type="radio" name="correct_answer" value="A" id="correctA" class="w-4 h-4 text-purple-600 border-gray-300">
+                                        <div class="flex items-center space-x-3 flex-1">
+                                            <span class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium">A</span>
+                                            <input type="text" name="option_a" placeholder="Option 1" class="flex-1 border-0 border-b border-gray-200 focus:border-purple-500 focus:ring-0 outline-none py-2 bg-transparent">
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="radio" name="correct_answer" value="B" id="correctB" class="w-4 h-4 text-purple-600 border-gray-300">
+                                        <div class="flex items-center space-x-3 flex-1">
+                                            <span class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium">B</span>
+                                            <input type="text" name="option_b" placeholder="Option 2" class="flex-1 border-0 border-b border-gray-200 focus:border-purple-500 focus:ring-0 outline-none py-2 bg-transparent">
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="radio" name="correct_answer" value="C" id="correctC" class="w-4 h-4 text-purple-600 border-gray-300">
+                                        <div class="flex items-center space-x-3 flex-1">
+                                            <span class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium">C</span>
+                                            <input type="text" name="option_c" placeholder="Option 3" class="flex-1 border-0 border-b border-gray-200 focus:border-purple-500 focus:ring-0 outline-none py-2 bg-transparent">
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="radio" name="correct_answer" value="D" id="correctD" class="w-4 h-4 text-purple-600 border-gray-300">
+                                        <div class="flex items-center space-x-3 flex-1">
+                                            <span class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium">D</span>
+                                            <input type="text" name="option_d" placeholder="Option 4" class="flex-1 border-0 border-b border-gray-200 focus:border-purple-500 focus:ring-0 outline-none py-2 bg-transparent">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 p-3 bg-blue-50 rounded-md">
+                                    <p class="text-sm text-blue-800">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        Select the radio button next to the correct answer
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- True/False Options -->
+                            <div id="trueFalseOptions" class="hidden">
+                                <div class="space-y-3">
+                                    <div class="flex items-center space-x-3">
+                                        <input type="radio" name="tf_answer" value="true" id="tfTrue" class="w-4 h-4 text-purple-600 border-gray-300">
+                                        <label for="tfTrue" class="text-gray-700">True</label>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="radio" name="tf_answer" value="false" id="tfFalse" class="w-4 h-4 text-purple-600 border-gray-300">
+                                        <label for="tfFalse" class="text-gray-700">False</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Short Answer/Paragraph Options -->
+                            <div id="openEndedOptions" class="hidden">
+                                <div class="space-y-4">
+                                    <div class="border border-gray-200 rounded-md p-4 bg-gray-50">
+                                        <p class="text-sm text-gray-600 mb-3">Correct answer(s)</p>
+                                        <textarea name="correct_answers" 
+                                                 rows="3" 
+                                                 class="w-full border-0 bg-transparent resize-none outline-none text-gray-700 placeholder-gray-400" 
+                                                 placeholder="Enter acceptable answers separated by commas"></textarea>
+                                    </div>
+                                    <p class="text-xs text-gray-500">
+                                        For multiple acceptable answers, separate them with commas (e.g., JavaScript, JS, javascript)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer Section -->
+                        <div class="p-6 bg-gray-50 border-t border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <label class="text-sm text-gray-600">Points:</label>
+                                    <input type="number" name="points" value="1" min="1" max="10" class="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                </div>
+                                
+                                <div class="flex items-center space-x-3">
+                                    <a href="{{ url_for('manage_quiz', quiz_id=quiz_id) }}" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="bg-purple-600 text-white px-6 py-2 text-sm rounded-md hover:bg-purple-700 transition-colors shadow-sm">
+                                        Add Question
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Bulk Questions Method -->
+                <div id="bulkMethod" class="method-content hidden">
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Add Multiple Questions</h3>
+                            <p class="text-sm text-gray-600 mb-4">Add multiple questions at once. You can manually set answers after adding.</p>
+                        </div>
+                        
+                        <div id="bulkQuestions">
+                            <div class="bulk-question mb-6 p-4 border border-gray-200 rounded-lg">
+                                <div class="flex items-start space-x-4 mb-4">
+                                    <span class="question-number bg-purple-100 text-purple-700 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">1</span>
+                                    <div class="flex-1">
+                                        <select name="bulk_question_type[]" class="bulk-type-select bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm mb-3" required>
+                                            <option value="">Question Type</option>
+                                            <option value="multiple_choice">Multiple choice</option>
+                                            <option value="true_false">True/False</option>
+                                            <option value="identification">Short answer</option>
+                                            <option value="enumeration">Paragraph</option>
+                                        </select>
+                                        <textarea name="bulk_question_text[]" placeholder="Question text" class="w-full border border-gray-200 rounded-md p-3 text-sm" rows="2" required></textarea>
+                                        <div class="mt-3">
+                                            <textarea name="bulk_choices[]" placeholder="Choices (one per line) or correct answers" class="w-full border border-gray-200 rounded-md p-3 text-sm bg-gray-50" rows="3"></textarea>
+                                            <p class="text-xs text-gray-500 mt-1">For multiple choice: enter options one per line. For other types: enter acceptable answers.</p>
+                                        </div>
+                                        <div class="mt-3 flex items-center space-x-4">
+                                            <div class="flex items-center space-x-2">
+                                                <label class="text-sm text-gray-600">Points:</label>
+                                                <input type="number" name="bulk_points[]" value="1" min="1" max="10" class="w-16 px-2 py-1 border border-gray-200 rounded text-sm">
+                                            </div>
+                                            <button type="button" class="remove-question text-red-600 hover:text-red-800 text-sm" style="display: none;">
+                                                <i class="fas fa-trash mr-1"></i>Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
+                            <button type="button" id="addBulkQuestion" class="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                                <i class="fas fa-plus mr-2"></i>Add Another Question
+                            </button>
+                            <div class="flex items-center space-x-3">
+                                <a href="{{ url_for('manage_quiz', quiz_id=quiz_id) }}" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors">
+                                    Cancel
+                                </a>
+                                <button type="button" id="saveBulkQuestions" class="bg-purple-600 text-white px-6 py-2 text-sm rounded-md hover:bg-purple-700 transition-colors shadow-sm">
+                                    Add All Questions
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CSV Upload Method -->
+                <div id="csvMethod" class="method-content hidden">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Upload Questions from CSV</h3>
+                        <p class="text-sm text-gray-600 mb-4">Upload a CSV file with your questions. The system will validate and parse them automatically.</p>
+
+                        <!-- File Upload Area -->
+                        <div class="mb-6">
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors cursor-pointer" id="csvDropZone">
+                                <input type="file" id="csvFile" accept=".csv" class="hidden">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                                <p class="text-lg font-medium text-gray-700 mb-2">Drop your CSV file here</p>
+                                <p class="text-sm text-gray-500 mb-4">or <span class="text-purple-600 hover:text-purple-700 font-medium cursor-pointer" id="browseBtn">click to browse</span></p>
+                                <p class="text-xs text-gray-400">Supported format: .csv files only (max 10MB)</p>
+                            </div>
+                            
+                            <!-- Upload Progress -->
+                            <div id="uploadProgress" class="hidden mt-4">
+                                <div class="bg-gray-200 rounded-full h-2">
+                                    <div id="progressBar" class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <p id="progressText" class="text-sm text-gray-600 mt-2">Uploading...</p>
+                            </div>
+                        </div>
+
+                        <!-- Error Messages -->
+                        <div id="errorMessages" class="hidden mb-6">
+                            <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-exclamation-triangle text-red-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="text-red-800 font-medium mb-2">Upload Errors</h4>
+                                        <ul id="errorList" class="text-sm text-red-700 list-disc list-inside space-y-1"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CSV Format Guide -->
+                        <div class="mb-6">
+                            <h4 class="font-medium text-gray-900 mb-3">Required CSV Format:</h4>
+                            <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
+                                <div class="mb-4">
+                                    <h5 class="text-sm font-medium text-gray-700 mb-2">Column Headers (Required):</h5>
+                                    <code class="text-sm bg-white px-2 py-1 rounded border">question_type,question_text,choices_answers,points</code>
+                                </div>
+                                
+                                <table class="w-full text-left text-sm">
+                                    <thead>
+                                        <tr class="border-b border-gray-300">
+                                            <th class="py-2 px-3 font-medium text-gray-700">Question Type</th>
+                                            <th class="py-2 px-3 font-medium text-gray-700">Question Text</th>
+                                            <th class="py-2 px-3 font-medium text-gray-700">Choices/Answers</th>
+                                            <th class="py-2 px-3 font-medium text-gray-700">Points</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-gray-600">
+                                        <tr class="border-b border-gray-200">
+                                            <td class="py-2 px-3">multiple_choice</td>
+                                            <td class="py-2 px-3">"What is 2+2?"</td>
+                                            <td class="py-2 px-3">"2|3|4|5"</td>
+                                            <td class="py-2 px-3">1</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200">
+                                            <td class="py-2 px-3">true_false</td>
+                                            <td class="py-2 px-3">"The sky is blue"</td>
+                                            <td class="py-2 px-3">"true|false"</td>
+                                            <td class="py-2 px-3">1</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200">
+                                            <td class="py-2 px-3">identification</td>
+                                            <td class="py-2 px-3">"Capital of France?"</td>
+                                            <td class="py-2 px-3">"Paris|paris"</td>
+                                            <td class="py-2 px-3">2</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-2 px-3">enumeration</td>
+                                            <td class="py-2 px-3">"Explain photosynthesis"</td>
+                                            <td class="py-2 px-3">"Process by which plants convert light energy"</td>
+                                            <td class="py-2 px-3">3</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                
+                                <div class="mt-4 p-3 bg-blue-50 rounded-md">
+                                    <h5 class="text-sm font-medium text-blue-800 mb-2">Important Notes:</h5>
+                                    <ul class="text-xs text-blue-700 space-y-1">
+                                        <li>• Use quotes around text containing commas</li>
+                                        <li>• Separate multiple choices/answers with | (pipe) character</li>
+                                        <li>• Valid question types: multiple_choice, true_false, identification, enumeration</li>
+                                        <li>• Points must be a number between 1-10</li>
+                                        <li>• First row must contain the exact column headers shown above</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sample CSV Download -->
+                        <div class="mb-6">
+                            <button id="downloadSample" class="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                                <i class="fas fa-download mr-2"></i>Download Sample CSV Template
+                            </button>
+                        </div>
+
+                        <!-- Preview Section -->
+                        <div id="csvPreview" class="hidden mb-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-medium text-gray-900">Preview Questions</h4>
+                                <span id="validQuestionCount" class="text-sm text-green-600 font-medium"></span>
+                            </div>
+                            <div id="csvPreviewContent" class="bg-white border border-gray-200 rounded-md max-h-96 overflow-y-auto">
+                                <!-- Preview content will be inserted here -->
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
+                            <div class="text-sm text-gray-600">
+                                <span id="csvQuestionCount">0</span> questions ready to import
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <button type="button" id="clearCsv" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors" disabled>
+                                    Clear
+                                </button>
+                                <button type="button" id="importCsvQuestions" class="bg-purple-600 text-white px-6 py-2 text-sm rounded-md hover:bg-purple-700 transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                                    Import Questions
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    class CSVUploader {
+        constructor() {
+            this.csvData = [];
+            this.validQuestions = [];
+            this.initializeEventListeners();
+        }
+
+        initializeEventListeners() {
+            const csvDropZone = document.getElementById('csvDropZone');
+            const csvFileInput = document.getElementById('csvFile');
+            const browseBtn = document.getElementById('browseBtn');
+
+            // File input events
+            browseBtn.addEventListener('click', () => csvFileInput.click());
+            csvFileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+
+            // Drag and drop events
+            csvDropZone.addEventListener('dragover', (e) => this.handleDragOver(e));
+            csvDropZone.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+            csvDropZone.addEventListener('drop', (e) => this.handleDrop(e));
+            csvDropZone.addEventListener('click', () => csvFileInput.click());
+
+            // Button events
+            document.getElementById('downloadSample').addEventListener('click', () => this.downloadSampleCSV());
+            document.getElementById('clearCsv').addEventListener('click', () => this.clearCSV());
+        }
+
+        handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const dropZone = document.getElementById('csvDropZone');
+            dropZone.classList.add('border-purple-400', 'bg-purple-50');
+        }
+
+        handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const dropZone = document.getElementById('csvDropZone');
+            dropZone.classList.remove('border-purple-400', 'bg-purple-50');
+        }
+
+        handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const dropZone = document.getElementById('csvDropZone');
+            dropZone.classList.remove('border-purple-400', 'bg-purple-50');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.handleFile(files[0]);
+            }
+        }
+
+        handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                this.handleFile(files[0]);
+            }
+        }
+
+        handleFile(file) {
+            const validationResult = this.validateFile(file);
+            if (!validationResult.valid) {
+                this.showError([validationResult.error]);
+                return;
+            }
+
+            this.showProgress();
+            this.readFile(file);
+        }
+
+        validateFile(file) {
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                return { valid: false, error: 'Please upload a CSV file (.csv extension required)' };
+            }
+
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                return { valid: false, error: 'File size too large. Maximum size is 10MB.' };
+            }
+
+            if (file.size === 0) {
+                return { valid: false, error: 'File is empty. Please upload a valid CSV file.' };
+            }
+
+            return { valid: true };
+        }
+
+        readFile(file) {
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    const text = e.target.result;
+                    this.parseCSV(text);
+                } catch (error) {
+                    this.hideProgress();
+                    this.showError(['Error reading file: ' + error.message]);
+                }
+            };
+
+            reader.onerror = () => {
+                this.hideProgress();
+                this.showError(['Error reading file. Please try again.']);
+            };
+
+            reader.readAsText(file);
+        }
+
+        parseCSV(text) {
+            try {
+                const lines = text.split(/\r?\n/).filter(line => line.trim());
+                
+                if (lines.length < 2) {
+                    throw new Error('CSV file must contain at least a header row and one data row');
+                }
+
+                const header = this.parseCSVLine(lines[0]);
+                const expectedHeaders = ['question_type', 'question_text', 'choices_answers', 'points'];
+                
+                if (!this.validateHeaders(header, expectedHeaders)) {
+                    throw new Error(`Invalid headers. Expected: ${expectedHeaders.join(', ')}`);
+                }
+
+                const questions = [];
+                const errors = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    try {
+                        const rowData = this.parseCSVLine(lines[i]);
+                        if (rowData.length === 0) continue;
+                        
+                        const question = this.parseQuestionRow(rowData, i + 1);
+                        if (question) {
+                            questions.push(question);
+                        }
+                    } catch (error) {
+                        errors.push(`Row ${i + 1}: ${error.message}`);
+                    }
+                }
+
+                this.hideProgress();
+
+                if (errors.length > 0 && questions.length === 0) {
+                    this.showError(errors);
+                    return;
+                }
+
+                this.csvData = questions;
+                this.displayPreview(questions, errors);
+
+            } catch (error) {
+                this.hideProgress();
+                this.showError([error.message]);
+            }
+        }
+
+        parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            let i = 0;
+
+            while (i < line.length) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i += 2;
+                    } else {
+                        inQuotes = !inQuotes;
+                        i++;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                    i++;
+                } else {
+                    current += char;
+                    i++;
+                }
+            }
+            
+            result.push(current.trim());
+            return result;
+        }
+
+        validateHeaders(headers, expected) {
+            if (headers.length !== expected.length) return false;
+            
+            for (let i = 0; i < expected.length; i++) {
+                if (headers[i].toLowerCase().trim() !== expected[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        parseQuestionRow(rowData, rowNumber) {
+            if (rowData.length < 4) {
+                throw new Error('Insufficient columns (expected 4: question_type, question_text, choices_answers, points)');
+            }
+
+            const [questionType, questionText, choicesAnswers, pointsStr] = rowData;
+
+            const validTypes = ['multiple_choice', 'true_false', 'identification', 'enumeration'];
+            if (!validTypes.includes(questionType.toLowerCase().trim())) {
+                throw new Error(`Invalid question type: ${questionType}. Valid types: ${validTypes.join(', ')}`);
+            }
+
+            if (!questionText.trim()) {
+                throw new Error('Question text cannot be empty');
+            }
+
+            const points = parseInt(pointsStr);
+            if (isNaN(points) || points < 1 || points > 10) {
+                throw new Error('Points must be a number between 1 and 10');
+            }
+
+            const type = questionType.toLowerCase().trim();
+            if (!choicesAnswers.trim()) {
+                throw new Error('Choices/answers cannot be empty');
+            }
+
+            const choices = choicesAnswers.split('|').map(c => c.trim()).filter(c => c);
+            
+            if (type === 'multiple_choice' && choices.length < 2) {
+                throw new Error('Multiple choice questions must have at least 2 options');
+            }
+
+            if (type === 'true_false' && choices.length !== 2) {
+                throw new Error('True/false questions must have exactly 2 options (true|false)');
+            }
+
+            return {
+                type: type,
+                question: questionText.trim(),
+                choices: choicesAnswers.trim(),
+                choicesArray: choices,
+                points: points,
+                rowNumber: rowNumber
+            };
+        }
+
+        displayPreview(questions, errors = []) {
+            const previewDiv = document.getElementById('csvPreview');
+            const contentDiv = document.getElementById('csvPreviewContent');
+            const countSpan = document.getElementById('csvQuestionCount');
+            const validCountSpan = document.getElementById('validQuestionCount');
+            const importBtn = document.getElementById('importCsvQuestions');
+            const clearBtn = document.getElementById('clearCsv');
+
+            countSpan.textContent = questions.length;
+            validCountSpan.textContent = `${questions.length} valid questions found`;
+
+            if (errors.length > 0) {
+                this.showError(errors);
+            } else {
+                this.hideError();
+            }
+
+            if (questions.length > 0) {
+                let previewHTML = '';
+                questions.forEach((q, index) => {
+                    const typeLabel = {
+                        'multiple_choice': 'Multiple Choice',
+                        'true_false': 'True/False',
+                        'identification': 'Short Answer',
+                        'enumeration': 'Paragraph'
+                    }[q.type] || q.type;
+
+                    previewHTML += `
+                        <div class="p-4 border-b border-gray-200 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
+                            <div class="flex items-start space-x-3">
+                                <span class="bg-purple-100 text-purple-700 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">${index + 1}</span>
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium">${typeLabel}</span>
+                                        <span class="text-xs text-gray-500">${q.points} point${q.points !== 1 ? 's' : ''}</span>
+                                    </div>
+                                    <p class="text-sm font-medium text-gray-900 mb-2">${this.escapeHtml(q.question)}</p>
+                                    <div class="text-xs text-gray-600">
+                                        <strong>Options/Answers:</strong> ${this.escapeHtml(q.choices)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                contentDiv.innerHTML = previewHTML;
+                previewDiv.classList.remove('hidden');
+                importBtn.disabled = false;
+                clearBtn.disabled = false;
+            } else {
+                previewDiv.classList.add('hidden');
+                importBtn.disabled = true;
+                clearBtn.disabled = true;
+            }
+        }
+
+        escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        showProgress() {
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            progressDiv.classList.remove('hidden');
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress > 90) progress = 90;
+                progressBar.style.width = progress + '%';
+                
+                if (progress > 50) {
+                    progressText.textContent = 'Processing CSV...';
+                }
+            }, 100);
+
+            this.progressInterval = interval;
+        }
+
+        hideProgress() {
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            
+            if (this.progressInterval) {
+                clearInterval(this.progressInterval);
+            }
+            
+            progressBar.style.width = '100%';
+            setTimeout(() => {
+                progressDiv.classList.add('hidden');
+                progressBar.style.width = '0%';
+            }, 500);
+        }
+
+        showError(errors) {
+            const errorDiv = document.getElementById('errorMessages');
+            const errorList = document.getElementById('errorList');
+            
+            errorList.innerHTML = '';
+            errors.forEach(error => {
+                const li = document.createElement('li');
+                li.textContent = error;
+                errorList.appendChild(li);
+            });
+            
+            errorDiv.classList.remove('hidden');
+        }
+
+        hideError() {
+            const errorDiv = document.getElementById('errorMessages');
+            errorDiv.classList.add('hidden');
+        }
+
+        downloadSampleCSV() {
+            const sampleData = [
+                ['question_type', 'question_text', 'choices_answers', 'points'],
+                ['multiple_choice', 'What is 2 + 2?', '2|3|4|5', '1'],
+                ['true_false', 'The sky is blue', 'true|false', '1'],
+                ['identification', 'What is the capital of France?', 'Paris|paris', '2'],
+                ['enumeration', 'Explain photosynthesis in your own words', 'Process by which plants convert light energy into chemical energy', '3']
+            ];
+
+            const csvContent = sampleData.map(row => 
+                row.map(field => 
+                    field.includes(',') || field.includes('"') ? `"${field.replace(/"/g, '""')}"` : field
+                ).join(',')
+            ).join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'quiz_questions_template.csv';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        clearCSV() {
+            this.csvData = [];
+            this.validQuestions = [];
+            
+            document.getElementById('csvFile').value = '';
+            document.getElementById('csvPreview').classList.add('hidden');
+            document.getElementById('csvQuestionCount').textContent = '0';
+            document.getElementById('importCsvQuestions').disabled = true;
+            document.getElementById('clearCsv').disabled = true;
+            this.hideError();
+        }
+    }
+
+    // Main application logic
+    let csvUploader;
+    let csvData = [];
+    let bulkQuestionCount = 1;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize CSV uploader
+        csvUploader = new CSVUploader();
+
+        // Method switching
+        const methodBtns = document.querySelectorAll('.method-btn');
+        const methodContents = document.querySelectorAll('.method-content');
+
+        methodBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const method = this.id.replace('MethodBtn', '');
+                
+                methodBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-purple-100', 'text-purple-700', 'border-purple-200');
+                    b.classList.add('text-gray-600', 'hover:bg-gray-100', 'border-gray-200');
+                });
+                this.classList.add('active', 'bg-purple-100', 'text-purple-700', 'border-purple-200');
+                this.classList.remove('text-gray-600', 'hover:bg-gray-100', 'border-gray-200');
+                
+                methodContents.forEach(content => content.classList.add('hidden'));
+                document.getElementById(method + 'Method').classList.remove('hidden');
+            });
+        });
+
+        // Single question functionality
+        const questionTypeSelect = document.getElementById('questionType');
+        const multipleChoiceDiv = document.getElementById('multipleChoiceOptions');
+        const trueFalseDiv = document.getElementById('trueFalseOptions');
+        const openEndedDiv = document.getElementById('openEndedOptions');
+        
+        function toggleQuestionOptions() {
+            const selectedType = questionTypeSelect.value;
+            
+            multipleChoiceDiv.classList.add('hidden');
+            trueFalseDiv.classList.add('hidden');
+            openEndedDiv.classList.add('hidden');
+            
+            switch(selectedType) {
+                case 'multiple_choice':
+                    multipleChoiceDiv.classList.remove('hidden');
+                    break;
+                case 'true_false':
+                    trueFalseDiv.classList.remove('hidden');
+                    break;
+                case 'identification':
+                case 'enumeration':
+                    openEndedDiv.classList.remove('hidden');
+                    break;
+            }
+        }
+        
+        questionTypeSelect.addEventListener('change', toggleQuestionOptions);
+
+        // Bulk questions functionality
+        document.getElementById('addBulkQuestion').addEventListener('click', function() {
+            bulkQuestionCount++;
+            const bulkQuestionsDiv = document.getElementById('bulkQuestions');
+            const newQuestion = document.createElement('div');
+            newQuestion.className = 'bulk-question mb-6 p-4 border border-gray-200 rounded-lg';
+            newQuestion.innerHTML = `
+                <div class="flex items-start space-x-4 mb-4">
+                    <span class="question-number bg-purple-100 text-purple-700 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">${bulkQuestionCount}</span>
+                    <div class="flex-1">
+                        <select name="bulk_question_type[]" class="bulk-type-select bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm mb-3" required>
+                            <option value="">Question Type</option>
+                            <option value="multiple_choice">Multiple choice</option>
+                            <option value="true_false">True/False</option>
+                            <option value="identification">Short answer</option>
+                            <option value="enumeration">Paragraph</option>
+                        </select>
+                        <textarea name="bulk_question_text[]" placeholder="Question text" class="w-full border border-gray-200 rounded-md p-3 text-sm" rows="2" required></textarea>
+                        <div class="mt-3">
+                            <textarea name="bulk_choices[]" placeholder="Choices (one per line) or correct answers" class="w-full border border-gray-200 rounded-md p-3 text-sm bg-gray-50" rows="3"></textarea>
+                            <p class="text-xs text-gray-500 mt-1">For multiple choice: enter options one per line. For other types: enter acceptable answers.</p>
+                        </div>
+                        <div class="mt-3 flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <label class="text-sm text-gray-600">Points:</label>
+                                <input type="number" name="bulk_points[]" value="1" min="1" max="10" class="w-16 px-2 py-1 border border-gray-200 rounded text-sm">
+                            </div>
+                            <button type="button" class="remove-question text-red-600 hover:text-red-800 text-sm">
+                                <i class="fas fa-trash mr-1"></i>Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            bulkQuestionsDiv.appendChild(newQuestion);
+            updateRemoveButtons();
+        });
+
+        function updateRemoveButtons() {
+            const removeButtons = document.querySelectorAll('.remove-question');
+            const questions = document.querySelectorAll('.bulk-question');
+            
+            removeButtons.forEach((btn, index) => {
+                if (questions.length > 1) {
+                    btn.style.display = 'inline-block';
+                    btn.onclick = function() {
+                        this.closest('.bulk-question').remove();
+                        updateQuestionNumbers();
+                        updateRemoveButtons();
+                    };
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        }
+
+        function updateQuestionNumbers() {
+            const questions = document.querySelectorAll('.bulk-question');
+            questions.forEach((question, index) => {
+                const numberSpan = question.querySelector('.question-number');
+                numberSpan.textContent = index + 1;
+            });
+            bulkQuestionCount = questions.length;
+        }
+
+        // Enhanced CSV import functionality
+        document.getElementById('importCsvQuestions').addEventListener('click', async function() {
+            if (csvUploader.csvData.length === 0) {
+                csvUploader.showError(['No questions to import. Please upload a CSV file first.']);
+                return;
+            }
+
+            const importBtn = this;
+            const originalText = importBtn.textContent;
+            
+            importBtn.disabled = true;
+            importBtn.textContent = 'Importing...';
+
+            try {
+                const response = await fetch('{{ url_for("add_question", quiz_id=quiz_id) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        method: 'csv',
+                        questions: csvUploader.csvData
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Successfully imported ${csvUploader.csvData.length} questions!`);
+                    csvUploader.clearCSV();
+                    window.location.href = '{{ url_for("manage_quiz", quiz_id=quiz_id) }}';
+                } else {
+                    throw new Error(result.message || 'Import failed');
+                }
+            } catch (error) {
+                console.error('Import error:', error);
+                csvUploader.showError(['Import failed: ' + error.message]);
+            } finally {
+                importBtn.disabled = false;
+                importBtn.textContent = originalText;
+            }
+        });
+
+        // Form submissions
+        document.getElementById('singleQuestionForm').addEventListener('submit', function(e) {
+            const questionType = questionTypeSelect.value;
+            const questionText = document.querySelector('textarea[name="question_text"]').value.trim();
+            
+            if (!questionText) {
+                alert('Please enter a question.');
+                e.preventDefault();
+                return;
+            }
+            
+            if (questionType === 'multiple_choice') {
+                const correctAnswer = document.querySelector('input[name="correct_answer"]:checked');
+                const optionA = document.querySelector('input[name="option_a"]').value.trim();
+                const optionB = document.querySelector('input[name="option_b"]').value.trim();
+                
+                if (!optionA || !optionB) {
+                    alert('Please fill in at least the first two options.');
+                    e.preventDefault();
+                    return;
+                }
+                
+                if (!correctAnswer) {
+                    alert('Please select the correct answer.');
+                    e.preventDefault();
+                    return;
+                }
+            }
+            
+            if (questionType === 'true_false') {
+                const tfAnswer = document.querySelector('input[name="tf_answer"]:checked');
+                if (!tfAnswer) {
+                    alert('Please select the correct answer.');
+                    e.preventDefault();
+                    return;
+                }
+            }
+            
+            if (questionType === 'identification' || questionType === 'enumeration') {
+                const correctAnswers = document.querySelector('textarea[name="correct_answers"]').value.trim();
+                if (!correctAnswers) {
+                    alert('Please provide the correct answer(s).');
+                    e.preventDefault();
+                    return;
+                }
+            }
+        });
+
+        document.getElementById('saveBulkQuestions').addEventListener('click', function() {
+            const questions = document.querySelectorAll('.bulk-question');
+            const questionsData = [];
+            
+            let valid = true;
+            questions.forEach(question => {
+                const type = question.querySelector('select[name="bulk_question_type[]"]').value;
+                const text = question.querySelector('textarea[name="bulk_question_text[]"]').value.trim();
+                const choices = question.querySelector('textarea[name="bulk_choices[]"]').value.trim();
+                const points = question.querySelector('input[name="bulk_points[]"]').value;
+                
+                if (!type || !text) {
+                    valid = false;
+                    return;
+                }
+                
+                questionsData.push({
+                    type: type,
+                    text: text,
+                    choices: choices,
+                    points: parseInt(points) || 1
+                });
+            });
+            
+            if (!valid) {
+                alert('Please fill in all required fields for each question.');
+                return;
+            }
+            
+            fetch('{{ url_for("add_question", quiz_id=quiz_id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    method: 'bulk',
+                    questions: questionsData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{{ url_for("manage_quiz", quiz_id=quiz_id) }}';
+                } else {
+                    alert('Error adding questions: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error adding questions. Please try again.');
+            });
+        });
+
+        // Auto-resize textarea
+        const questionTextarea = document.querySelector('textarea[name="question_text"]');
+        if (questionTextarea) {
+            questionTextarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.max(this.scrollHeight, 60) + 'px';
+            });
+        }
+    });
+    </script>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

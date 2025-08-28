@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Quizera{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Profile Header -->
+    <div class="bg-white rounded-lg shadow-md p-8 mb-6">
+        <div class="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
+            <!-- Profile Picture -->
+            <div class="relative">
+                <img id="profileImagePreview" 
+                     src="{{ user.profile_picture if user.profile_picture else '/static/images/default-avatar.png' }}" 
+                     alt="Profile Picture" 
+                     class="w-24 h-24 rounded-full object-cover border-4 border-blue-200">
+                <label for="profileImageInput" class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </label>
+                <input type="file" id="profileImageInput" accept="image/*" class="hidden" onchange="previewProfileImage(this)">
+            </div>
+            
+            <!-- User Info -->
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ user.username if user.username else 'No Username' }}</h1>
+                <p class="text-gray-600 mb-1">{{ user.email if user.email else 'No Email' }}</p>
+                <span class="inline-block bg-{{ 'blue' if user.role == 'teacher' else 'green' }}-100 text-{{ 'blue' if user.role == 'teacher' else 'green' }}-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {{ user.role|title if user.role else 'No Role' }}
+                </span>
+                <p class="text-gray-500 text-sm mt-2">
+                    Member since {{ user.created_at.strftime('%B %Y') if user.created_at else 'Unknown' }}
+                </p>
+            </div>
+            
+            <!-- Edit Profile Button -->
+            <button onclick="toggleEditMode()" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                Edit Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- Profile Content Tabs -->
+    <div class="bg-white rounded-lg shadow-md">
+        <!-- Tab Navigation -->
+        <div class="border-b border-gray-200">
+            <nav class="flex space-x-8 px-6">
+                <button onclick="switchTab('overview')" class="tab-button active py-4 border-b-2 border-blue-500 text-blue-600 font-medium">Overview</button>
+                <button onclick="switchTab('settings')" class="tab-button py-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Settings</button>
+                <button onclick="switchTab('activity')" class="tab-button py-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Activity</button>
+                {% if user.role == 'teacher' %}
+                <button onclick="switchTab('stats')" class="tab-button py-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Statistics</button>
+                {% endif %}
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="p-6">
+            <!-- Overview Tab -->
+            <div id="overview-tab" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Personal Information -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Personal Information</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                                <p class="text-gray-900">{{ user.full_name if user.full_name else 'Not provided' }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Bio</label>
+                                <p class="text-gray-900">{{ user.bio if user.bio else 'No bio provided' }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Institution</label>
+                                <p class="text-gray-900">{{ user.institution if user.institution else 'Not provided' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Quick Stats</h3>
+                        {% if user.role == 'teacher' %}
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="text-2xl font-bold text-blue-600">{{ stats.subjects_count or 0 }}</h4>
+                                <p class="text-blue-800 text-sm">Subjects Created</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="text-2xl font-bold text-green-600">{{ stats.quizzes_count or 0 }}</h4>
+                                <p class="text-green-800 text-sm">Quizzes Created</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <h4 class="text-2xl font-bold text-purple-600">{{ stats.topics_count or 0 }}</h4>
+                                <p class="text-purple-800 text-sm">Topics Created</p>
+                            </div>
+                            <div class="bg-orange-50 p-4 rounded-lg">
+                                <h4 class="text-2xl font-bold text-orange-600">{{ stats.total_students or 0 }}</h4>
+                                <p class="text-orange-800 text-sm">Students Reached</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="text-2xl font-bold text-blue-600">{{ stats.quizzes_taken or 0 }}</h4>
+                                <p class="text-blue-800 text-sm">Quizzes Taken</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="text-2xl font-bold text-green-600">{{ stats.average_score or 0 }}%</h4>
+                                <p class="text-green-800 text-sm">Average Score</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <h4 class="text-2xl font-bold text-purple-600">{{ stats.subjects_enrolled or 0 }}</h4>
+                                <p class="text-purple-800 text-sm">Subjects Enrolled</p>
+                            </div>
+                            <div class="bg-orange-50 p-4 rounded-lg">
+                                <h4 class="text-2xl font-bold text-orange-600">{{ stats.study_hours or 0 }}</h4>
+                                <p class="text-orange-800 text-sm">Study Hours</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+                    <div class="space-y-3">
+                        {% if recent_activities %}
+                            {% for activity in recent_activities %}
+                            <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-gray-800">{{ activity.description }}</p>
+                                    <p class="text-gray-500 text-sm">{{ activity.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <p class="text-gray-500 text-center py-8">No recent activity to display.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content hidden">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="space-y-6">
+                        <!-- Profile Information -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Profile Information</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                                    <input type="text" name="username" value="{{ user.username if user.username else '' }}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                    <input type="text" name="full_name" value="{{ user.full_name if user.full_name else '' }}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                    <input type="email" name="email" value="{{ user.email if user.email else '' }}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                                    <textarea name="bio" rows="3" 
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">{{ user.bio if user.bio else '' }}</textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Institution</label>
+                                    <input type="text" name="institution" value="{{ user.institution if user.institution else '' }}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Change Password -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Change Password</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                                    <input type="password" name="current_password" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                                    <input type="password" name="new_password" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                                    <input type="password" name="confirm_new_password" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Activity Tab -->
+            <div id="activity-tab" class="tab-content hidden">
+                <h3 class="text-lg font-semibold mb-4">Activity History</h3>
+                <div class="space-y-4">
+                    {% if recent_activities %}
+                        {% for activity in recent_activities %}
+                        <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-gray-800 font-medium">{{ activity.description }}</p>
+                                <p class="text-gray-500 text-sm">{{ activity.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No activity yet</h3>
+                        <p class="mt-1 text-sm text-gray-500">Your recent activities will appear here.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Statistics Tab (for teachers only) -->
+            {% if user.role == 'teacher' %}
+            <div id="stats-tab" class="tab-content hidden">
+                <h3 class="text-lg font-semibold mb-6">Detailed Statistics</h3>
+                
+                <!-- Overview Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
+                        <h4 class="text-3xl font-bold">{{ stats.subjects_count or 0 }}</h4>
+                        <p class="text-blue-100">Subjects Created</p>
+                    </div>
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
+                        <h4 class="text-3xl font-bold">{{ stats.quizzes_count or 0 }}</h4>
+                        <p class="text-green-100">Quizzes Created</p>
+                    </div>
+                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg">
+                        <h4 class="text-3xl font-bold">{{ stats.topics_count or 0 }}</h4>
+                        <p class="text-purple-100">Topics Created</p>
+                    </div>
+                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 rounded-lg">
+                        <h4 class="text-3xl font-bold">{{ stats.total_students or 0 }}</h4>
+                        <p class="text-orange-100">Students Reached</p>
+                    </div>
+                </div>
+
+                <!-- Additional Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold mb-4">Quiz Performance</h4>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Average Completion Rate:</span>
+                                <span class="font-medium">{{ stats.avg_completion_rate or 0 }}%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Quiz Attempts:</span>
+                                <span class="font-medium">{{ stats.total_attempts or 0 }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Average Score:</span>
+                                <span class="font-medium">{{ stats.avg_score or 0 }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold mb-4">Engagement</h4>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Active Students:</span>
+                                <span class="font-medium">{{ stats.active_students or 0 }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">This Month's Quiz Views:</span>
+                                <span class="font-medium">{{ stats.monthly_views or 0 }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Teaching Hours:</span>
+                                <span class="font-medium">{{ stats.teaching_hours or 0 }}h</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab switching functionality
+function switchTab(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(content => content.classList.add('hidden'));
+    
+    // Remove active class from all tab buttons
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.classList.remove('active', 'border-blue-500', 'text-blue-600');
+        button.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabName + '-tab').classList.remove('hidden');
+    
+    // Add active class to selected tab button
+    event.target.classList.add('active', 'border-blue-500', 'text-blue-600');
+    event.target.classList.remove('border-transparent', 'text-gray-500');
+}
+
+// Profile image preview functionality
+function previewProfileImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profileImagePreview').src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Edit mode toggle functionality
+function toggleEditMode() {
+    switchTab('settings');
+}
+
+// Initialize default tab
+document.addEventListener('DOMContentLoaded', function() {
+    // Set overview tab as active by default
+    const overviewButton = document.querySelector('button[onclick="switchTab(\'overview\')"]');
+    if (overviewButton) {
+        overviewButton.classList.add('active', 'border-blue-500', 'text-blue-600');
+        overviewButton.classList.remove('border-transparent', 'text-gray-500');
+    }
+});
+</script>
+
+{% endblock %}

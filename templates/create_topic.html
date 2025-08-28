@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Topic - Quizera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('home') }}" class="text-2xl font-bold">Quizera</a>
+                    <span class="text-blue-200">Create Topic</span>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('view_subject', subject_id=subject_id) }}" class="hover:text-blue-200 transition-colors">
+                        <i class="fas fa-arrow-left mr-1"></i>Back to Subject
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="hover:text-blue-200 transition-colors">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mb-6">
+                    {% for message in messages %}
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-2">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-md p-8">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800 gradient-text">Create New Topic</h1>
+                    <p class="text-gray-600 mt-2">Add educational content to your subject</p>
+                </div>
+
+                <form method="POST" class="space-y-8">
+                    <!-- Topic Title -->
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-heading mr-2 text-blue-600"></i>Topic Title
+                        </label>
+                        <input type="text" id="title" name="title" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent form-input"
+                            placeholder="e.g., Introduction to Variables">
+                    </div>
+
+                    <!-- Content Tabs -->
+                    <div>
+                        <div class="flex border-b border-gray-200 mb-6">
+                            <button type="button" id="text-tab" class="px-6 py-3 text-sm font-medium text-blue-600 border-b-2 border-blue-600 tab-btn active">
+                                <i class="fas fa-file-text mr-2"></i>Text Content
+                            </button>
+                            <button type="button" id="video-tab" class="px-6 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 tab-btn ml-8">
+                                <i class="fas fa-video mr-2"></i>Video Link
+                            </button>
+                        </div>
+
+                        <!-- Text Content Tab -->
+                        <div id="text-content" class="tab-content">
+                            <label for="content_text" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-align-left mr-2 text-blue-600"></i>Text Content
+                            </label>
+                            <div class="mb-4">
+                                <div class="flex space-x-2 mb-2">
+                                    <button type="button" onclick="formatText('bold')" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm">
+                                        <i class="fas fa-bold"></i>
+                                    </button>
+                                    <button type="button" onclick="formatText('italic')" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm">
+                                        <i class="fas fa-italic"></i>
+                                    </button>
+                                    <button type="button" onclick="formatText('underline')" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm">
+                                        <i class="fas fa-underline"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea id="content_text" name="content_text" rows="12"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent form-input resize-vertical"
+                                placeholder="Write your lesson content here. You can include explanations, examples, code snippets, etc."></textarea>
+                            <p class="text-sm text-gray-500 mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                You can use Markdown formatting for better text presentation.
+                            </p>
+                        </div>
+
+                        <!-- Video Content Tab -->
+                        <div id="video-content" class="tab-content hidden">
+                            <label for="video_link" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-link mr-2 text-blue-600"></i>Video URL
+                            </label>
+                            <input type="url" id="video_link" name="video_link"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent form-input"
+                                placeholder="https://www.youtube.com/watch?v=example or https://vimeo.com/example">
+                            <p class="text-sm text-gray-500 mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Supported platforms: YouTube, Vimeo, and direct video links
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                        <a href="{{ url_for('view_subject', subject_id=subject_id) }}" 
+                           class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </a>
+                        <div class="space-x-4">
+                            <button type="button" onclick="previewContent()" 
+                                    class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                                <i class="fas fa-eye mr-2"></i>Preview
+                            </button>
+                            <button type="submit" class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors btn-hover">
+                                <i class="fas fa-save mr-2"></i>Save Topic
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-4xl w-full max-h-96 overflow-y-auto">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">Content Preview</h3>
+                        <button onclick="closePreview()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="preview-content" class="p-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.addEventListener('DOMContentLoaded', function() {
+            const textTab = document.getElementById('text-tab');
+            const videoTab = document.getElementById('video-tab');
+            const textContent = document.getElementById('text-content');
+            const videoContent = document.getElementById('video-content');
+
+            textTab.addEventListener('click', function() {
+                textTab.classList.add('text-blue-600', 'border-blue-600', 'active');
+                textTab.classList.remove('text-gray-500');
+                videoTab.classList.remove('text-blue-600', 'border-blue-600', 'active');
+                videoTab.classList.add('text-gray-500');
+                textContent.classList.remove('hidden');
+                videoContent.classList.add('hidden');
+            });
+
+            videoTab.addEventListener('click', function() {
+                videoTab.classList.add('text-blue-600', 'border-blue-600', 'active');
+                videoTab.classList.remove('text-gray-500');
+                textTab.classList.remove('text-blue-600', 'border-blue-600', 'active');
+                textTab.classList.add('text-gray-500');
+                videoContent.classList.remove('hidden');
+                textContent.classList.add('hidden');
+            });
+        });
+
+        // Text formatting functions
+        function formatText(command) {
+            const textarea = document.getElementById('content_text');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            
+            let formattedText = '';
+            switch(command) {
+                case 'bold':
+                    formattedText = `**${selectedText}**`;
+                    break;
+                case 'italic':
+                    formattedText = `*${selectedText}*`;
+                    break;
+                case 'underline':
+                    formattedText = `<u>${selectedText}</u>`;
+                    break;
+            }
+            
+            if (selectedText) {
+                textarea.value = textarea.value.substring(0, start) + formattedText + textarea.value.substring(end);
+                textarea.selectionStart = start;
+                textarea.selectionEnd = start + formattedText.length;
+            }
+            textarea.focus();
+        }
+
+        // Preview functionality
+        function previewContent() {
+            const title = document.getElementById('title').value;
+            const textContent = document.getElementById('content_text').value;
+            const videoLink = document.getElementById('video_link').value;
+            
+            let previewHTML = '';
+            if (title) {
+                previewHTML += `<h2 class="text-2xl font-bold mb-4">${title}</h2>`;
+            }
+            
+            if (textContent) {
+                previewHTML += `<div class="prose max-w-none mb-4">${textContent.replace(/\n/g, '<br>')}</div>`;
+            }
+            
+            if (videoLink) {
+                if (videoLink.includes('youtube.com') || videoLink.includes('youtu.be')) {
+                    const videoId = videoLink.includes('youtu.be') ? 
+                        videoLink.split('/').pop() : 
+                        videoLink.split('v=')[1]?.split('&')[0];
+                    if (videoId) {
+                        previewHTML += `<div class="mb-4">
+                            <iframe width="100%" height="315" src="https://www.youtube.com/embed/${videoId}" 
+                                frameborder="0" allowfullscreen class="rounded"></iframe>
+                        </div>`;
+                    }
+                } else if (videoLink.includes('vimeo.com')) {
+                    const videoId = videoLink.split('/').pop();
+                    previewHTML += `<div class="mb-4">
+                        <iframe width="100%" height="315" src="https://player.vimeo.com/video/${videoId}" 
+                            frameborder="0" allowfullscreen class="rounded"></iframe>
+                    </div>`;
+                } else {
+                    previewHTML += `<div class="mb-4">
+                        <video width="100%" height="315" controls class="rounded">
+                            <source src="${videoLink}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>`;
+                }
+            }
+            
+            if (!previewHTML) {
+                previewHTML = '<p class="text-gray-500">No content to preview yet.</p>';
+            }
+            
+            document.getElementById('preview-content').innerHTML = previewHTML;
+            document.getElementById('preview-modal').classList.remove('hidden');
+        }
+
+        function closePreview() {
+            document.getElementById('preview-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

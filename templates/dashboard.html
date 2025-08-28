@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Quizera{% endblock %}
+
+{% block content %}
+    <!-- Main Dashboard Content -->
+    <div class="container mx-auto px-4 py-8">
+        {% if role == 'teacher' %}
+            <!-- Teacher Dashboard -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 gradient-text mb-2">Teacher Dashboard</h1>
+                <p class="text-gray-600">Manage your subjects and quizzes</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Manage Subjects -->
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-800">
+                            <i class="fas fa-book text-blue-600 mr-2"></i>My Subjects
+                        </h2>
+                        <a href="{{ url_for('create_subject') }}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 btn-hover transition-all">
+                            <i class="fas fa-plus mr-1"></i>Add Subject
+                        </a>
+                    </div>
+                    
+                    <div class="space-y-4 max-h-96 overflow-y-auto">
+                        {% if subjects %}
+                            {% for subject in subjects %}
+                                <div class="border border-gray-200 rounded-lg p-4 subject-card">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <h3 class="font-semibold text-lg text-white">{{ subject.name }}</h3>
+                                            <p class="text-gray-100 text-sm mt-1">{{ subject.description }}</p>
+                                            <p class="text-gray-200 text-xs mt-2">
+                                                <i class="fas fa-list-ul mr-1"></i>{{ subject.topic_count|default(0) }} Topics
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex space-x-2">
+                                        <a href="{{ url_for('view_subject', subject_id=subject.id) }}" class="bg-white text-purple-600 px-3 py-1 rounded text-sm hover:bg-gray-100 transition-colors">
+                                            <i class="fas fa-eye mr-1"></i>View
+                                        </a>
+                                        <button class="subject-edit-btn bg-yellow-400 text-purple-800 px-3 py-1 rounded text-sm hover:bg-yellow-300 transition-colors"
+                                                data-subject-id="{{ subject.id }}"
+                                                data-subject-name="{{ subject.name }}"
+                                                data-subject-description="{{ subject.description }}">
+                                            <i class="fas fa-edit mr-1"></i>Edit
+                                        </button>
+                                        <button class="subject-delete-btn bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+                                                data-subject-id="{{ subject.id }}"
+                                                data-subject-name="{{ subject.name }}">
+                                            <i class="fas fa-trash mr-1"></i>Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-8">
+                                <i class="fas fa-book text-gray-400 text-4xl mb-4"></i>
+                                <p class="text-gray-500">No subjects created yet.</p>
+                                <p class="text-gray-400 text-sm">Create your first subject to get started!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- My Quizzes -->
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-800">
+                            <i class="fas fa-question-circle text-purple-600 mr-2"></i>My Quizzes
+                        </h2>
+                        <a href="{{ url_for('create_quiz') }}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 btn-hover transition-all">
+                            <i class="fas fa-plus mr-1"></i>Create Quiz
+                        </a>
+                    </div>
+                    
+                    <div class="space-y-4 max-h-96 overflow-y-auto">
+                        {% if quizzes %}
+                            {% for quiz in quizzes %}
+                                <div class="border border-gray-200 rounded-lg p-4 quiz-card">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <h3 class="font-semibold text-lg text-white">{{ quiz.title }}</h3>
+                                            <p class="text-gray-100 text-sm mt-1">Subject: {{ quiz.subject_name }}</p>
+                                            <div class="flex items-center space-x-4 mt-2 text-xs text-gray-200">
+                                                <span><i class="fas fa-question mr-1"></i>{{ quiz.question_count|default(0) }} Questions</span>
+                                                <span><i class="fas fa-clock mr-1"></i>{{ quiz.time_limit|default(30) }} min</span>
+                                                {% if quiz.is_published %}
+                                                    <span class="bg-green-500 px-2 py-1 rounded"><i class="fas fa-check mr-1"></i>Published</span>
+                                                {% else %}
+                                                    <span class="bg-orange-500 px-2 py-1 rounded"><i class="fas fa-draft2digital mr-1"></i>Draft</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex space-x-2">
+                                        <a href="{{ url_for('manage_quiz', quiz_id=quiz.id) }}" class="bg-white text-purple-600 px-3 py-1 rounded text-sm hover:bg-gray-100 transition-colors">
+                                            <i class="fas fa-cog mr-1"></i>Manage
+                                        </a>
+                                        <button class="quiz-preview-btn bg-blue-400 text-white px-3 py-1 rounded text-sm hover:bg-blue-500 transition-colors"
+                                                data-quiz-id="{{ quiz.id }}">
+                                            <i class="fas fa-eye mr-1"></i>Preview
+                                        </button>
+                                        <button class="quiz-delete-btn bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+                                                data-quiz-id="{{ quiz.id }}"
+                                                data-quiz-title="{{ quiz.title }}">
+                                            <i class="fas fa-trash mr-1"></i>Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-8">
+                                <i class="fas fa-question-circle text-gray-400 text-4xl mb-4"></i>
+                                <p class="text-gray-500">No quizzes created yet.</p>
+                                <p class="text-gray-400 text-sm">Create your first quiz to get started!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        {% elif role == 'student' %}
+            <!-- Student Dashboard -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 gradient-text mb-2">Student Dashboard</h1>
+                <p class="text-gray-600">Explore subjects and take quizzes</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Enrolled Subjects -->
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800">
+                        <i class="fas fa-bookmark text-green-600 mr-2"></i>Enrolled Subjects
+                    </h2>
+                    <div class="space-y-4 max-h-96 overflow-y-auto">
+                        {% if enrolled_subjects %}
+                            {% for subject in enrolled_subjects %}
+                                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors subject-card">
+                                    <h3 class="font-semibold text-lg text-white">{{ subject.name }}</h3>
+                                    <p class="text-gray-100 text-sm mt-1">{{ subject.description }}</p>
+                                    <p class="text-gray-200 text-xs mt-2">
+                                        <i class="fas fa-user mr-1"></i>{{ subject.teacher_name }}
+                                        <span class="ml-4"><i class="fas fa-list-ul mr-1"></i>{{ subject.topic_count or 0 }} Topics</span>
+                                    </p>
+                                    <div class="mt-3 flex space-x-2">
+                                        <a href="{{ url_for('view_subject', subject_id=subject.id) }}" class="bg-white text-purple-600 px-3 py-1 rounded text-sm hover:bg-gray-100 transition-colors">
+                                            <i class="fas fa-book-open mr-1"></i>Study
+                                        </a>
+                                        <button class="bg-red-100 text-red-600 px-3 py-1 rounded text-sm hover:bg-red-200 transition-colors"
+                                                onclick="unenrollFromSubject('{{ subject.id }}', '{{ subject.name }}')">
+                                            <i class="fas fa-times mr-1"></i>Unenroll
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-8">
+                                <i class="fas fa-bookmark text-gray-400 text-4xl mb-4"></i>
+                                <p class="text-gray-500">No enrolled subjects yet.</p>
+                                <p class="text-gray-400 text-sm">Explore available subjects to get started!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+<!-- 
+                <!-- Available Subjects
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800">
+                        <i class="fas fa-graduation-cap text-blue-600 mr-2"></i>Available Subjects
+                    </h2>
+                    <div class="space-y-4 max-h-96 overflow-y-auto">
+                        {% if available_subjects %}
+                            {% for subject in available_subjects %}
+                                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors subject-card">
+                                    <h3 class="font-semibold text-lg text-white">{{ subject.name }}</h3>
+                                    <p class="text-gray-100 text-sm mt-1">{{ subject.description }}</p>
+                                    <p class="text-gray-200 text-xs mt-2">
+                                        <i class="fas fa-user mr-1"></i>{{ subject.teacher_name }}
+                                        <span class="ml-4"><i class="fas fa-list-ul mr-1"></i>{{ subject.topic_count or 0 }} Topics</span>
+                                    </p>
+                                    <div class="mt-3 flex space-x-2">
+                                        <a href="{{ url_for('view_subject', subject_id=subject.id) }}" class="bg-gray-100 text-gray-600 px-3 py-1 rounded text-sm hover:bg-gray-200 transition-colors">
+                                            <i class="fas fa-eye mr-1"></i>Preview
+                                        </a>
+                                        <button class="bg-white text-purple-600 px-3 py-1 rounded text-sm hover:bg-gray-100 transition-colors"
+                                                onclick="enrollInSubject('{{ subject.id }}', '{{ subject.name }}')">
+                                            <i class="fas fa-plus mr-1"></i>Enroll
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-8">
+                                <i class="fas fa-graduation-cap text-gray-400 text-4xl mb-4"></i>
+                                <p class="text-gray-500">No subjects available.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div> -->
+
+            <!-- Available Quizzes from Enrolled Subjects -->
+            <div class="mt-8 bg-white rounded-lg shadow-md p-6 card-hover">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800">
+                    <i class="fas fa-tasks text-green-600 mr-2"></i>Available Quizzes
+                </h2>
+                <div class="space-y-4 max-h-96 overflow-y-auto">
+                    {% if quizzes %}
+                        {% for quiz in quizzes %}
+                            {% if quiz.is_published %}
+                                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors quiz-card">
+                                    <h3 class="font-semibold text-lg text-white">{{ quiz.title }}</h3>
+                                    <p class="text-gray-100 text-sm mt-1">Subject: {{ quiz.subject_name }}</p>
+                                    <div class="flex items-center space-x-4 mt-2 text-xs text-gray-200">
+                                        <span><i class="fas fa-question mr-1"></i>{{ quiz.question_count|default(0) }} Questions</span>
+                                        <span><i class="fas fa-clock mr-1"></i>{{ quiz.time_limit|default(30) }} minutes</span>
+                                    </div>
+                                    <div class="mt-3 flex space-x-2">
+                                        <button class="quiz-take-btn bg-white text-purple-600 px-3 py-1 rounded text-sm hover:bg-gray-100 transition-colors"
+                                                data-quiz-id="{{ quiz.id }}">
+                                            <i class="fas fa-play mr-1"></i>Take Quiz
+                                        </button>
+                                        <button class="quiz-results-btn bg-yellow-400 text-purple-800 px-3 py-1 rounded text-sm hover:bg-yellow-300 transition-colors"
+                                                data-quiz-id="{{ quiz.id }}">
+                                            <i class="fas fa-chart-bar mr-1"></i>View Results
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i class="fas fa-tasks text-gray-400 text-4xl mb-4"></i>
+                            <p class="text-gray-500">No quizzes available yet.</p>
+                            <p class="text-gray-400 text-sm">Enroll in subjects to access their quizzes!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Enrollment functions for students
+        function enrollInSubject(subjectId, subjectName) {
+            if (confirm(`Are you sure you want to enroll in "${subjectName}"?`)) {
+                fetch(`/subject/${subjectId}/enroll`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload(); // Refresh to show updated enrollment status
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred while enrolling.');
+                });
+            }
+        }
+
+        function unenrollFromSubject(subjectId, subjectName) {
+            if (confirm(`Are you sure you want to unenroll from "${subjectName}"?`)) {
+                fetch(`/subject/${subjectId}/unenroll`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload(); // Refresh to show updated enrollment status
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred while unenrolling.');
+                });
+            }
+        }
+
+        // Quiz action functions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Quiz take buttons
+            document.querySelectorAll('.quiz-take-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const quizId = this.dataset.quizId;
+                    window.location.href = `/quiz/${quizId}/take`;
+                });
+            });
+
+            // Quiz results buttons
+            document.querySelectorAll('.quiz-results-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const quizId = this.dataset.quizId;
+                    window.location.href = `/quiz/${quizId}/results`;
+                });
+            });
+
+            // Quiz preview buttons (for teachers)
+            document.querySelectorAll('.quiz-preview-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const quizId = this.dataset.quizId;
+                    window.location.href = `/quiz/${quizId}/preview`;
+                });
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block footer %}
+    <div class="text-center">
+        <p>&copy; 2024 Quizera. All rights reserved.</p>
+        <p class="text-gray-400 text-sm mt-2">E-Learning Platform for Computer Science Students</p>
+    </div>
+{% endblock %}

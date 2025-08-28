@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Quizera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Quizera</h1>
+            <p class="text-gray-600 mt-2">Sign in to your account</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mb-6">
+                    {% for message in messages %}
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-2">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Login Form -->
+        <form method="POST" class="space-y-6">
+            <!-- Email -->
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter your email"
+                    value="{{ request.form.email if request.form.email }}"
+                >
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <div class="relative">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        required 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter your password"
+                    >
+                    <button 
+                        type="button" 
+                        id="togglePassword"
+                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                    >
+                        <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Remember Me -->
+            <div class="flex items-center justify-between">
+                <label class="flex items-center">
+                    <input 
+                        type="checkbox" 
+                        name="remember" 
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    >
+                    <span class="ml-2 text-sm text-gray-600">Remember me</span>
+                </label>
+                <a href="{{ url_for('forgot_password') }}" class="text-sm text-blue-600 hover:text-blue-800">Forgot password?</a>
+            </div>
+
+            <!-- Submit Button -->
+            <button 
+                type="submit" 
+                class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200"
+            >
+                Sign In
+            </button>
+        </form>
+
+        <!-- Divider -->
+        <div class="my-6">
+            <div class="relative">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-2 bg-white text-gray-500">Or</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Accounts -->
+        <div class="space-y-2 mb-6">
+            <p class="text-sm text-gray-600 text-center">Try demo accounts:</p>
+            <div class="flex space-x-2">
+                <button 
+                    type="button" 
+                    onclick="fillDemo('student')"
+                    class="flex-1 bg-green-100 text-green-800 py-2 px-3 rounded text-sm hover:bg-green-200 transition duration-200"
+                >
+                    Demo Student
+                </button>
+                <button 
+                    type="button" 
+                    onclick="fillDemo('teacher')"
+                    class="flex-1 bg-purple-100 text-purple-800 py-2 px-3 rounded text-sm hover:bg-purple-200 transition duration-200"
+                >
+                    Demo Teacher
+                </button>
+            </div>
+        </div>
+
+        <!-- Signup Link -->
+        <div class="text-center mt-6">
+            <p class="text-sm text-gray-600">
+                Don't have an account? 
+                <a href="{{ url_for('signup') }}" class="text-blue-600 hover:text-blue-800 font-medium">
+                    Sign up here
+                </a>
+            </p>
+        </div>
+
+        <!-- Home Link -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('home') }}" class="text-sm text-gray-500 hover:text-gray-700">
+                ← Back to Home
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const password = document.getElementById('password');
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+        });
+
+        // Demo account functionality
+        function fillDemo(role) {
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            
+            if (role === 'student') {
+                emailInput.value = 'student@demo.com';
+                passwordInput.value = 'demo123';
+            } else if (role === 'teacher') {
+                emailInput.value = 'teacher@demo.com';
+                passwordInput.value = 'demo123';
+            }
+        }
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Please fill in all fields');
+                e.preventDefault();
+                return;
+            }
+        });
+    </script>
+</body>
+</html>

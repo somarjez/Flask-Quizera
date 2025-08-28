@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ topic.title }} - Quizera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('home') }}" class="text-2xl font-bold">Quizera</a>
+                    <span class="text-blue-200">{{ topic.title }}</span>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('view_subject', subject_id=topic.subject_id) }}" class="hover:text-blue-200 transition-colors">
+                        <i class="fas fa-arrow-left mr-1"></i>Back to Subject
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="hover:text-blue-200 transition-colors">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mx-auto px-4 pt-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-message bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Topic Header -->
+            <div class="bg-white rounded-lg shadow-md p-8 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800 gradient-text mb-2">{{ topic.title }}</h1>
+                        <div class="flex items-center space-x-4 text-sm text-gray-500">
+                            <span><i class="fas fa-calendar mr-1"></i>{{ topic.created_at.strftime('%B %d, %Y') }}</span>
+                            {% if topic.video_link %}
+                                <span><i class="fas fa-video mr-1 text-red-500"></i>Video Available</span>
+                            {% endif %}
+                            {% if topic.content_text %}
+                                <span><i class="fas fa-file-text mr-1 text-blue-500"></i>Text Content</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if session.role == 'teacher' and topic.teacher_id == session.user_id %}
+                        <div class="flex space-x-2">
+                            <button class="topic-edit-btn bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
+                                    data-topic-id="{{ topic.id }}"
+                                    data-topic-title="{{ topic.title }}"
+                                    data-topic-content="{{ topic.content_text }}"
+                                    data-topic-video="{{ topic.video_link }}">
+                                <i class="fas fa-edit mr-1"></i>Edit
+                            </button>
+                            <button class="topic-delete-btn bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+                                    data-topic-id="{{ topic.id }}"
+                                    data-topic-title="{{ topic.title }}">
+                                <i class="fas fa-trash mr-1"></i>Delete
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Content Section -->
+            <div class="space-y-8">
+                <!-- Video Content -->
+                {% if topic.video_link %}
+                    <div class="bg-white rounded-lg shadow-md p-8">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-video mr-2 text-red-600"></i>Video Lesson
+                        </h2>
+                        <div class="relative" style="padding-bottom: 56.25%; height: 0;">
+                            {% if 'youtube.com' in topic.video_link or 'youtu.be' in topic.video_link %}
+                                {% set video_id = topic.video_link.split('youtu.be/')[1] if 'youtu.be' in topic.video_link else topic.video_link.split('v=')[1].split('&')[0] %}
+                                <iframe class="absolute top-0 left-0 w-full h-full rounded-lg" 
+                                        src="https://www.youtube.com/embed/{{ video_id }}" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen></iframe>
+                            {% elif 'vimeo.com' in topic.video_link %}
+                                {% set video_id = topic.video_link.split('/')[-1] %}
+                                <iframe class="absolute top-0 left-0 w-full h-full rounded-lg" 
+                                        src="https://player.vimeo.com/video/{{ video_id }}" 
+                                        frameborder="0" 
+                                        allow="autoplay; fullscreen; picture-in-picture" 
+                                        allowfullscreen></iframe>
+                            {% else %}
+                                <video class="absolute top-0 left-0 w-full h-full rounded-lg" controls>
+                                    <source src="{{ topic.video_link }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            {% endif %}
+                        </div>
+                        <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+                            <span><i class="fas fa-external-link-alt mr-1"></i>Original link: 
+                                <a href="{{ topic.video_link }}" target="_blank" class="text-blue-600 hover:underline">{{ topic.video_link }}</a>
+                            </span>
+                            <div class="flex space-x-4">
+                                <button onclick="toggleFullscreen()" class="hover:text-gray-700 transition-colors">
+                                    <i class="fas fa-expand mr-1"></i>Fullscreen
+                                </button>
+                                <button onclick="toggleSpeed()" class="hover:text-gray-700 transition-colors">
+                                    <i class="fas fa-tachometer-alt mr-1"></i>Speed
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Text Content -->
+                {% if topic.content_text %}
+                    <div class="bg-white rounded-lg shadow-md p-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-semibold text-gray-800">
+                                <i class="fas fa-file-text mr-2 text-blue-600"></i>Lesson Content
+                            </h2>
+                            <div class="flex space-x-2 text-sm">
+                                <button onclick="increaseFontSize()" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors">
+                                    <i class="fas fa-plus mr-1"></i>A+
+                                </button>
+                                <button onclick="decreaseFontSize()" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors">
+                                    <i class="fas fa-minus mr-1"></i>A-
+                                </button>
+                                <button onclick="toggleDarkMode()" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors">
+                                    <i class="fas fa-moon mr-1"></i>Dark
+                                </button>
+                            </div>
+                        </div>
+                        <div id="content-text" class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                            {{ topic.content_text | replace('\n\n', '</p><p>') | replace('\n', '<br>') | safe }}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Notes Section for Students -->
+                {% if session.role == 'student' %}
+                    <div class="bg-white rounded-lg shadow-md p-8">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-sticky-note mr-2 text-yellow-600"></i>My Notes
+                        </h2>
+                        <textarea id="student-notes" 
+                                  class="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                                  placeholder="Take notes while studying this topic..."></textarea>
+                        <div class="mt-4 flex items-center justify-between">
+                            <p class="text-sm text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>Your notes are saved automatically
+                            </p>
+                            <div class="flex space-x-2">
+                                <button onclick="saveNotes()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+                                    <i class="fas fa-save mr-1"></i>Save Notes
+                                </button>
+                                <button onclick="exportNotes()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors">
+                                    <i class="fas fa-download mr-1"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex items-center justify-between mt-12 bg-white rounded-lg shadow-md p-6">
+                <button class="flex items-center text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-chevron-left mr-2"></i>Previous Topic
+                </button>
+                <a href="{{ url_for('view_subject', subject_id=topic.subject_id) }}" 
+                   class="flex items-center text-blue-600 hover:text-blue-800 transition-colors">
+                    <i class="fas fa-list mr-2"></i>All Topics
+                </a>
+                <button class="flex items-center text-gray-500 hover:text-blue-600 transition-colors">
+                    Next Topic<i class="fas fa-chevron-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Font size controls
+        let currentFontSize = 16;
+        
+        function increaseFontSize() {
+            if (currentFontSize < 24) {
+                currentFontSize += 2;
+                document.getElementById('content-text').style.fontSize = currentFontSize + 'px';
+            }
+        }
+        
+        function decreaseFontSize() {
+            if (currentFontSize > 12) {
+                currentFontSize -= 2;
+                document.getElementById('content-text').style.fontSize = currentFontSize + 'px';
+            }
+        }
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            const contentText = document.getElementById('content-text');
+            const parent = contentText.parentElement;
+            
+            if (parent.classList.contains('bg-gray-800')) {
+                parent.classList.remove('bg-gray-800');
+                parent.classList.add('bg-white');
+                contentText.classList.remove('text-gray-200');
+                contentText.classList.add('text-gray-700');
+            } else {
+                parent.classList.remove('bg-white');
+                parent.classList.add('bg-gray-800');
+                contentText.classList.remove('text-gray-700');
+                contentText.classList.add('text-gray-200');
+            }
+        }
+
+        // Student notes functionality
+        {% if session.role == 'student' %}
+        function saveNotes() {
+            const notes = document.getElementById('student-notes').value;
+            localStorage.setItem('notes_{{ topic.id }}', notes);
+            
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check mr-1"></i>Saved!';
+            button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            button.classList.add('bg-green-500');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('bg-green-500');
+                button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+            }, 2000);
+        }
+
+        function exportNotes() {
+            const notes = document.getElementById('student-notes').value;
+            const topicTitle = "{{ topic.title }}";
+            
+            if (!notes.trim()) {
+                alert('No notes to export!');
+                return;
+            }
+            
+            const content = `Topic: ${topicTitle}\nDate: ${new Date().toLocaleDateString()}\n\nNotes:\n${notes}`;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${topicTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedNotes = localStorage.getItem('notes_{{ topic.id }}');
+            if (savedNotes) {
+                document.getElementById('student-notes').value = savedNotes;
+            }
+        });
+        {% endif %}
+
+        // Video controls (if video is present)
+        {% if topic.video_link %}
+        function toggleFullscreen() {
+            const video = document.querySelector('iframe, video');
+            if (video.requestFullscreen) {
+                video.requestFullscreen();
+            } else if (video.webkitRequestFullscreen) {
+                video.webkitRequestFullscreen();
+            } else if (video.msRequestFullscreen) {
+                video.msRequestFullscreen();
+            }
+        }
+
+        function toggleSpeed() {
+            alert('Speed control is available in the video player controls');
+        }
+        {% endif %}
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
