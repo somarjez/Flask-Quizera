@@ -1,4 +1,4 @@
-# 🎓 Quizera: E-Learning Platform for Computer Science Students  
+# 🎓 Quizera: E-Learning Platform for Computer Science Students VERSION 1
 
 > 🚀 An interactive Python-based platform for Computer Science students to **learn, practice, and earn certificates** through structured lessons, quizzes, and exams.  
 > Built with **Flask** + **Firebase**.  
