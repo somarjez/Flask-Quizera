@@ -12,6 +12,7 @@ from flask_mail import Mail, Message
 import secrets
 from datetime import datetime, timezone, timedelta 
 import hashlib
+from google.cloud.firestore_v1 import FieldFilter
 
 
 app = Flask(__name__)
@@ -739,7 +740,6 @@ def login():
 #         print(f"Error loading profile: {e}")
 #         flash('Error loading profile.')
 #         return redirect(url_for('dashboard'))
-
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'user_id' not in session:
@@ -830,15 +830,15 @@ def profile():
                 self.bio = data.get('bio', '')
                 self.institution = data.get('institution', '')
                 self.profile_picture = data.get('profile_picture', None)
-                self.avatar_type = data.get('avatar_type', 'initial')  # Add this
-                self.avatar_id = data.get('avatar_id', 'blue')        # Add this
+                self.avatar_type = data.get('avatar_type', 'initial')
+                self.avatar_id = data.get('avatar_id', 'blue')
                 self.created_at = data.get('created_at', None)
                 self.updated_at = data.get('updated_at', None)
         
         user = UserProfile(user_data)
         print(f"UserProfile created with avatar_type: {user.avatar_type}, avatar_id: {user.avatar_id}")  # Debug line
         
-        # Get user statistics
+        # Get user statistics and recent activities
         stats = {}
         recent_activities = []
         
@@ -875,8 +875,12 @@ def profile():
                         total_score += attempt_data.get('percentage', 0)
                         unique_students.add(attempt_data.get('user_id'))
                 
+                # Get enrolled students count from enrollments collection
+                enrollments_query = db.collection('enrollments').where('teacher_id', '==', user_id).where('status', '==', 'active')
+                enrolled_students_docs = list(enrollments_query.stream())
+                total_students = len(set(doc.to_dict()['student_id'] for doc in enrolled_students_docs))
+                
                 avg_score = (total_score / total_attempts) if total_attempts > 0 else 0
-                total_students = len(unique_students)
                 
                 stats = {
                     'subjects_count': subjects_count,
@@ -890,8 +894,12 @@ def profile():
                     'monthly_views': total_attempts * 3,  # Rough estimate
                     'teaching_hours': topics_count * 2  # Rough estimate
                 }
+                
+                # Get recent activities for teachers
+                recent_activities = get_teacher_recent_activities(user_id)
+                
             else:
-                # Calculate student statistics
+                # Calculate student statistics - UPDATED to use enrollments
                 attempts_query = db.collection('quiz_attempts').where('user_id', '==', user_id)
                 attempts_docs = list(attempts_query.stream())
                 
@@ -899,28 +907,25 @@ def profile():
                 total_score = sum(attempt.to_dict().get('percentage', 0) for attempt in attempts_docs)
                 average_score = (total_score / quizzes_taken) if quizzes_taken > 0 else 0
                 
-                # Get unique subjects from taken quizzes
-                unique_subjects = set()
-                for attempt_doc in attempts_docs:
-                    attempt_data = attempt_doc.to_dict()
-                    quiz_id = attempt_data.get('quiz_id')
-                    if quiz_id:
-                        quiz_doc = db.collection('quizzes').document(quiz_id).get()
-                        if quiz_doc.exists:
-                            quiz_data = quiz_doc.to_dict()
-                            subject_id = quiz_data.get('subject_id')
-                            if subject_id:
-                                unique_subjects.add(subject_id)
+                # Get subjects enrolled from enrollments collection (FIXED)
+                enrollments_query = db.collection('enrollments').where('student_id', '==', user_id).where('status', '==', 'active')
+                enrollments_docs = list(enrollments_query.stream())
+                subjects_enrolled = len(enrollments_docs)
                 
                 stats = {
                     'quizzes_taken': quizzes_taken,
                     'average_score': round(average_score, 1),
-                    'subjects_enrolled': len(unique_subjects),
+                    'subjects_enrolled': subjects_enrolled,  # Now correctly reflects actual enrollments
                     'study_hours': quizzes_taken * 0.5  # Rough estimate
                 }
                 
+                # Get recent activities for students
+                recent_activities = get_student_recent_activities(user_id)
+                
         except Exception as e:
             print(f"Error calculating stats: {e}")
+            import traceback
+            traceback.print_exc()
             # Provide default empty stats
             if user_data['role'] == 'teacher':
                 stats = {
@@ -957,6 +962,188 @@ def profile():
         flash('Error loading profile.')
         return redirect(url_for('dashboard'))
 
+# Helper functions to get recent activities
+def get_teacher_recent_activities(teacher_id, limit=5):
+    """Get recent activities for teachers"""
+    activities = []
+    try:
+        # Get recent enrollments
+        recent_enrollments = db.collection('enrollments')\
+            .where('teacher_id', '==', teacher_id)\
+            .order_by('enrolled_at', direction=firestore.Query.DESCENDING)\
+            .limit(limit).stream()
+        
+        for enrollment in recent_enrollments:
+            data = enrollment.to_dict()
+            activities.append({
+                'description': f"New student {data['student_name']} enrolled in {data['subject_name']}",
+                'created_at': data['enrolled_at']
+            })
+        
+        # Get recent quiz attempts on teacher's quizzes
+        teacher_quizzes = db.collection('quizzes').where('teacher_id', '==', teacher_id).stream()
+        quiz_ids = [quiz.id for quiz in teacher_quizzes]
+        
+        if quiz_ids:
+            for quiz_id in quiz_ids[:3]:  # Limit to prevent too many queries
+                recent_attempts = db.collection('quiz_attempts')\
+                    .where('quiz_id', '==', quiz_id)\
+                    .order_by('created_at', direction=firestore.Query.DESCENDING)\
+                    .limit(2).stream()
+                
+                for attempt in recent_attempts:
+                    data = attempt.to_dict()
+                    activities.append({
+                        'description': f"Student completed quiz with {data.get('percentage', 0)}% score",
+                        'created_at': data.get('created_at', datetime.now())
+                    })
+        
+        # Sort activities by date and limit
+        activities.sort(key=lambda x: x['created_at'], reverse=True)
+        return activities[:limit]
+        
+    except Exception as e:
+        print(f"Error getting teacher activities: {e}")
+        return []
+
+def get_student_recent_activities(student_id, limit=5):
+    """Get recent activities for students"""
+    activities = []
+    try:
+        # Get recent enrollments
+        recent_enrollments = db.collection('enrollments')\
+            .where('student_id', '==', student_id)\
+            .order_by('enrolled_at', direction=firestore.Query.DESCENDING)\
+            .limit(limit).stream()
+        
+        for enrollment in recent_enrollments:
+            data = enrollment.to_dict()
+            activities.append({
+                'description': f"Enrolled in {data['subject_name']} by {data['teacher_name']}",
+                'created_at': data['enrolled_at']
+            })
+        
+        # Get recent quiz attempts
+        recent_attempts = db.collection('quiz_attempts')\
+            .where('user_id', '==', student_id)\
+            .order_by('created_at', direction=firestore.Query.DESCENDING)\
+            .limit(limit).stream()
+        
+        for attempt in recent_attempts:
+            data = attempt.to_dict()
+            activities.append({
+                'description': f"Completed quiz with {data.get('percentage', 0)}% score",
+                'created_at': data.get('created_at', datetime.now())
+            })
+        
+        # Sort activities by date and limit
+        activities.sort(key=lambda x: x['created_at'], reverse=True)
+        return activities[:limit]
+        
+    except Exception as e:
+        print(f"Error getting student activities: {e}")
+        return []
+
+# @app.route('/dashboard')
+# def dashboard():
+#     if 'user_id' not in session:
+#         flash('Please log in to access your dashboard.')
+#         return redirect(url_for('login'))
+    
+#     user_role = session.get('role')
+#     username = session.get('username')
+    
+#     if user_role == 'teacher':
+#         # Get teacher's subjects and quizzes (existing code remains the same)
+#         subjects = []
+#         quizzes = []
+#         try:
+#             subjects_ref = db.collection('subjects').where('teacher_id', '==', session['user_id'])
+#             for doc in subjects_ref.stream():
+#                 subject_data = doc.to_dict()
+#                 subject_data['id'] = doc.id
+                
+#                 # Calculate topic count for each subject
+#                 topics_ref = db.collection('topics').where('subject_id', '==', doc.id)
+#                 topic_count = len(list(topics_ref.stream()))
+#                 subject_data['topic_count'] = topic_count
+                
+#                 subjects.append(subject_data)
+                
+#             quizzes_ref = db.collection('quizzes').where('teacher_id', '==', session['user_id'])
+#             for doc in quizzes_ref.stream():
+#                 quiz_data = doc.to_dict()
+#                 quiz_data['id'] = doc.id
+#                 quizzes.append(quiz_data)
+#         except Exception as e:
+#             print(f"Error fetching teacher data: {e}")
+        
+#         return render_template('dashboard.html', role='teacher', username=username, subjects=subjects, quizzes=quizzes)
+    
+#     elif user_role == 'student':
+#         # Get student's enrolled subjects and available subjects
+#         enrolled_subjects = []
+#         available_subjects = []
+#         enrolled_quizzes = []
+        
+#         try:
+#             # Get enrolled subjects
+#             enrollments_ref = db.collection('enrollments').where('student_id', '==', session['user_id'])
+#             enrolled_subject_ids = []
+            
+#             for doc in enrollments_ref.stream():
+#                 enrollment_data = doc.to_dict()
+#                 subject_id = enrollment_data['subject_id']
+#                 enrolled_subject_ids.append(subject_id)
+                
+#                 # Get subject details
+#                 subject_ref = db.collection('subjects').document(subject_id)
+#                 subject_doc = subject_ref.get()
+                
+#                 if subject_doc.exists:
+#                     subject_data = subject_doc.to_dict()
+#                     subject_data['id'] = subject_doc.id
+                    
+#                     # Calculate topic count
+#                     topics_ref = db.collection('topics').where('subject_id', '==', subject_id)
+#                     topic_count = len(list(topics_ref.stream()))
+#                     subject_data['topic_count'] = topic_count
+#                     subject_data['enrollment_date'] = enrollment_data['enrolled_at']
+                    
+#                     enrolled_subjects.append(subject_data)
+            
+#             # Get available subjects (not enrolled)
+#             all_subjects_ref = db.collection('subjects')
+#             for doc in all_subjects_ref.stream():
+#                 if doc.id not in enrolled_subject_ids:
+#                     subject_data = doc.to_dict()
+#                     subject_data['id'] = doc.id
+                    
+#                     # Calculate topic count
+#                     topics_ref = db.collection('topics').where('subject_id', '==', doc.id)
+#                     topic_count = len(list(topics_ref.stream()))
+#                     subject_data['topic_count'] = topic_count
+                    
+#                     available_subjects.append(subject_data)
+            
+#             # Get quizzes from enrolled subjects
+#             for subject_id in enrolled_subject_ids:
+#                 quizzes_ref = db.collection('quizzes').where('subject_id', '==', subject_id).where('is_published', '==', True)
+#                 for doc in quizzes_ref.stream():
+#                     quiz_data = doc.to_dict()
+#                     quiz_data['id'] = doc.id
+#                     enrolled_quizzes.append(quiz_data)
+                    
+#         except Exception as e:
+#             print(f"Error fetching student data: {e}")
+        
+#         return render_template('dashboard.html', 
+#                              role='student', 
+#                              username=username, 
+#                              enrolled_subjects=enrolled_subjects,
+#                              available_subjects=available_subjects, 
+#                              quizzes=enrolled_quizzes)
+    
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -994,14 +1181,13 @@ def dashboard():
         return render_template('dashboard.html', role='teacher', username=username, subjects=subjects, quizzes=quizzes)
     
     elif user_role == 'student':
-        # Get student's enrolled subjects and available subjects
+        # Get student's enrolled subjects only (FIXED)
         enrolled_subjects = []
-        available_subjects = []
         enrolled_quizzes = []
         
         try:
-            # Get enrolled subjects
-            enrollments_ref = db.collection('enrollments').where('student_id', '==', session['user_id'])
+            # Get ONLY ACTIVE enrolled subjects
+            enrollments_ref = db.collection('enrollments').where('student_id', '==', session['user_id']).where('status', '==', 'active')
             enrolled_subject_ids = []
             
             for doc in enrollments_ref.stream():
@@ -1017,46 +1203,48 @@ def dashboard():
                     subject_data = subject_doc.to_dict()
                     subject_data['id'] = subject_doc.id
                     
+                    # Get teacher name from subject data
+                    subject_data['teacher_name'] = subject_data.get('teacher_name', 'Unknown Teacher')
+                    
                     # Calculate topic count
                     topics_ref = db.collection('topics').where('subject_id', '==', subject_id)
                     topic_count = len(list(topics_ref.stream()))
                     subject_data['topic_count'] = topic_count
-                    subject_data['enrollment_date'] = enrollment_data['enrolled_at']
+                    subject_data['enrollment_date'] = enrollment_data.get('enrolled_at')
                     
                     enrolled_subjects.append(subject_data)
             
-            # Get available subjects (not enrolled)
-            all_subjects_ref = db.collection('subjects')
-            for doc in all_subjects_ref.stream():
-                if doc.id not in enrolled_subject_ids:
-                    subject_data = doc.to_dict()
-                    subject_data['id'] = doc.id
-                    
-                    # Calculate topic count
-                    topics_ref = db.collection('topics').where('subject_id', '==', doc.id)
-                    topic_count = len(list(topics_ref.stream()))
-                    subject_data['topic_count'] = topic_count
-                    
-                    available_subjects.append(subject_data)
-            
-            # Get quizzes from enrolled subjects
+            # Get quizzes ONLY from enrolled subjects (FIXED)
             for subject_id in enrolled_subject_ids:
                 quizzes_ref = db.collection('quizzes').where('subject_id', '==', subject_id).where('is_published', '==', True)
                 for doc in quizzes_ref.stream():
                     quiz_data = doc.to_dict()
                     quiz_data['id'] = doc.id
+                    
+                    # Get subject name for the quiz
+                    subject_ref = db.collection('subjects').document(subject_id)
+                    subject_doc = subject_ref.get()
+                    if subject_doc.exists:
+                        quiz_data['subject_name'] = subject_doc.to_dict().get('name', 'Unknown Subject')
+                    
+                    # Get question count
+                    questions_ref = db.collection('questions').where('quiz_id', '==', doc.id)
+                    question_count = len(list(questions_ref.stream()))
+                    quiz_data['question_count'] = question_count
+                    
                     enrolled_quizzes.append(quiz_data)
                     
         except Exception as e:
             print(f"Error fetching student data: {e}")
+            import traceback
+            traceback.print_exc()
         
+        # Return ONLY enrolled subjects and their quizzes - NO available_subjects
         return render_template('dashboard.html', 
                              role='student', 
                              username=username, 
                              enrolled_subjects=enrolled_subjects,
-                             available_subjects=available_subjects, 
                              quizzes=enrolled_quizzes)
-    
     
 # Subject Management Routes
 @app.route('/create-subject', methods=['GET', 'POST'])
@@ -1086,6 +1274,130 @@ def create_subject():
             flash(f'Error creating subject: {e}')
     
     return render_template('create_subject.html')
+
+# Helper function to get student's completed topics
+def get_student_completed_topics(student_id, subject_id=None):
+    """Get list of topic IDs that student has completed"""
+    try:
+        query = db.collection('topic_completions').where('student_id', '==', student_id)
+        if subject_id:
+            query = query.where('subject_id', '==', subject_id)
+        
+        completed_topics = []
+        for doc in query.stream():
+            completed_topics.append(doc.to_dict()['topic_id'])
+        return completed_topics
+    except Exception as e:
+        print(f"Error getting completed topics: {e}")
+        return []
+
+# Helper function to calculate subject progress
+def calculate_subject_progress(student_id, subject_id):
+    """Calculate completion percentage for a subject"""
+    try:
+        # Get total topics in subject
+        total_topics = db.collection('topics').where('subject_id', '==', subject_id).stream()
+        total_count = len(list(total_topics))
+        
+        if total_count == 0:
+            return 0
+        
+        # Get completed topics for this subject
+        completed_topics = get_student_completed_topics(student_id, subject_id)
+        completed_count = len(completed_topics)
+        
+        progress_percentage = (completed_count / total_count) * 100
+        return round(progress_percentage, 1)
+    except Exception as e:
+        print(f"Error calculating progress: {e}")
+        return 0
+
+# Route to mark topic as completed
+@app.route('/topic/<topic_id>/complete', methods=['POST'])
+def mark_topic_complete(topic_id):
+    if 'user_id' not in session or session.get('role') != 'student':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        # Get topic details
+        topic_ref = db.collection('topics').document(topic_id)
+        topic_doc = topic_ref.get()
+        
+        if not topic_doc.exists:
+            return jsonify({'success': False, 'message': 'Topic not found'}), 404
+        
+        topic_data = topic_doc.to_dict()
+        subject_id = topic_data['subject_id']
+        student_id = session['user_id']
+        
+        # Check if student is enrolled
+        if not check_enrollment(student_id, subject_id):
+            return jsonify({'success': False, 'message': 'Not enrolled in this subject'}), 403
+        
+        # Check if already completed
+        existing_completion = db.collection('topic_completions').where('student_id', '==', student_id).where('topic_id', '==', topic_id).limit(1).stream()
+        if len(list(existing_completion)) > 0:
+            return jsonify({'success': False, 'message': 'Topic already marked as completed'})
+        
+        # Mark as completed
+        completion_data = {
+            'student_id': student_id,
+            'topic_id': topic_id,
+            'subject_id': subject_id,
+            'completed_at': datetime.now(),
+            'student_name': session.get('username', 'Unknown')
+        }
+        
+        db.collection('topic_completions').add(completion_data)
+        
+        # Calculate new progress percentage
+        progress = calculate_subject_progress(student_id, subject_id)
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Topic marked as completed!',
+            'progress': progress
+        })
+        
+    except Exception as e:
+        print(f"Error marking topic complete: {e}")
+        return jsonify({'success': False, 'message': 'Error marking topic as completed'}), 500
+
+# Route to unmark topic as completed
+@app.route('/topic/<topic_id>/uncomplete', methods=['POST'])
+def unmark_topic_complete(topic_id):
+    if 'user_id' not in session or session.get('role') != 'student':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        student_id = session['user_id']
+        
+        # Find and delete the completion record
+        completions = db.collection('topic_completions').where('student_id', '==', student_id).where('topic_id', '==', topic_id).limit(1).stream()
+        
+        deleted = False
+        subject_id = None
+        for completion in completions:
+            subject_id = completion.to_dict()['subject_id']
+            completion.reference.delete()
+            deleted = True
+            break
+        
+        if not deleted:
+            return jsonify({'success': False, 'message': 'Topic was not marked as completed'})
+        
+        # Calculate new progress percentage
+        progress = calculate_subject_progress(student_id, subject_id) if subject_id else 0
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Topic unmarked as completed',
+            'progress': progress
+        })
+        
+    except Exception as e:
+        print(f"Error unmarking topic: {e}")
+        return jsonify({'success': False, 'message': 'Error unmarking topic'}), 500
 
 # @app.route('/subject/<subject_id>')
 # def view_subject(subject_id):
@@ -1118,7 +1430,6 @@ def create_subject():
 #         flash(f'Error loading subject: {e}')
 #         return redirect(url_for('dashboard'))
 
-# Updated view_subject route
 @app.route('/subject/<subject_id>')
 def view_subject(subject_id):
     if 'user_id' not in session:
@@ -1139,6 +1450,9 @@ def view_subject(subject_id):
         
         # Check enrollment for students
         is_enrolled = False
+        progress = 0
+        completed_topics = []
+        
         if session.get('role') == 'student':
             is_enrolled = check_enrollment(session['user_id'], subject_id)
             if not is_enrolled:
@@ -1147,7 +1461,12 @@ def view_subject(subject_id):
                                      subject=subject_data, 
                                      topics=[], 
                                      is_enrolled=False, 
-                                     enrollment_required=True)
+                                     enrollment_required=True,
+                                     progress=0)
+            else:
+                # Calculate progress and get completed topics
+                progress = calculate_subject_progress(session['user_id'], subject_id)
+                completed_topics = get_student_completed_topics(session['user_id'], subject_id)
         
         # Teachers can always view their own subjects
         elif session.get('role') == 'teacher' and subject_data['teacher_id'] != session['user_id']:
@@ -1161,16 +1480,91 @@ def view_subject(subject_id):
             for doc in topics_ref.stream():
                 topic_data = doc.to_dict()
                 topic_data['id'] = doc.id
+                # Add completion status for students
+                if session.get('role') == 'student':
+                    topic_data['is_completed'] = doc.id in completed_topics
                 topics.append(topic_data)
         
         return render_template('subject_detail.html', 
                              subject=subject_data, 
                              topics=topics, 
-                             is_enrolled=is_enrolled)
+                             is_enrolled=is_enrolled,
+                             progress=progress,
+                             completed_topics=completed_topics)
         
     except Exception as e:
         flash(f'Error loading subject: {e}')
         return redirect(url_for('dashboard'))
+
+# Updated view_topic route with completion status
+@app.route('/topic/<topic_id>')
+def view_topic(topic_id):
+    if 'user_id' not in session:
+        flash('Please log in to view topics.')
+        return redirect(url_for('login'))
+    
+    try:
+        topic_ref = db.collection('topics').document(topic_id)
+        topic_doc = topic_ref.get()
+        
+        if not topic_doc.exists:
+            flash('Topic not found.')
+            return redirect(url_for('dashboard'))
+        
+        topic_data = topic_doc.to_dict()
+        topic_data['id'] = topic_doc.id
+        
+        # Check enrollment for students
+        is_completed = False
+        if session.get('role') == 'student':
+            is_enrolled = check_enrollment(session['user_id'], topic_data['subject_id'])
+            if not is_enrolled:
+                flash('You must be enrolled in this subject to view topics.')
+                return redirect(url_for('view_subject', subject_id=topic_data['subject_id']))
+            
+            # Check if topic is completed by this student
+            completed_topics = get_student_completed_topics(session['user_id'], topic_data['subject_id'])
+            is_completed = topic_id in completed_topics
+        
+        # Check teacher ownership
+        elif session.get('role') == 'teacher' and topic_data['teacher_id'] != session['user_id']:
+            flash('Access denied.')
+            return redirect(url_for('dashboard'))
+        
+        topic_data['is_completed'] = is_completed
+        return render_template('topic_detail.html', topic=topic_data)
+        
+    except Exception as e:
+        flash(f'Error loading topic: {e}')
+        return redirect(url_for('dashboard'))
+
+@app.route('/student/<student_id>/progress/<subject_id>')
+def get_student_progress(student_id, subject_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    # Students can only view their own progress, teachers can view any student's progress
+    if session.get('role') == 'student' and session['user_id'] != student_id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        progress = calculate_subject_progress(student_id, subject_id)
+        completed_topics = get_student_completed_topics(student_id, subject_id)
+        
+        # Get total topics count
+        total_topics = db.collection('topics').where('subject_id', '==', subject_id).stream()
+        total_count = len(list(total_topics))
+        
+        return jsonify({
+            'progress': progress,
+            'completed_count': len(completed_topics),
+            'total_count': total_count,
+            'completed_topics': completed_topics
+        })
+        
+    except Exception as e:
+        print(f"Error getting student progress: {e}")
+        return jsonify({'error': 'Error fetching progress'}), 500
 
 @app.route('/subject/<subject_id>/create-topic', methods=['GET', 'POST'])
 def create_topic(subject_id):
@@ -1240,40 +1634,40 @@ def create_topic(subject_id):
 #         return redirect(url_for('dashboard'))
 
 # Updated view_topic route
-@app.route('/topic/<topic_id>')
-def view_topic(topic_id):
-    if 'user_id' not in session:
-        flash('Please log in to view topics.')
-        return redirect(url_for('login'))
+# @app.route('/topic/<topic_id>')
+# def view_topic(topic_id):
+#     if 'user_id' not in session:
+#         flash('Please log in to view topics.')
+#         return redirect(url_for('login'))
     
-    try:
-        topic_ref = db.collection('topics').document(topic_id)
-        topic_doc = topic_ref.get()
+#     try:
+#         topic_ref = db.collection('topics').document(topic_id)
+#         topic_doc = topic_ref.get()
         
-        if not topic_doc.exists:
-            flash('Topic not found.')
-            return redirect(url_for('dashboard'))
+#         if not topic_doc.exists:
+#             flash('Topic not found.')
+#             return redirect(url_for('dashboard'))
         
-        topic_data = topic_doc.to_dict()
-        topic_data['id'] = topic_doc.id
+#         topic_data = topic_doc.to_dict()
+#         topic_data['id'] = topic_doc.id
         
-        # Check enrollment for students
-        if session.get('role') == 'student':
-            is_enrolled = check_enrollment(session['user_id'], topic_data['subject_id'])
-            if not is_enrolled:
-                flash('You must be enrolled in this subject to view topics.')
-                return redirect(url_for('view_subject', subject_id=topic_data['subject_id']))
+#         # Check enrollment for students
+#         if session.get('role') == 'student':
+#             is_enrolled = check_enrollment(session['user_id'], topic_data['subject_id'])
+#             if not is_enrolled:
+#                 flash('You must be enrolled in this subject to view topics.')
+#                 return redirect(url_for('view_subject', subject_id=topic_data['subject_id']))
         
-        # Check teacher ownership
-        elif session.get('role') == 'teacher' and topic_data['teacher_id'] != session['user_id']:
-            flash('Access denied.')
-            return redirect(url_for('dashboard'))
+#         # Check teacher ownership
+#         elif session.get('role') == 'teacher' and topic_data['teacher_id'] != session['user_id']:
+#             flash('Access denied.')
+#             return redirect(url_for('dashboard'))
         
-        return render_template('topic_detail.html', topic=topic_data)
+#         return render_template('topic_detail.html', topic=topic_data)
         
-    except Exception as e:
-        flash(f'Error loading topic: {e}')
-        return redirect(url_for('dashboard'))
+#     except Exception as e:
+#         flash(f'Error loading topic: {e}')
+#         return redirect(url_for('dashboard'))
 
 # Topic Edit and Delete Routes
 @app.route('/topic/<topic_id>/edit', methods=['GET', 'POST'])
@@ -2358,7 +2752,7 @@ def view_attempt(attempt_id):
     except Exception as e:
         flash(f'Error loading attempt: {e}')
         return redirect(url_for('dashboard'))
-    # Enrollment Management Routes
+
 @app.route('/subject/<subject_id>/enroll', methods=['POST'])
 def enroll_subject(subject_id):
     if 'user_id' not in session or session.get('role') != 'student':
@@ -2374,11 +2768,11 @@ def enroll_subject(subject_id):
         
         subject_data = subject_doc.to_dict()
         
-        # Check if already enrolled
+        # Check if already enrolled (ACTIVE enrollments only)
         enrollments_ref = db.collection('enrollments')
-        existing_enrollment = enrollments_ref.where('student_id', '==', session['user_id']).where('subject_id', '==', subject_id).get()
+        existing_enrollment = enrollments_ref.where('student_id', '==', session['user_id']).where('subject_id', '==', subject_id).where('status', '==', 'active').get()
         
-        if existing_enrollment:
+        if len(existing_enrollment) > 0:  # Check length instead of truthiness
             return jsonify({'success': False, 'message': 'Already enrolled in this subject'}), 400
         
         # Create enrollment
@@ -2407,16 +2801,19 @@ def unenroll_subject(subject_id):
         return jsonify({'success': False, 'message': 'Students only'}), 403
     
     try:
-        # Find enrollment
+        # Find ACTIVE enrollment only
         enrollments_ref = db.collection('enrollments')
-        enrollment_docs = enrollments_ref.where('student_id', '==', session['user_id']).where('subject_id', '==', subject_id).get()
+        enrollment_docs = enrollments_ref.where('student_id', '==', session['user_id']).where('subject_id', '==', subject_id).where('status', '==', 'active').get()
         
-        if not enrollment_docs:
+        if len(enrollment_docs) == 0:  # Check length instead of truthiness
             return jsonify({'success': False, 'message': 'Not enrolled in this subject'}), 400
         
-        # Delete enrollment
+        # Update enrollment status to 'inactive' instead of deleting (for activity tracking)
         for doc in enrollment_docs:
-            doc.reference.delete()
+            doc.reference.update({
+                'status': 'inactive',
+                'unenrolled_at': datetime.now()
+            })
         
         return jsonify({'success': True, 'message': 'Successfully unenrolled from subject'})
         
@@ -2424,16 +2821,30 @@ def unenroll_subject(subject_id):
         print(f"Error unenrolling from subject: {e}")
         return jsonify({'success': False, 'message': 'Error unenrolling from subject'}), 500
 
-# Helper function to check enrollment
+# Helper function to check enrollment (this one is correct)
 def check_enrollment(student_id, subject_id):
     """Check if a student is enrolled in a subject"""
     try:
         enrollments_ref = db.collection('enrollments')
-        enrollment_docs = enrollments_ref.where('student_id', '==', student_id).where('subject_id', '==', subject_id).get()
+        enrollment_docs = enrollments_ref.where('student_id', '==', student_id).where('subject_id', '==', subject_id).where('status', '==', 'active').get()
         return len(enrollment_docs) > 0
     except:
         return False
 
+@app.route('/api/generate-flashcards', methods=['POST'])
+def generate_flashcards():
+    data = request.get_json()
+    content = data.get('content')
+    count = data.get('count', 10)
+    difficulty = data.get('difficulty', 'medium')
+    
+    # Call your AI service here
+    flashcards = call_ai_service(content, count, difficulty)
+    
+    return jsonify({
+        'success': True,
+        'flashcards': flashcards
+    })
 
 @app.route('/logout')
 def logout():
@@ -2901,6 +3312,50 @@ def reset_password(token):
             flash('An error occurred while resetting your password. Please try again.')
             return render_template('reset_password.html', token=token)
 
+@app.route('/browse-subjects')
+def browse_subjects():
+    if 'user_id' not in session or session.get('role') != 'student':
+        flash('Students only access.')
+        return redirect(url_for('login'))
+    
+    try:
+        # Get already enrolled subject IDs
+        enrollments_ref = db.collection('enrollments').where('student_id', '==', session['user_id']).where('status', '==', 'active')
+        enrolled_subject_ids = []
+        
+        for doc in enrollments_ref.stream():
+            enrolled_subject_ids.append(doc.to_dict()['subject_id'])
+        
+        # Get all subjects not enrolled in
+        available_subjects = []
+        all_subjects_ref = db.collection('subjects')
+        
+        for doc in all_subjects_ref.stream():
+            if doc.id not in enrolled_subject_ids:
+                subject_data = doc.to_dict()
+                subject_data['id'] = doc.id
+                
+                # Calculate topic count
+                topics_ref = db.collection('topics').where('subject_id', '==', doc.id)
+                topic_count = len(list(topics_ref.stream()))
+                subject_data['topic_count'] = topic_count
+                
+                # Calculate quiz count
+                quizzes_ref = db.collection('quizzes').where('subject_id', '==', doc.id).where('is_published', '==', True)
+                quiz_count = len(list(quizzes_ref.stream()))
+                subject_data['quiz_count'] = quiz_count
+                
+                available_subjects.append(subject_data)
+        
+        return render_template('browse_subjects.html', 
+                             available_subjects=available_subjects,
+                             username=session.get('username'))
+    
+    except Exception as e:
+        print(f"Error fetching available subjects: {e}")
+        flash('Error loading subjects.')
+        return redirect(url_for('dashboard'))
+    
 if __name__ == '__main__':
     # app.run(debug=True)
     app.run(debug=True, host='0.0.0.0', port=5000)

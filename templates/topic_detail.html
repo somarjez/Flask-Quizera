@@ -31,7 +31,7 @@
     </nav>
 
     <!-- Flash Messages -->
-    <div class="container mx-auto px-4 pt-4">
+    <div class="container mx-auto px-4 pt-4" id="flashContainer">
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 {% for message in messages %}
@@ -49,8 +49,25 @@
             <!-- Topic Header -->
             <div class="bg-white rounded-lg shadow-md p-8 mb-8">
                 <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-800 gradient-text mb-2">{{ topic.title }}</h1>
+                    <div class="flex-1">
+                        <div class="flex items-center mb-2">
+                            <!-- Completion Status for Students -->
+                            {% if session.role == 'student' %}
+                                <div class="mr-4">
+                                    {% if topic.is_completed %}
+                                        <i id="completionIcon" class="fas fa-check-circle text-green-500 text-2xl"></i>
+                                    {% else %}
+                                        <i id="completionIcon" class="far fa-circle text-gray-400 text-2xl"></i>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            <h1 class="text-3xl font-bold text-gray-800 gradient-text">{{ topic.title }}</h1>
+                            {% if session.role == 'student' and topic.is_completed %}
+                                <span id="completedBadge" class="ml-3 text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                                    <i class="fas fa-check mr-1"></i>Completed
+                                </span>
+                            {% endif %}
+                        </div>
                         <div class="flex items-center space-x-4 text-sm text-gray-500">
                             <span><i class="fas fa-calendar mr-1"></i>{{ topic.created_at.strftime('%B %d, %Y') }}</span>
                             {% if topic.video_link %}
@@ -61,8 +78,9 @@
                             {% endif %}
                         </div>
                     </div>
-                    {% if session.role == 'teacher' and topic.teacher_id == session.user_id %}
-                        <div class="flex space-x-2">
+                    
+                    <div class="flex space-x-2">
+                        {% if session.role == 'teacher' and topic.teacher_id == session.user_id %}
                             <button class="topic-edit-btn bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
                                     data-topic-id="{{ topic.id }}"
                                     data-topic-title="{{ topic.title }}"
@@ -75,8 +93,27 @@
                                     data-topic-title="{{ topic.title }}">
                                 <i class="fas fa-trash mr-1"></i>Delete
                             </button>
-                        </div>
-                    {% endif %}
+                        {% elif session.role == 'student' %}
+                            <!-- COMPLETION BUTTONS IN HEADER FOR STUDENTS -->
+                            <div id="completionButtonsHeader">
+                                {% if topic.is_completed %}
+                                    <button id="uncompleteTopicHeader" 
+                                            class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-all transform hover:scale-105 shadow-lg"
+                                            data-topic-id="{{ topic.id }}"
+                                            data-topic-title="{{ topic.title }}">
+                                        <i class="fas fa-times-circle mr-2"></i>Mark as Incomplete
+                                    </button>
+                                {% else %}
+                                    <button id="completeTopicHeader" 
+                                            class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all transform hover:scale-105 shadow-lg"
+                                            data-topic-id="{{ topic.id }}"
+                                            data-topic-title="{{ topic.title }}">
+                                        <i class="fas fa-check-circle mr-2"></i>Mark as Complete
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
@@ -174,8 +211,283 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Enhanced AI Flashcards Section -->
+                    <div class="relative overflow-hidden bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 rounded-2xl shadow-2xl border border-purple-100 p-8">
+                        <!-- Decorative Elements -->
+                        <div class="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full -translate-x-16 -translate-y-16 opacity-30"></div>
+                        <div class="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-blue-200 to-indigo-200 rounded-full translate-x-20 translate-y-20 opacity-30"></div>
+                        
+                        <div class="relative z-10">
+                            <!-- Header -->
+                            <div class="text-center mb-8">
+                                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full mb-4 shadow-lg">
+                                    <i class="fas fa-brain text-white text-3xl"></i>
+                                </div>
+                                <h2 class="text-4xl font-bold gradient-text mb-3">
+                                    AI-Generated Flashcards
+                                </h2>
+                                <p class="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
+                                    Transform your learning with personalized AI flashcards that adapt to your study needs and help you master the material effectively
+                                </p>
+                            </div>
+
+                            <!-- Enhanced Generation Controls -->
+                            <div id="flashcard-controls" class="mb-8">
+                                <div class="glass-effect rounded-2xl p-6 shadow-lg border border-white/20">
+                                    <div class="flex flex-col lg:flex-row items-center justify-center space-y-6 lg:space-y-0 lg:space-x-8">
+                                        <!-- Card Count Selection -->
+                                        <div class="flex flex-col items-center space-y-2">
+                                            <label for="flashcard-count" class="text-sm font-semibold text-gray-700 flex items-center">
+                                                <i class="fas fa-layer-group text-purple-500 mr-2"></i>
+                                                Number of Cards
+                                            </label>
+                                            <select id="flashcard-count" class="px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm transition-all hover:border-purple-300">
+                                                <option value="5">5 cards</option>
+                                                <option value="10" selected>10 cards</option>
+                                                <option value="15">15 cards</option>
+                                                <option value="20">20 cards</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Difficulty Selection -->
+                                        <div class="flex flex-col items-center space-y-2">
+                                            <label for="difficulty-level" class="text-sm font-semibold text-gray-700 flex items-center">
+                                                <i class="fas fa-chart-line text-indigo-500 mr-2"></i>
+                                                Difficulty Level
+                                            </label>
+                                            <select id="difficulty-level" class="px-4 py-3 border-2 border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm transition-all hover:border-indigo-300">
+                                                <option value="easy">Easy</option>
+                                                <option value="medium" selected>Medium</option>
+                                                <option value="hard">Hard</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Generate Button -->
+                                        <button id="generate-flashcards" 
+                                                class="relative group bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-4 rounded-2xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-bold text-lg sparkle">
+                                            <div class="flex items-center space-x-3">
+                                                <i class="fas fa-magic text-xl group-hover:animate-spin"></i>
+                                                <span>Generate Flashcards</span>
+                                            </div>
+                                            <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Loading State -->
+                            <div id="flashcard-loading" class="hidden text-center py-16">
+                                <div class="relative mb-6">
+                                    <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600"></div>
+                                    <div class="absolute inset-0 rounded-full border-4 border-transparent border-r-indigo-400 animate-ping"></div>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800 mb-3">
+                                    <i class="fas fa-brain mr-2 text-purple-600"></i>AI is Working Its Magic
+                                </h3>
+                                <p class="text-gray-600 mb-2">Analyzing your lesson content and crafting personalized flashcards...</p>
+                                <p class="text-sm text-gray-500">This usually takes just a few seconds</p>
+                                
+                                <!-- Progress indicator -->
+                                <div class="mt-6 max-w-xs mx-auto">
+                                    <div class="flex justify-between text-xs text-gray-500 mb-2">
+                                        <span>Processing content</span>
+                                        <span>Almost done</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 h-2 rounded-full pulse-animation" style="width: 70%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Generated Flashcards -->
+                            <div id="flashcards-container" class="hidden">
+                                <!-- Header with Actions -->
+                                <div class="flex flex-col sm:flex-row items-center justify-between mb-8 glass-effect rounded-2xl p-6 shadow-lg border border-white/20">
+                                    <div class="flex items-center mb-4 sm:mb-0">
+                                        <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mr-4">
+                                            <i class="fas fa-cards-blank text-white text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xl font-bold text-gray-800">Your Flashcards</h3>
+                                            <p class="text-gray-600 text-sm">Ready for study and practice</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex space-x-3">
+                                        <button onclick="exportFlashcards()" 
+                                                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 shadow-md font-medium">
+                                            <i class="fas fa-download mr-2"></i>Export
+                                        </button>
+                                        <button onclick="startFlashcardQuiz()" 
+                                                class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-2 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg font-semibold relative overflow-hidden group">
+                                            <div class="flex items-center space-x-2 relative z-10">
+                                                <i class="fas fa-play"></i>
+                                                <span>Start Quiz Mode</span>
+                                            </div>
+                                            <div class="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Enhanced Navigation -->
+                                <div class="flex items-center justify-between mb-6 glass-effect rounded-xl p-4 shadow-md">
+                                    <button id="prev-card" 
+                                            class="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 shadow-md font-medium">
+                                        <i class="fas fa-chevron-left mr-2"></i>Previous
+                                    </button>
+                                    
+                                    <div class="text-center">
+                                        <div id="card-counter" class="text-2xl font-bold gradient-text mb-1">1 / 10</div>
+                                        <div class="text-xs text-gray-500 uppercase tracking-wide">Card Progress</div>
+                                    </div>
+                                    
+                                    <button id="next-card" 
+                                            class="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 shadow-md font-medium">
+                                        Next<i class="fas fa-chevron-right ml-2"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Enhanced Flashcard Display -->
+                                <div id="flashcard-display" class="mb-8">
+                                    <div class="flashcard cursor-pointer hover-lift">
+                                        <div class="flashcard-inner relative w-full h-full">
+                                            <!-- Question Side -->
+                                            <div class="flashcard-front absolute inset-0 p-8 flex items-center justify-center">
+                                                <div class="bg-white rounded-2xl shadow-xl border-2 border-blue-100 w-full h-80 card-shadow">
+                                                    <div class="h-full flex flex-col justify-center items-center text-center p-8">
+                                                        <div class="mb-6">
+                                                            <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                                <i class="fas fa-question-circle text-white text-2xl"></i>
+                                                            </div>
+                                                            <h4 class="text-2xl font-bold text-gray-800 mb-2">Question</h4>
+                                                            <div class="w-16 h-1 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full mx-auto"></div>
+                                                        </div>
+                                                        <p id="card-question" class="text-lg text-gray-700 leading-relaxed mb-6 max-w-md">Click Generate Flashcards to see questions here...</p>
+                                                        <div class="flex items-center text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
+                                                            <i class="fas fa-mouse-pointer mr-2"></i>
+                                                            <span>Click to reveal answer</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Answer Side -->
+                                            <div class="flashcard-back absolute inset-0 p-8 flex items-center justify-center">
+                                                <div class="bg-white rounded-2xl shadow-xl border-2 border-green-100 w-full h-80 card-shadow">
+                                                    <div class="h-full flex flex-col justify-center items-center text-center p-8">
+                                                        <div class="mb-6">
+                                                            <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                                <i class="fas fa-lightbulb text-white text-2xl"></i>
+                                                            </div>
+                                                            <h4 class="text-2xl font-bold text-gray-800 mb-2">Answer</h4>
+                                                            <div class="w-16 h-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full mx-auto"></div>
+                                                        </div>
+                                                        <p id="card-answer" class="text-lg text-gray-700 leading-relaxed mb-6 max-w-md">Answers will appear here...</p>
+                                                        <div class="flex items-center text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
+                                                            <i class="fas fa-mouse-pointer mr-2"></i>
+                                                            <span>Click to go back to question</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Enhanced Progress Bar -->
+                                <div class="glass-effect rounded-xl p-6 shadow-md">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-chart-line text-purple-500 mr-2"></i>
+                                            <span class="text-sm font-semibold text-gray-700">Study Progress</span>
+                                        </div>
+                                        <div class="text-sm font-medium text-gray-600">
+                                            <span id="progress-current">0</span> of <span id="progress-total">0</span> cards
+                                        </div>
+                                    </div>
+                                    <div class="relative w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                        <div id="progress-bar" 
+                                             class="bg-gradient-to-r from-purple-500 to-indigo-600 h-3 rounded-full transition-all duration-500 progress-glow" 
+                                             style="width: 0%"></div>
+                                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 pulse-animation"></div>
+                                    </div>
+                                    <div class="flex justify-between text-xs text-gray-500 mt-2">
+                                        <span>Just started</span>
+                                        <span>Mastery achieved!</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Error State -->
+                            <div id="flashcard-error" class="hidden text-center py-16">
+                                <div class="glass-effect rounded-2xl p-8 shadow-lg border border-red-100">
+                                    <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <i class="fas fa-exclamation-triangle text-red-500 text-3xl"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold text-gray-800 mb-3">Oops! Something went wrong</h3>
+                                    <p class="text-gray-600 mb-6 max-w-md mx-auto">
+                                        We encountered an issue while generating your flashcards. Don't worry, this happens sometimes!
+                                    </p>
+                                    <button onclick="retryFlashcardGeneration()" 
+                                            class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg font-semibold">
+                                        <i class="fas fa-retry mr-2"></i>Try Again
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 {% endif %}
             </div>
+
+            <!-- PROMINENT COMPLETION SECTION FOR STUDENTS AT THE BOTTOM -->
+            {% if session.role == 'student' %}
+                <div class="mt-12 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg shadow-lg p-8 border-2 border-blue-200">
+                    <div class="text-center">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-graduation-cap mr-2 text-purple-600"></i>Topic Completion
+                        </h3>
+                        <p class="text-gray-700 mb-8 text-lg">
+                            {% if topic.is_completed %}
+                                <span class="text-green-600 font-semibold">
+                                    <i class="fas fa-check-circle mr-2"></i>
+                                    You have successfully completed this topic! Great job!
+                                </span>
+                            {% else %}
+                                <span class="text-blue-600">
+                                    Mark this topic as completed once you've finished studying all the material above.
+                                </span>
+                            {% endif %}
+                        </p>
+                        
+                        <div id="completionSection" class="flex justify-center space-x-4">
+                            {% if topic.is_completed %}
+                                <button id="uncompleteTopic" 
+                                        class="bg-red-500 text-white px-10 py-4 rounded-lg hover:bg-red-600 transition-all transform hover:scale-105 shadow-lg text-lg font-semibold"
+                                        data-topic-id="{{ topic.id }}"
+                                        data-topic-title="{{ topic.title }}">
+                                    <i class="fas fa-times-circle mr-3"></i>Mark as Incomplete
+                                </button>
+                                <button onclick="window.location.href='{{ url_for('view_subject', subject_id=topic.subject_id) }}'" 
+                                        class="bg-blue-500 text-white px-10 py-4 rounded-lg hover:bg-blue-600 transition-all transform hover:scale-105 shadow-lg text-lg font-semibold">
+                                    <i class="fas fa-list mr-3"></i>Back to Topics
+                                </button>
+                            {% else %}
+                                <button id="completeTopic" 
+                                        class="bg-green-500 text-white px-10 py-4 rounded-lg hover:bg-green-600 transition-all transform hover:scale-105 shadow-lg text-lg font-semibold"
+                                        data-topic-id="{{ topic.id }}"
+                                        data-topic-title="{{ topic.title }}">
+                                    <i class="fas fa-check-circle mr-3"></i>Mark as Complete
+                                </button>
+                                <button onclick="window.location.href='{{ url_for('view_subject', subject_id=topic.subject_id) }}'" 
+                                        class="bg-gray-500 text-white px-10 py-4 rounded-lg hover:bg-gray-600 transition-all transform hover:scale-105 shadow-lg text-lg font-semibold">
+                                    <i class="fas fa-list mr-3"></i>Back to Topics
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
 
             <!-- Navigation -->
             <div class="flex items-center justify-between mt-12 bg-white rounded-lg shadow-md p-6">
@@ -193,6 +505,83 @@
         </div>
     </div>
 
+    <style>
+        .flashcard {
+            perspective: 1000px;
+            min-height: 320px;
+        }
+        
+        .flashcard-inner {
+            transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        
+        .flashcard.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .flashcard-front,
+        .flashcard-back {
+            backface-visibility: hidden;
+            border-radius: 16px;
+        }
+        
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .sparkle::before {
+            content: '✨';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            animation: sparkle 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+            50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+        
+        .progress-glow {
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+
     <script>
         // Font size controls
         let currentFontSize = 16;
@@ -200,20 +589,28 @@
         function increaseFontSize() {
             if (currentFontSize < 24) {
                 currentFontSize += 2;
-                document.getElementById('content-text').style.fontSize = currentFontSize + 'px';
+                const contentText = document.getElementById('content-text');
+                if (contentText) {
+                    contentText.style.fontSize = currentFontSize + 'px';
+                }
             }
         }
         
         function decreaseFontSize() {
             if (currentFontSize > 12) {
                 currentFontSize -= 2;
-                document.getElementById('content-text').style.fontSize = currentFontSize + 'px';
+                const contentText = document.getElementById('content-text');
+                if (contentText) {
+                    contentText.style.fontSize = currentFontSize + 'px';
+                }
             }
         }
 
         // Dark mode toggle
         function toggleDarkMode() {
             const contentText = document.getElementById('content-text');
+            if (!contentText) return;
+            
             const parent = contentText.parentElement;
             
             if (parent.classList.contains('bg-gray-800')) {
@@ -229,11 +626,446 @@
             }
         }
 
+        // Topic Completion Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            setupCompletionButtons();
+            setupFlashcardGeneration();
+        });
+
+        function setupCompletionButtons() {
+            // Get all completion buttons
+            const completeButtons = document.querySelectorAll('#completeTopic, #completeTopicHeader');
+            const uncompleteButtons = document.querySelectorAll('#uncompleteTopic, #uncompleteTopicHeader');
+
+            // Add event listeners to complete buttons
+            completeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    handleTopicCompletion(this, true);
+                });
+            });
+
+            // Add event listeners to uncomplete buttons
+            uncompleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    handleTopicCompletion(this, false);
+                });
+            });
+        }
+
+        function handleTopicCompletion(button, markComplete) {
+            const topicId = button.dataset.topicId;
+            const topicTitle = button.dataset.topicTitle;
+            
+            // Add loading state
+            const originalText = button.innerHTML;
+            button.innerHTML = markComplete ? 
+                '<i class="fas fa-spinner fa-spin mr-2"></i>Marking Complete...' : 
+                '<i class="fas fa-spinner fa-spin mr-2"></i>Unmarking...';
+            button.disabled = true;
+            
+            const endpoint = markComplete ? 
+                `/topic/${topicId}/complete` : 
+                `/topic/${topicId}/uncomplete`;
+            
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update UI to reflect new completion state
+                    updateCompletionUI(markComplete, topicId, topicTitle);
+                    showFlashMessage(data.message, 'success');
+                } else {
+                    showFlashMessage(data.message, 'error');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showFlashMessage('An error occurred while updating topic status.', 'error');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        // Update completion UI
+        function updateCompletionUI(isCompleted, topicId, topicTitle) {
+            // Update header icon
+            const headerIcon = document.getElementById('completionIcon');
+            if (headerIcon) {
+                headerIcon.className = isCompleted ? 
+                    'fas fa-check-circle text-green-500 text-2xl' : 
+                    'far fa-circle text-gray-400 text-2xl';
+            }
+            
+            // Update or add/remove completed badge
+            const existingBadge = document.getElementById('completedBadge');
+            const h1Element = document.querySelector('h1.gradient-text');
+            
+            if (isCompleted && !existingBadge && h1Element) {
+                const badge = document.createElement('span');
+                badge.id = 'completedBadge';
+                badge.className = 'ml-3 text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full';
+                badge.innerHTML = '<i class="fas fa-check mr-1"></i>Completed';
+                h1Element.parentNode.appendChild(badge);
+            } else if (!isCompleted && existingBadge) {
+                existingBadge.remove();
+            }
+            
+            // Update header buttons
+            const headerButtonsContainer = document.getElementById('completionButtonsHeader');
+            if (headerButtonsContainer) {
+                if (isCompleted) {
+                    headerButtonsContainer.innerHTML = `
+                        <button id="uncompleteTopicHeader" 
+                                class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-all transform hover:scale-105 shadow-lg"
+                                data-topic-id="${topicId}"
+                                data-topic-title="${topicTitle}">
+                            <i class="fas fa-times-circle mr-2"></i>Mark as Incomplete
+                        </button>
+                    `;
+                } else {
+                    headerButtonsContainer.innerHTML = `
+                        <button id="completeTopicHeader" 
+                                class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all transform hover:scale-105 shadow-lg"
+                                data-topic-id="${topicId}"
+                                data-topic-title="${topicTitle}">
+                            <i class="fas fa-check-circle mr-2"></i>Mark as Complete
+                        </button>
+                    `;
+                }
+            }
+            
+            // Update main completion section
+            const completionSection = document.getElementById('completionSection');
+            const completionText = completionSection.parentElement.querySelector('p');
+            
+            if (isCompleted) {
+                completionText.innerHTML = `
+                    <span class="text-green-600 font-semibold">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        You have successfully completed this topic! Great job!
+                    </span>
+                `;
+                completionSection.innerHTML = `
+                    <button id="uncompleteTopic" 
+                            class="bg-red-500 text-white px-10 py-4 rounded-lg hover:bg-red-600 transition-all transform hover:scale-105 shadow-lg text-lg font-semibold"
+                            data-topic-id="${topicId}"
+                            data-topic-title="${topicTitle}">
+                        <i class="fas fa-times-circle mr-3"></i>Mark as Incomplete
+                    </button>
+                    <button onclick="window.location.href='{{ url_for('view_subject', subject_id=topic.subject_id) }}'" 
+                            class="bg-blue-500 text-white px-10 py-4 rounded-lg hover:bg-blue-600 transition-all transform hover:scale-105 shadow-lg text-lg font-semibold">
+                        <i class="fas fa-list mr-3"></i>Back to Topics
+                    </button>
+                `;
+            } else {
+                completionText.innerHTML = `
+                    <span class="text-blue-600">
+                        Mark this topic as completed once you've finished studying all the material above.
+                    </span>
+                `;
+                completionSection.innerHTML = `
+                    <button id="completeTopic" 
+                            class="bg-green-500 text-white px-10 py-4 rounded-lg hover:bg-green-600 transition-all transform hover:scale-105 shadow-lg text-lg font-semibold"
+                            data-topic-id="${topicId}"
+                            data-topic-title="${topicTitle}">
+                        <i class="fas fa-check-circle mr-3"></i>Mark as Complete
+                    </button>
+                    <button onclick="window.location.href='{{ url_for('view_subject', subject_id=topic.subject_id) }}'" 
+                            class="bg-gray-500 text-white px-10 py-4 rounded-lg hover:bg-gray-600 transition-all transform hover:scale-105 shadow-lg text-lg font-semibold">
+                        <i class="fas fa-list mr-3"></i>Back to Topics
+                    </button>
+                `;
+            }
+            
+            // Re-attach event listeners
+            setTimeout(() => {
+                setupCompletionButtons();
+            }, 100);
+        }
+
+        // Flash message helper
+        function showFlashMessage(message, type) {
+            const flashContainer = document.getElementById('flashContainer');
+            const flashDiv = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700';
+            
+            flashDiv.className = `flash-message ${bgColor} border-l-4 p-4 mb-4 rounded`;
+            flashDiv.textContent = message;
+            
+            flashContainer.appendChild(flashDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                flashDiv.remove();
+            }, 5000);
+        }
+
+        // AI Flashcards Functionality
+        let currentFlashcards = [];
+        let currentCardIndex = 0;
+
+        function setupFlashcardGeneration() {
+            const generateBtn = document.getElementById('generate-flashcards');
+            if (generateBtn) {
+                generateBtn.addEventListener('click', generateFlashcards);
+            }
+
+            // Setup flashcard navigation
+            const prevBtn = document.getElementById('prev-card');
+            const nextBtn = document.getElementById('next-card');
+            const flashcardDisplay = document.getElementById('flashcard-display');
+
+            if (prevBtn) prevBtn.addEventListener('click', previousCard);
+            if (nextBtn) nextBtn.addEventListener('click', nextCard);
+            if (flashcardDisplay) {
+                flashcardDisplay.addEventListener('click', flipCard);
+            }
+        }
+
+        async function generateFlashcards() {
+            const count = document.getElementById('flashcard-count').value;
+            const difficulty = document.getElementById('difficulty-level').value;
+            
+            // Get lesson content
+            const contentText = document.getElementById('content-text');
+            if (!contentText || !contentText.textContent.trim()) {
+                showFlashMessage('No content available to generate flashcards from.', 'error');
+                return;
+            }
+
+            const lessonContent = contentText.textContent.trim();
+            const topicTitle = "{{ topic.title }}";
+
+            // Show loading state
+            showFlashcardLoading(true);
+
+            try {
+                // Simulate AI generation (replace with actual AI API call)
+                const flashcards = await generateFlashcardsWithAI(lessonContent, topicTitle, count, difficulty);
+                
+                if (flashcards && flashcards.length > 0) {
+                    currentFlashcards = flashcards;
+                    currentCardIndex = 0;
+                    displayFlashcards();
+                } else {
+                    showFlashcardError();
+                }
+            } catch (error) {
+                console.error('Error generating flashcards:', error);
+                showFlashcardError();
+            }
+        }
+
+        async function generateFlashcardsWithAI(content, title, count, difficulty) {
+            // Simulate AI generation - replace this with your actual AI API call
+            // This could be OpenAI API, Claude API, or any other AI service
+            
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // Mock flashcards based on the content
+                    const mockFlashcards = generateMockFlashcards(title, parseInt(count), difficulty);
+                    resolve(mockFlashcards);
+                }, 2000); // Simulate API delay
+            });
+        }
+
+        function generateMockFlashcards(title, count, difficulty) {
+            const templates = {
+                easy: [
+                    { question: `What is the main topic of "${title}"?`, answer: `The main topic is ${title}, which covers fundamental concepts and basic principles.` },
+                    { question: `Why is "${title}" important to understand?`, answer: `${title} is important because it provides foundational knowledge for further learning.` },
+                    { question: `What are the key components discussed in "${title}"?`, answer: `The key components include the main concepts, definitions, and practical applications.` }
+                ],
+                medium: [
+                    { question: `How does "${title}" relate to other concepts in this subject?`, answer: `${title} connects to other concepts by building upon previous knowledge and introducing new principles.` },
+                    { question: `What are the practical applications of "${title}"?`, answer: `The practical applications include real-world examples and use cases mentioned in the lesson.` },
+                    { question: `What challenges might arise when learning about "${title}"?`, answer: `Common challenges include understanding complex terminology and connecting abstract concepts to practical examples.` }
+                ],
+                hard: [
+                    { question: `Analyze the deeper implications of "${title}" in the broader context of this field.`, answer: `The deeper implications involve how ${title} influences advanced concepts and shapes future developments in the field.` },
+                    { question: `Critically evaluate the methods discussed in "${title}".`, answer: `The methods can be evaluated based on their effectiveness, limitations, and potential for improvement or adaptation.` },
+                    { question: `How would you apply the principles from "${title}" to solve a complex problem?`, answer: `Application would involve identifying relevant principles, adapting them to the specific context, and systematically implementing solutions.` }
+                ]
+            };
+
+            const selectedTemplates = templates[difficulty] || templates.medium;
+            const flashcards = [];
+
+            for (let i = 0; i < count; i++) {
+                const template = selectedTemplates[i % selectedTemplates.length];
+                flashcards.push({
+                    id: i + 1,
+                    question: template.question,
+                    answer: template.answer,
+                    difficulty: difficulty
+                });
+            }
+
+            return flashcards;
+        }
+
+        function showFlashcardLoading(show) {
+            const controls = document.getElementById('flashcard-controls');
+            const loading = document.getElementById('flashcard-loading');
+            const container = document.getElementById('flashcards-container');
+            const error = document.getElementById('flashcard-error');
+
+            if (show) {
+                controls.classList.add('hidden');
+                loading.classList.remove('hidden');
+                container.classList.add('hidden');
+                error.classList.add('hidden');
+            } else {
+                controls.classList.remove('hidden');
+                loading.classList.add('hidden');
+            }
+        }
+
+        function showFlashcardError() {
+            const controls = document.getElementById('flashcard-controls');
+            const loading = document.getElementById('flashcard-loading');
+            const container = document.getElementById('flashcards-container');
+            const error = document.getElementById('flashcard-error');
+
+            controls.classList.add('hidden');
+            loading.classList.add('hidden');
+            container.classList.add('hidden');
+            error.classList.remove('hidden');
+        }
+
+        function displayFlashcards() {
+            const controls = document.getElementById('flashcard-controls');
+            const loading = document.getElementById('flashcard-loading');
+            const container = document.getElementById('flashcards-container');
+            const error = document.getElementById('flashcard-error');
+
+            controls.classList.remove('hidden');
+            loading.classList.add('hidden');
+            container.classList.remove('hidden');
+            error.classList.add('hidden');
+
+            updateFlashcardDisplay();
+            updateProgress();
+        }
+
+        function updateFlashcardDisplay() {
+            if (!currentFlashcards.length) return;
+
+            const card = currentFlashcards[currentCardIndex];
+            document.getElementById('card-question').textContent = card.question;
+            document.getElementById('card-answer').textContent = card.answer;
+            document.getElementById('card-counter').textContent = `${currentCardIndex + 1} / ${currentFlashcards.length}`;
+
+            // Reset card to question side
+            const flashcard = document.querySelector('.flashcard');
+            flashcard.classList.remove('flipped');
+
+            // Update navigation buttons
+            const prevBtn = document.getElementById('prev-card');
+            const nextBtn = document.getElementById('next-card');
+            
+            prevBtn.disabled = currentCardIndex === 0;
+            nextBtn.disabled = currentCardIndex === currentFlashcards.length - 1;
+
+            if (prevBtn.disabled) {
+                prevBtn.classList.add('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
+            } else {
+                prevBtn.classList.remove('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
+            }
+
+            if (nextBtn.disabled) {
+                nextBtn.classList.add('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
+            } else {
+                nextBtn.classList.remove('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
+            }
+        }
+
+        function updateProgress() {
+            document.getElementById('progress-current').textContent = currentCardIndex + 1;
+            document.getElementById('progress-total').textContent = currentFlashcards.length;
+            const progressPercent = ((currentCardIndex + 1) / currentFlashcards.length) * 100;
+            document.getElementById('progress-bar').style.width = progressPercent + '%';
+        }
+
+        function previousCard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                updateFlashcardDisplay();
+                updateProgress();
+            }
+        }
+
+        function nextCard() {
+            if (currentCardIndex < currentFlashcards.length - 1) {
+                currentCardIndex++;
+                updateFlashcardDisplay();
+                updateProgress();
+            }
+        }
+
+        function flipCard() {
+            const flashcard = document.querySelector('.flashcard');
+            flashcard.classList.toggle('flipped');
+        }
+
+        function exportFlashcards() {
+            if (!currentFlashcards.length) {
+                showFlashMessage('No flashcards to export.', 'error');
+                return;
+            }
+
+            const topicTitle = "{{ topic.title }}";
+            let exportContent = `Flashcards for: ${topicTitle}\nGenerated on: ${new Date().toLocaleDateString()}\n\n`;
+
+            currentFlashcards.forEach((card, index) => {
+                exportContent += `Card ${index + 1}:\nQ: ${card.question}\nA: ${card.answer}\n\n`;
+            });
+
+            const blob = new Blob([exportContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${topicTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_flashcards.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function startFlashcardQuiz() {
+            if (!currentFlashcards.length) {
+                showFlashMessage('No flashcards available for quiz.', 'error');
+                return;
+            }
+
+            // Shuffle flashcards for quiz mode
+            const shuffled = [...currentFlashcards].sort(() => Math.random() - 0.5);
+            currentFlashcards = shuffled;
+            currentCardIndex = 0;
+            updateFlashcardDisplay();
+            updateProgress();
+
+            showFlashMessage('Flashcards shuffled! Quiz mode activated.', 'success');
+        }
+
+        function retryFlashcardGeneration() {
+            generateFlashcards();
+        }
+
         // Student notes functionality
         {% if session.role == 'student' %}
         function saveNotes() {
             const notes = document.getElementById('student-notes').value;
-            localStorage.setItem('notes_{{ topic.id }}', notes);
+            // Using memory storage since localStorage is not available
+            window.topicNotes = window.topicNotes || {};
+            window.topicNotes['{{ topic.id }}'] = notes;
             
             const button = event.target;
             const originalText = button.innerHTML;
@@ -269,8 +1101,10 @@
             window.URL.revokeObjectURL(url);
         }
 
+        // Load saved notes on page load
         document.addEventListener('DOMContentLoaded', function() {
-            const savedNotes = localStorage.getItem('notes_{{ topic.id }}');
+            window.topicNotes = window.topicNotes || {};
+            const savedNotes = window.topicNotes['{{ topic.id }}'];
             if (savedNotes) {
                 document.getElementById('student-notes').value = savedNotes;
             }
@@ -281,11 +1115,11 @@
         {% if topic.video_link %}
         function toggleFullscreen() {
             const video = document.querySelector('iframe, video');
-            if (video.requestFullscreen) {
+            if (video && video.requestFullscreen) {
                 video.requestFullscreen();
-            } else if (video.webkitRequestFullscreen) {
+            } else if (video && video.webkitRequestFullscreen) {
                 video.webkitRequestFullscreen();
-            } else if (video.msRequestFullscreen) {
+            } else if (video && video.msRequestFullscreen) {
                 video.msRequestFullscreen();
             }
         }

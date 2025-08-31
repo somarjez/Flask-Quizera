@@ -41,7 +41,7 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-    </nav>
+    </div>
 
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8">
@@ -107,6 +107,39 @@
             </div>
         </div>
 
+        <!-- Progress Section for Students -->
+        {% if session.role == 'student' and is_enrolled %}
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">
+                        <i class="fas fa-chart-line mr-2 text-green-600"></i>Your Progress
+                    </h2>
+                    <span id="progressPercentage" class="text-2xl font-bold text-green-600">{{ progress }}%</span>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
+                    <div id="progressBar" class="bg-green-500 h-3 rounded-full transition-all duration-300" 
+                         style="width: {{ progress }}%"></div>
+                </div>
+                
+                <div class="flex justify-between text-sm text-gray-600">
+                    <span id="progressText">{{ completed_topics|length }} of {{ topics|length }} topics completed</span>
+                    <span id="progressBadge">
+                        {% if progress == 100 %}
+                            <i class="fas fa-trophy text-yellow-500 mr-1"></i>Completed!
+                        {% elif progress >= 75 %}
+                            <i class="fas fa-fire text-orange-500 mr-1"></i>Almost there!
+                        {% elif progress >= 50 %}
+                            <i class="fas fa-thumbs-up text-blue-500 mr-1"></i>Great progress!
+                        {% else %}
+                            <i class="fas fa-play text-gray-500 mr-1"></i>Keep going!
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        {% endif %}
+
         <!-- Enrollment Required Notice -->
         {% if enrollment_required %}
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
@@ -134,23 +167,44 @@
             {% if topics %}
                 <div class="space-y-4">
                     {% for topic in topics %}
-                        <div class="border border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors card-hover">
+                        <div class="border border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors card-hover
+                                    {% if session.role == 'student' and topic.is_completed %}bg-green-50 border-green-200{% endif %}">
                             <div class="flex items-center justify-between">
-                                <div class="flex-1">
-                                    <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ topic.title }}</h3>
-                                    {% if topic.content_text %}
-                                        <p class="text-gray-600 mb-3">{{ topic.content_text[:150] }}{% if topic.content_text|length > 150 %}...{% endif %}</p>
+                                <div class="flex items-start space-x-4 flex-1">
+                                    <!-- Completion Status Icon for Students -->
+                                    {% if session.role == 'student' %}
+                                        <div class="flex-shrink-0 mt-1">
+                                            {% if topic.is_completed %}
+                                                <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                                            {% else %}
+                                                <i class="far fa-circle text-gray-400 text-xl"></i>
+                                            {% endif %}
+                                        </div>
                                     {% endif %}
-                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
-                                        <span><i class="fas fa-clock mr-1"></i>{{ topic.created_at.strftime('%B %d, %Y') }}</span>
-                                        {% if topic.video_link %}
-                                            <span><i class="fas fa-video mr-1 text-red-500"></i>Video Available</span>
-                                        {% endif %}
+                                    
+                                    <div class="flex-1">
+                                        <h3 class="text-xl font-semibold text-gray-800 mb-2
+                                                   {% if session.role == 'student' and topic.is_completed %}text-green-800{% endif %}">
+                                            {{ topic.title }}
+                                            {% if session.role == 'student' and topic.is_completed %}
+                                                <span class="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">Completed</span>
+                                            {% endif %}
+                                        </h3>
                                         {% if topic.content_text %}
-                                            <span><i class="fas fa-file-text mr-1 text-blue-500"></i>Text Content</span>
+                                            <p class="text-gray-600 mb-3">{{ topic.content_text[:150] }}{% if topic.content_text|length > 150 %}...{% endif %}</p>
                                         {% endif %}
+                                        <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                            <span><i class="fas fa-clock mr-1"></i>{{ topic.created_at.strftime('%B %d, %Y') }}</span>
+                                            {% if topic.video_link %}
+                                                <span><i class="fas fa-video mr-1 text-red-500"></i>Video Available</span>
+                                            {% endif %}
+                                            {% if topic.content_text %}
+                                                <span><i class="fas fa-file-text mr-1 text-blue-500"></i>Text Content</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
+                                
                                 <div class="ml-6 flex space-x-2">
                                     <a href="{{ url_for('view_topic', topic_id=topic.id) }}" 
                                        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
@@ -227,6 +281,24 @@
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
+        // Helper function to update progress badge
+        function updateProgressBadge(progress) {
+            const badge = document.getElementById('progressBadge');
+            if (!badge) return;
+            
+            let badgeContent = '';
+            if (progress == 100) {
+                badgeContent = '<i class="fas fa-trophy text-yellow-500 mr-1"></i>Completed!';
+            } else if (progress >= 75) {
+                badgeContent = '<i class="fas fa-fire text-orange-500 mr-1"></i>Almost there!';
+            } else if (progress >= 50) {
+                badgeContent = '<i class="fas fa-thumbs-up text-blue-500 mr-1"></i>Great progress!';
+            } else {
+                badgeContent = '<i class="fas fa-play text-gray-500 mr-1"></i>Keep going!';
+            }
+            badge.innerHTML = badgeContent;
+        }
+
         // Enrollment functionality
         document.addEventListener('DOMContentLoaded', function() {
             const enrollBtn = document.getElementById('enrollBtn');

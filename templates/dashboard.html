@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard - Quizera{% endblock %}
-
 {% block content %}
     <!-- Main Dashboard Content -->
     <div class="container mx-auto px-4 py-8">
@@ -11,7 +9,6 @@
                 <h1 class="text-3xl font-bold text-gray-800 gradient-text mb-2">Teacher Dashboard</h1>
                 <p class="text-gray-600">Manage your subjects and quizzes</p>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Manage Subjects -->
                 <div class="bg-white rounded-lg shadow-md p-6 card-hover">
@@ -64,7 +61,6 @@
                         {% endif %}
                     </div>
                 </div>
-
                 <!-- My Quizzes -->
                 <div class="bg-white rounded-lg shadow-md p-6 card-hover">
                     <div class="flex items-center justify-between mb-6">
@@ -121,20 +117,29 @@
                     </div>
                 </div>
             </div>
-
         {% elif role == 'student' %}
             <!-- Student Dashboard -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-800 gradient-text mb-2">Student Dashboard</h1>
-                <p class="text-gray-600">Explore subjects and take quizzes</p>
+                <p class="text-gray-600">Explore your enrolled subjects and take quizzes</p>
             </div>
-
+            
+            <!-- Quick Navigation Info for Students -->
+            <div class="mb-6 text-center">
+                <p class="text-gray-600 mb-3">Looking for new subjects to enroll in?</p>
+                <p class="text-sm text-gray-500">
+                    Navigate to <span class="font-semibold text-blue-600">Subjects</span> from the main menu to explore available subjects
+                </p>
+            </div>
+            
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Enrolled Subjects -->
+                <!-- Enrolled Subjects ONLY -->
                 <div class="bg-white rounded-lg shadow-md p-6 card-hover">
-                    <h2 class="text-2xl font-semibold mb-6 text-gray-800">
-                        <i class="fas fa-bookmark text-green-600 mr-2"></i>Enrolled Subjects
-                    </h2>
+                    <div class="flex items-center mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-800">
+                            <i class="fas fa-bookmark text-green-600 mr-2"></i>My Enrolled Subjects
+                        </h2>
+                    </div>
                     <div class="space-y-4 max-h-96 overflow-y-auto">
                         {% if enrolled_subjects %}
                             {% for subject in enrolled_subjects %}
@@ -160,113 +165,62 @@
                             <div class="text-center py-8">
                                 <i class="fas fa-bookmark text-gray-400 text-4xl mb-4"></i>
                                 <p class="text-gray-500">No enrolled subjects yet.</p>
-                                <p class="text-gray-400 text-sm">Explore available subjects to get started!</p>
+                                <p class="text-gray-400 text-sm mb-4">Discover and enroll in subjects to get started!</p>
+                                <div class="text-sm text-gray-500">
+                                    <p class="mb-2">You can find subjects by:</p>
+                                    <ul class="text-left inline-block">
+                                        <li>• Using the "Subjects" section in the navigation menu</li>
+                                        <li>• Asking your teacher for subject enrollment codes</li>
+                                        <li>• Browsing the available subjects catalog</li>
+                                    </ul>
+                                </div>
                             </div>
                         {% endif %}
                     </div>
                 </div>
-<!-- 
-                <!-- Available Subjects
+                <!-- Available Quizzes from Enrolled Subjects ONLY -->
                 <div class="bg-white rounded-lg shadow-md p-6 card-hover">
                     <h2 class="text-2xl font-semibold mb-6 text-gray-800">
-                        <i class="fas fa-graduation-cap text-blue-600 mr-2"></i>Available Subjects
+                        <i class="fas fa-tasks text-green-600 mr-2"></i>Available Quizzes
                     </h2>
                     <div class="space-y-4 max-h-96 overflow-y-auto">
-                        {% if available_subjects %}
-                            {% for subject in available_subjects %}
-                                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors subject-card">
-                                    <h3 class="font-semibold text-lg text-white">{{ subject.name }}</h3>
-                                    <p class="text-gray-100 text-sm mt-1">{{ subject.description }}</p>
-                                    <p class="text-gray-200 text-xs mt-2">
-                                        <i class="fas fa-user mr-1"></i>{{ subject.teacher_name }}
-                                        <span class="ml-4"><i class="fas fa-list-ul mr-1"></i>{{ subject.topic_count or 0 }} Topics</span>
-                                    </p>
-                                    <div class="mt-3 flex space-x-2">
-                                        <a href="{{ url_for('view_subject', subject_id=subject.id) }}" class="bg-gray-100 text-gray-600 px-3 py-1 rounded text-sm hover:bg-gray-200 transition-colors">
-                                            <i class="fas fa-eye mr-1"></i>Preview
-                                        </a>
-                                        <button class="bg-white text-purple-600 px-3 py-1 rounded text-sm hover:bg-gray-100 transition-colors"
-                                                onclick="enrollInSubject('{{ subject.id }}', '{{ subject.name }}')">
-                                            <i class="fas fa-plus mr-1"></i>Enroll
-                                        </button>
+                        {% if quizzes %}
+                            {% for quiz in quizzes %}
+                                {% if quiz.is_published %}
+                                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors quiz-card">
+                                        <h3 class="font-semibold text-lg text-white">{{ quiz.title }}</h3>
+                                        <p class="text-gray-100 text-sm mt-1">Subject: {{ quiz.subject_name }}</p>
+                                        <div class="flex items-center space-x-4 mt-2 text-xs text-gray-200">
+                                            <span><i class="fas fa-question mr-1"></i>{{ quiz.question_count|default(0) }} Questions</span>
+                                            <span><i class="fas fa-clock mr-1"></i>{{ quiz.time_limit|default(30) }} minutes</span>
+                                        </div>
+                                        <div class="mt-3 flex space-x-2">
+                                            <button class="quiz-take-btn bg-white text-purple-600 px-3 py-1 rounded text-sm hover:bg-gray-100 transition-colors"
+                                                    data-quiz-id="{{ quiz.id }}">
+                                                <i class="fas fa-play mr-1"></i>Take Quiz
+                                            </button>
+                                            <button class="quiz-results-btn bg-yellow-400 text-purple-800 px-3 py-1 rounded text-sm hover:bg-yellow-300 transition-colors"
+                                                    data-quiz-id="{{ quiz.id }}">
+                                                <i class="fas fa-chart-bar mr-1"></i>View Results
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
+                                {% endif %}
                             {% endfor %}
                         {% else %}
                             <div class="text-center py-8">
-                                <i class="fas fa-graduation-cap text-gray-400 text-4xl mb-4"></i>
-                                <p class="text-gray-500">No subjects available.</p>
+                                <i class="fas fa-tasks text-gray-400 text-4xl mb-4"></i>
+                                <p class="text-gray-500">No quizzes available yet.</p>
+                                <p class="text-gray-400 text-sm">Enroll in subjects to access their quizzes!</p>
                             </div>
                         {% endif %}
                     </div>
-                </div>
-            </div> -->
-
-            <!-- Available Quizzes from Enrolled Subjects -->
-            <div class="mt-8 bg-white rounded-lg shadow-md p-6 card-hover">
-                <h2 class="text-2xl font-semibold mb-6 text-gray-800">
-                    <i class="fas fa-tasks text-green-600 mr-2"></i>Available Quizzes
-                </h2>
-                <div class="space-y-4 max-h-96 overflow-y-auto">
-                    {% if quizzes %}
-                        {% for quiz in quizzes %}
-                            {% if quiz.is_published %}
-                                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors quiz-card">
-                                    <h3 class="font-semibold text-lg text-white">{{ quiz.title }}</h3>
-                                    <p class="text-gray-100 text-sm mt-1">Subject: {{ quiz.subject_name }}</p>
-                                    <div class="flex items-center space-x-4 mt-2 text-xs text-gray-200">
-                                        <span><i class="fas fa-question mr-1"></i>{{ quiz.question_count|default(0) }} Questions</span>
-                                        <span><i class="fas fa-clock mr-1"></i>{{ quiz.time_limit|default(30) }} minutes</span>
-                                    </div>
-                                    <div class="mt-3 flex space-x-2">
-                                        <button class="quiz-take-btn bg-white text-purple-600 px-3 py-1 rounded text-sm hover:bg-gray-100 transition-colors"
-                                                data-quiz-id="{{ quiz.id }}">
-                                            <i class="fas fa-play mr-1"></i>Take Quiz
-                                        </button>
-                                        <button class="quiz-results-btn bg-yellow-400 text-purple-800 px-3 py-1 rounded text-sm hover:bg-yellow-300 transition-colors"
-                                                data-quiz-id="{{ quiz.id }}">
-                                            <i class="fas fa-chart-bar mr-1"></i>View Results
-                                        </button>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        <div class="text-center py-8">
-                            <i class="fas fa-tasks text-gray-400 text-4xl mb-4"></i>
-                            <p class="text-gray-500">No quizzes available yet.</p>
-                            <p class="text-gray-400 text-sm">Enroll in subjects to access their quizzes!</p>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         {% endif %}
     </div>
-
     <script>
         // Enrollment functions for students
-        function enrollInSubject(subjectId, subjectName) {
-            if (confirm(`Are you sure you want to enroll in "${subjectName}"?`)) {
-                fetch(`/subject/${subjectId}/enroll`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload(); // Refresh to show updated enrollment status
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('An error occurred while enrolling.');
-                });
-            }
-        }
-
         function unenrollFromSubject(subjectId, subjectName) {
             if (confirm(`Are you sure you want to unenroll from "${subjectName}"?`)) {
                 fetch(`/subject/${subjectId}/unenroll`, {
@@ -288,7 +242,6 @@
                 });
             }
         }
-
         // Quiz action functions
         document.addEventListener('DOMContentLoaded', function() {
             // Quiz take buttons
@@ -298,7 +251,6 @@
                     window.location.href = `/quiz/${quizId}/take`;
                 });
             });
-
             // Quiz results buttons
             document.querySelectorAll('.quiz-results-btn').forEach(button => {
                 button.addEventListener('click', function() {
@@ -306,7 +258,6 @@
                     window.location.href = `/quiz/${quizId}/results`;
                 });
             });
-
             // Quiz preview buttons (for teachers)
             document.querySelectorAll('.quiz-preview-btn').forEach(button => {
                 button.addEventListener('click', function() {
@@ -317,7 +268,6 @@
         });
     </script>
 {% endblock %}
-
 {% block footer %}
     <div class="text-center">
         <p>&copy; 2024 Quizera. All rights reserved.</p>
