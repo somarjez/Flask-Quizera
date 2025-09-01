@@ -94,31 +94,34 @@
         </div>
     </nav>
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="container mx-auto px-4 py-4">
+<!-- Flash Messages (Enhanced Version) -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure showMessage function is available
+            if (typeof showMessage === 'function') {
                 {% for category, message in messages %}
-                    <div class="bg-{{ 'green' if category == 'success' else 'red' if category == 'error' else 'yellow' if category == 'warning' else 'blue' }}-100 
-                                border border-{{ 'green' if category == 'success' else 'red' if category == 'error' else 'yellow' if category == 'warning' else 'blue' }}-400 
-                                text-{{ 'green' if category == 'success' else 'red' if category == 'error' else 'yellow' if category == 'warning' else 'blue' }}-700 
-                                px-4 py-3 rounded mb-2 flex items-center justify-between flash-message">
-                        <span>
-                            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'error' else 'exclamation-triangle' if category == 'warning' else 'info-circle' }} mr-2"></i>
-                            {{ message }}
-                        </span>
-                        <button onclick="this.parentElement.remove()" 
-                                class="text-{{ 'green' if category == 'success' else 'red' if category == 'error' else 'yellow' if category == 'warning' else 'blue' }}-700 
-                                       hover:text-{{ 'green' if category == 'success' else 'red' if category == 'error' else 'yellow' if category == 'warning' else 'blue' }}-900">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
+                setTimeout(() => {
+                    showMessage(`{{ message|replace('`', '\\`')|replace('"', '\\"')|e }}`, `{{ category }}`);
+                }, {{ loop.index0 * 200 }});
                 {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+            } else {
+                // Fallback if showMessage isn't loaded yet
+                setTimeout(function() {
+                    {% for category, message in messages %}
+                    if (typeof showMessage === 'function') {
+                        showMessage(`{{ message|replace('`', '\\`')|replace('"', '\\"')|e }}`, `{{ category }}`);
+                    } else {
+                        console.error('Flash message system not loaded:', `{{ message|e }}`);
+                    }
+                    {% endfor %}
+                }, 100);
+            }
+        });
+        </script>
+    {% endif %}
+{% endwith %}
 
     <!-- Main Content -->
     <main class="{% block main_class %}{% endblock %}">
