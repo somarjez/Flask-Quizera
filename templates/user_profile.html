@@ -5,7 +5,6 @@
 {% block main_class %}container mx-auto px-4 py-8{% endblock %}
 
 {% block content %}
-<!-- -->
     
     <!-- Profile Header -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
@@ -133,62 +132,144 @@
                 {% endif %}
             </div>
             
-            <!-- Recent Activity -->
+            <!-- Analytics Dashboard -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-bold text-gray-900 mb-6">Recent Activity</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-900">Analytics Dashboard</h2>
+                    <div class="space-x-2">
+                        <button onclick="downloadChart('statsChart')" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Download Charts
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Charts Container -->
+                <div class="space-y-8">
+                    {% if viewed_user.role == 'teacher' %}
+                    <!-- Teacher Analytics -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Performance Overview Chart -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold mb-4">Content Overview</h4>
+                            <canvas id="teacherOverviewChart" width="400" height="200"></canvas>
+                            <button onclick="downloadChart('teacherOverviewChart')" class="mt-3 text-sm text-blue-600 hover:text-blue-800">
+                                Download Chart
+                            </button>
+                        </div>
+
+                        <!-- Student Engagement Chart -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold mb-4">Student Engagement</h4>
+                            <canvas id="engagementChart" width="400" height="200"></canvas>
+                            <button onclick="downloadChart('engagementChart')" class="mt-3 text-sm text-blue-600 hover:text-blue-800">
+                                Download Chart
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Performance Trend -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold mb-4">Quiz Performance Trends</h4>
+                        <canvas id="performanceTrendChart" width="800" height="300"></canvas>
+                        <button onclick="downloadChart('performanceTrendChart')" class="mt-3 text-sm text-blue-600 hover:text-blue-800">
+                            Download Chart
+                        </button>
+                    </div>
+
+                    {% else %}
+                    <!-- Student Analytics -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Performance Overview Chart -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold mb-4">Study Overview</h4>
+                            <canvas id="studentOverviewChart" width="400" height="200"></canvas>
+                            <button onclick="downloadChart('studentOverviewChart')" class="mt-3 text-sm text-blue-600 hover:text-blue-800">
+                                Download Chart
+                            </button>
+                        </div>
+
+                        <!-- Score Distribution Chart -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold mb-4">Score Distribution</h4>
+                            <canvas id="scoreChart" width="400" height="200"></canvas>
+                            <button onclick="downloadChart('scoreChart')" class="mt-3 text-sm text-blue-600 hover:text-blue-800">
+                                Download Chart
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Study Progress Trend -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold mb-4">Study Progress Over Time</h4>
+                        <canvas id="progressChart" width="800" height="300"></canvas>
+                        <button onclick="downloadChart('progressChart')" class="mt-3 text-sm text-blue-600 hover:text-blue-800">
+                            Download Chart
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Subjects/Enrollments - Moved from sidebar -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">
+                    {% if viewed_user.role == 'teacher' %}
+                        Teaching Subjects
+                    {% else %}
+                        Enrolled Subjects
+                    {% endif %}
+                </h2>
                 
-                {% if recent_activities %}
-                    <div class="space-y-4">
-                        {% for activity in recent_activities %}
-                            <div class="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                                <div class="flex-shrink-0">
-                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                        {% if activity.icon == 'user-plus' %}
-                                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-                                            </svg>
-                                        {% elif activity.icon == 'plus-circle' %}
-                                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                            </svg>
-                                        {% elif activity.icon == 'check-circle' %}
-                                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                        {% elif activity.icon == 'x-circle' %}
-                                            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                        {% elif activity.icon == 'book-open' %}
-                                            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                                            </svg>
-                                        {% else %}
-                                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
+                {% if subjects %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for subject in subjects %}
+                            <div class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                {% if viewed_user.role == 'teacher' %}
+                                    <h4 class="font-semibold text-gray-900 text-lg mb-2">{{ subject.name }}</h4>
+                                    <p class="text-sm text-gray-600 mb-3">{{ subject.get('description', 'No description available') }}</p>
+                                    <div class="flex justify-between items-center">
+                                        {% if subject.get('topic_count') %}
+                                            <span class="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">{{ subject.topic_count }} topics</span>
+                                        {% endif %}
+                                        {% if subject.get('student_count') %}
+                                            <span class="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">{{ subject.student_count }} students</span>
                                         {% endif %}
                                     </div>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm text-gray-900">{{ activity.description }}</p>
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        {% if activity.created_at %}
-                                            {{ activity.created_at.strftime('%B %d, %Y at %I:%M %p') if activity.created_at.strftime else 'Recently' }}
-                                        {% else %}
-                                            Recently
-                                        {% endif %}
-                                    </p>
-                                </div>
+                                {% else %}
+                                    <h4 class="font-semibold text-gray-900 text-lg mb-1">{{ subject.name }}</h4>
+                                    <p class="text-sm text-gray-600 mb-2">by {{ subject.teacher_name }}</p>
+                                    {% if subject.enrolled_at %}
+                                        <p class="text-xs text-gray-500">
+                                            Enrolled {{ subject.enrolled_at.strftime('%B %d, %Y') if subject.enrolled_at.strftime else 'recently' }}
+                                        </p>
+                                    {% endif %}
+                                    {% if subject.get('progress') %}
+                                        <div class="mt-2">
+                                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ subject.progress }}%"></div>
+                                            </div>
+                                            <span class="text-xs text-gray-500 mt-1">{{ subject.progress }}% complete</span>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
                             </div>
                         {% endfor %}
                     </div>
                 {% else %}
                     <div class="text-center py-8">
                         <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                         </svg>
-                        <p class="text-gray-500">No recent activities to display</p>
+                        <p class="text-gray-500">
+                            {% if viewed_user.role == 'teacher' %}
+                                No subjects created yet
+                            {% else %}
+                                Not enrolled in any subjects yet
+                            {% endif %}
+                        </p>
                     </div>
                 {% endif %}
             </div>
@@ -196,122 +277,6 @@
         
         <!-- Sidebar -->
         <div class="space-y-8">
-            <!-- Subjects/Enrollments -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    {% if viewed_user.role == 'teacher' %}
-                        Teaching Subjects
-                    {% else %}
-                        Enrolled Subjects
-                    {% endif %}
-                </h3>
-                
-                {% if subjects %}
-                    <div class="space-y-3">
-                        {% for subject in subjects %}
-                            <div class="p-3 bg-gray-50 rounded-lg">
-                                {% if viewed_user.role == 'teacher' %}
-                                    <h4 class="font-medium text-gray-900">{{ subject.name }}</h4>
-                                    <p class="text-sm text-gray-600 mt-1">{{ subject.get('description', 'No description available') }}</p>
-                                    {% if subject.get('topic_count') %}
-                                        <p class="text-xs text-gray-500 mt-2">{{ subject.topic_count }} topics</p>
-                                    {% endif %}
-                                {% else %}
-                                    <h4 class="font-medium text-gray-900">{{ subject.name }}</h4>
-                                    <p class="text-sm text-gray-600">by {{ subject.teacher_name }}</p>
-                                    {% if subject.enrolled_at %}
-                                        <p class="text-xs text-gray-500 mt-1">
-                                            Enrolled {{ subject.enrolled_at.strftime('%B %d, %Y') if subject.enrolled_at.strftime else 'recently' }}
-                                        </p>
-                                    {% endif %}
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-gray-500 text-center py-4">
-                        {% if viewed_user.role == 'teacher' %}
-                            No subjects created yet
-                        {% else %}
-                            Not enrolled in any subjects yet
-                        {% endif %}
-                    </p>
-                {% endif %}
-            </div>
-            
-            <!-- Achievement Badges -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Achievements</h3>
-                
-                <div class="grid grid-cols-2 gap-3">
-                    {% if viewed_user.role == 'teacher' %}
-                        {% if stats.subjects_count >= 5 %}
-                            <div class="text-center p-3 bg-blue-50 rounded-lg">
-                                <div class="text-2xl mb-1">🎓</div>
-                                <div class="text-xs text-gray-600">Subject Master</div>
-                            </div>
-                        {% endif %}
-                        
-                        {% if stats.total_students >= 50 %}
-                            <div class="text-center p-3 bg-green-50 rounded-lg">
-                                <div class="text-2xl mb-1">👥</div>
-                                <div class="text-xs text-gray-600">Popular Teacher</div>
-                            </div>
-                        {% endif %}
-                        
-                        {% if stats.avg_score >= 80 %}
-                            <div class="text-center p-3 bg-yellow-50 rounded-lg">
-                                <div class="text-2xl mb-1">⭐</div>
-                                <div class="text-xs text-gray-600">Excellence</div>
-                            </div>
-                        {% endif %}
-                        
-                        {% if stats.teaching_experience >= 12 %}
-                            <div class="text-center p-3 bg-purple-50 rounded-lg">
-                                <div class="text-2xl mb-1">🏆</div>
-                                <div class="text-xs text-gray-600">Veteran</div>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        {% if stats.quizzes_taken >= 10 %}
-                            <div class="text-center p-3 bg-blue-50 rounded-lg">
-                                <div class="text-2xl mb-1">📚</div>
-                                <div class="text-xs text-gray-600">Quiz Master</div>
-                            </div>
-                        {% endif %}
-                        
-                        {% if stats.average_score >= 90 %}
-                            <div class="text-center p-3 bg-green-50 rounded-lg">
-                                <div class="text-2xl mb-1">🎯</div>
-                                <div class="text-xs text-gray-600">High Achiever</div>
-                            </div>
-                        {% endif %}
-                        
-                        {% if stats.learning_streak >= 7 %}
-                            <div class="text-center p-3 bg-yellow-50 rounded-lg">
-                                <div class="text-2xl mb-1">🔥</div>
-                                <div class="text-xs text-gray-600">On Fire</div>
-                            </div>
-                        {% endif %}
-                        
-                        {% if stats.subjects_enrolled >= 5 %}
-                            <div class="text-center p-3 bg-purple-50 rounded-lg">
-                                <div class="text-2xl mb-1">🌟</div>
-                                <div class="text-xs text-gray-600">Dedicated</div>
-                            </div>
-                        {% endif %}
-                    {% endif %}
-                    
-                    <!-- Default badge if no achievements -->
-                    {% if (viewed_user.role == 'teacher' and stats.subjects_count < 5 and stats.total_students < 50 and stats.avg_score < 80 and stats.teaching_experience < 12) or (viewed_user.role == 'student' and stats.quizzes_taken < 10 and stats.average_score < 90 and stats.learning_streak < 7 and stats.subjects_enrolled < 5) %}
-                        <div class="col-span-2 text-center p-4 bg-gray-50 rounded-lg">
-                            <div class="text-2xl mb-2">🚀</div>
-                            <div class="text-sm text-gray-600">Getting Started</div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-            
             <!-- Quick Info -->
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Profile Info</h3>
@@ -353,5 +318,243 @@
             </div>
         </div>
     </div>
-</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Chart instances
+let charts = {};
+
+// Stats data from backend
+const statsData = {
+    {% if viewed_user.role == 'teacher' %}
+    subjects: {{ stats.subjects_count or 0 }},
+    quizzes: {{ stats.quizzes_count or 0 }},
+    topics: {{ stats.topics_count or 0 }},
+    students: {{ stats.total_students or 0 }},
+    activeStudents: {{ stats.active_students or 0 }},
+    monthlyViews: {{ stats.monthly_views or 0 }},
+    avgScore: {{ stats.avg_score or 0 }},
+    avgCompletion: {{ stats.avg_completion_rate or 0 }}
+    {% else %}
+    quizzesTaken: {{ stats.quizzes_taken or 0 }},
+    averageScore: {{ stats.average_score or 0 }},
+    subjectsEnrolled: {{ stats.subjects_enrolled or 0 }},
+    studyHours: {{ stats.study_hours or 0 }}
+    {% endif %}
+};
+
+// Chart initialization
+function initCharts() {
+    {% if viewed_user.role == 'teacher' %}
+    initTeacherCharts();
+    {% else %}
+    initStudentCharts();
+    {% endif %}
+}
+
+{% if viewed_user.role == 'teacher' %}
+function initTeacherCharts() {
+    // Teacher Overview Chart (Doughnut)
+    const overviewCtx = document.getElementById('teacherOverviewChart').getContext('2d');
+    charts.teacherOverview = new Chart(overviewCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Subjects', 'Quizzes', 'Topics'],
+            datasets: [{
+                data: [statsData.subjects, statsData.quizzes, statsData.topics],
+                backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Engagement Chart (Bar)
+    const engagementCtx = document.getElementById('engagementChart').getContext('2d');
+    charts.engagement = new Chart(engagementCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Total Students', 'Active Students', 'Monthly Views'],
+            datasets: [{
+                label: 'Count',
+                data: [statsData.students, statsData.activeStudents, statsData.monthlyViews],
+                backgroundColor: ['#F59E0B', '#EF4444', '#06B6D4'],
+                borderWidth: 0,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Performance Trend Chart (Line)
+    const trendCtx = document.getElementById('performanceTrendChart').getContext('2d');
+    charts.performanceTrend = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Average Score %',
+                data: [65, 72, 68, 75, 82, statsData.avgScore],
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }, {
+                label: 'Completion Rate %',
+                data: [78, 85, 82, 88, 91, statsData.avgCompletion],
+                borderColor: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+}
+{% else %}
+function initStudentCharts() {
+    // Student Overview Chart (Polar Area)
+    const overviewCtx = document.getElementById('studentOverviewChart').getContext('2d');
+    charts.studentOverview = new Chart(overviewCtx, {
+        type: 'polarArea',
+        data: {
+            labels: ['Quizzes Taken', 'Subjects Enrolled', 'Study Hours'],
+            datasets: [{
+                data: [statsData.quizzesTaken, statsData.subjectsEnrolled, statsData.studyHours],
+                backgroundColor: ['#3B82F6', '#8B5CF6', '#F59E0B'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Score Chart (Gauge-style doughnut)
+    const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+    charts.score = new Chart(scoreCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Score', 'Remaining'],
+            datasets: [{
+                data: [statsData.averageScore, 100 - statsData.averageScore],
+                backgroundColor: [
+                    statsData.averageScore >= 80 ? '#10B981' : 
+                    statsData.averageScore >= 60 ? '#F59E0B' : '#EF4444',
+                    '#E5E7EB'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // Progress Chart (Line)
+    const progressCtx = document.getElementById('progressChart').getContext('2d');
+    charts.progress = new Chart(progressCtx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+            datasets: [{
+                label: 'Quizzes Completed',
+                data: [2, 5, 8, 12, 15, statsData.quizzesTaken],
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }, {
+                label: 'Average Score',
+                data: [45, 52, 61, 68, 75, statsData.averageScore],
+                borderColor: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                tension: 0.4,
+                fill: true,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    max: 100,
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+}
+{% endif %}
+
+// Download chart function
+function downloadChart(chartId) {
+    const canvas = document.getElementById(chartId);
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${chartId}_${new Date().toISOString().slice(0, 10)}.png`;
+    a.click();
+}
+
+// Initialize charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initCharts, 100); // Small delay to ensure canvases are ready
+});
+</script>
+
 {% endblock %}
