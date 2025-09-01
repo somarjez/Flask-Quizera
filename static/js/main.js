@@ -1632,60 +1632,217 @@ window.SearchUtils = {
 };
 
 // for flash messages
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-hide flash messages after 5 seconds
-    const flashMessages = document.querySelectorAll('.flash-message');
+// Enhanced Flash Messages System - Complete Version
+function showMessage(message, type = 'info') {
+    // Create or get the flash container
+    let container = document.querySelector('.flash-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'flash-container';
+        document.body.appendChild(container);
+    }
     
-    flashMessages.forEach(function(message, index) {
-        // Stagger the appearance of multiple messages
-        setTimeout(() => {
-            message.style.animationDelay = (index * 100) + 'ms';
-        }, 0);
-        
-        // Auto-hide after 5 seconds
-        setTimeout(function() {
-            hideFlashMessage(message);
-        }, 5000 + (index * 100));
-    });
-    
-    // Add click event to close buttons
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('close-btn')) {
-            hideFlashMessage(e.target.closest('.flash-message'));
-        }
-    });
-});
-
-function hideFlashMessage(message) {
-    message.classList.add('fade-out');
-    setTimeout(function() {
-        if (message.parentNode) {
-            message.parentNode.removeChild(message);
-        }
-    }, 300);
-}
-
-// Function to add flash messages dynamically (for AJAX responses)
-function showFlashMessage(message, category = 'info') {
-    const container = document.querySelector('.flash-container') || createFlashContainer();
-    
+    // Create the flash message element
     const flashDiv = document.createElement('div');
-    flashDiv.className = `flash-message ${category}`;
+    flashDiv.className = `flash-message ${type}`;
+    
+    // Create the message content with close button
     flashDiv.innerHTML = `
-        ${message}
-        <button class="close-btn" type="button">&times;</button>
+        <span class="message-text">${message}</span>
+        <button class="close-btn" onclick="hideFlashMessage(this.parentElement)" title="Close">&times;</button>
     `;
     
+    // Add the message to container
     container.appendChild(flashDiv);
+    
+    // Trigger the CSS animation by adding show class after a brief delay
+    setTimeout(() => {
+        flashDiv.classList.add('show');
+    }, 10);
     
     // Auto-hide after 5 seconds
     setTimeout(() => hideFlashMessage(flashDiv), 5000);
+    
+    return flashDiv;
 }
 
-function createFlashContainer() {
-    const container = document.createElement('div');
-    container.className = 'flash-container';
-    document.body.appendChild(container);
-    return container;
+function hideFlashMessage(element) {
+    if (!element || !element.classList.contains('flash-message')) return;
+    
+    // Add fade-out class for smooth exit animation
+    element.classList.add('fade-out');
+    
+    // Remove element after animation completes
+    setTimeout(() => {
+        if (element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+        
+        // Clean up container if empty
+        const container = document.querySelector('.flash-container');
+        if (container && container.children.length === 0) {
+            container.remove();
+        }
+    }, 250); // Match the animation duration
+}
+
+// Initialize flash messages from Flask backend
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize any existing flash messages in the DOM
+    initializeExistingMessages();
+    
+    // Make functions globally available
+    window.showMessage = showMessage;
+    window.showFlashMessage = showMessage; // Alias for compatibility
+    window.hideFlashMessage = hideFlashMessage;
+    window.testFlashMessages = testFlashMessages;
+});
+
+// Function to handle existing messages in DOM
+function initializeExistingMessages() {
+    const existingMessages = document.querySelectorAll('.alert, [class*="flash"]:not(.flash-container):not(.flash-message)');
+    existingMessages.forEach((msg, index) => {
+        // Determine type from classes
+        let type = 'info';
+        const className = msg.className.toLowerCase();
+        
+        if (className.includes('success') || className.includes('green')) {
+            type = 'success';
+        } else if (className.includes('error') || className.includes('danger') || className.includes('red')) {
+            type = 'error';
+        } else if (className.includes('warning') || className.includes('yellow')) {
+            type = 'warning';
+        } else if (className.includes('info') || className.includes('blue')) {
+            type = 'info';
+        }
+        
+        const text = msg.textContent.trim();
+        if (text) {
+            setTimeout(() => {
+                showMessage(text, type);
+            }, index * 200);
+        }
+        
+        // Hide the original message
+        msg.style.display = 'none';
+    });
+}
+
+// Test function for debugging
+function testFlashMessages() {
+    showMessage('This is a success message! Everything worked perfectly.', 'success');
+    setTimeout(() => showMessage('This is an error message! Something went wrong.', 'error'), 600);
+    setTimeout(() => showMessage('This is a warning message! Please be careful.', 'warning'), 1200);
+    setTimeout(() => showMessage('This is an info message! Here\'s some information.', 'info'), 1800);
+}
+
+// Utility function to show messages with custom duration
+function showMessageWithDuration(message, type = 'info', duration = 5000) {
+    const messageElement = showMessage(message, type);
+    
+    // Clear any existing timeout
+    if (messageElement._timeout) {
+        clearTimeout(messageElement._timeout);
+    }
+    
+    // Set new timeout
+    messageElement._timeout = setTimeout(() => {
+        hideFlashMessage(messageElement);
+    }, duration);
+    
+    return messageElement;
+}
+
+// Utility function to clear all messages
+function clearAllMessages() {
+    const container = document.querySelector('.flash-container');
+    if (container) {
+        const messages = container.querySelectorAll('.flash-message');
+        messages.forEach(msg => hideFlashMessage(msg));
+    }
+}
+
+// Make utility functions available globally
+window.showMessageWithDuration = showMessageWithDuration;
+window.clearAllMessages = clearAllMessages;
+
+// Handle page visibility changes (pause timers when page is hidden)
+document.addEventListener('visibilitychange', function() {
+    const messages = document.querySelectorAll('.flash-message');
+    if (document.hidden) {
+        // Page is hidden, pause all timers
+        messages.forEach(msg => {
+            if (msg._timeout) {
+                clearTimeout(msg._timeout);
+                msg._pausedTime = Date.now();
+            }
+        });
+    } else {
+        // Page is visible again, resume timers
+        messages.forEach(msg => {
+            if (msg._pausedTime) {
+                const elapsed = Date.now() - msg._pausedTime;
+                const remaining = Math.max(1000, 5000 - elapsed); // At least 1 second remaining
+                msg._timeout = setTimeout(() => hideFlashMessage(msg), remaining);
+                delete msg._pausedTime;
+            }
+        });
+    }
+});
+
+// Keyboard support (ESC to close all messages)
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        clearAllMessages();
+    }
+});
+
+// Add support for custom events
+document.addEventListener('showFlashMessage', function(e) {
+    const { message, type, duration } = e.detail;
+    if (duration) {
+        showMessageWithDuration(message, type, duration);
+    } else {
+        showMessage(message, type);
+    }
+});
+
+// Function to dispatch custom flash message event
+function dispatchFlashMessage(message, type = 'info', duration = null) {
+    const event = new CustomEvent('showFlashMessage', {
+        detail: { message, type, duration }
+    });
+    document.dispatchEvent(event);
+}
+
+window.dispatchFlashMessage = dispatchFlashMessage;
+
+// Error handling for failed AJAX requests (if using fetch/axios)
+window.addEventListener('unhandledrejection', function(event) {
+    console.warn('Unhandled promise rejection:', event.reason);
+    // Optionally show error message
+    // showMessage('An unexpected error occurred', 'error');
+});
+
+// Console logging for debugging
+const DEBUG = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+function debugLog(...args) {
+    if (DEBUG) {
+        console.log('[Flash Messages]', ...args);
+    }
+}
+
+// Log when system is ready
+debugLog('Flash message system initialized');
+
+// Export for module systems (if needed)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        showMessage,
+        hideFlashMessage,
+        showMessageWithDuration,
+        clearAllMessages,
+        testFlashMessages
+    };
 }
