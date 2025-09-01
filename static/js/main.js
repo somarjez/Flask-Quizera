@@ -1630,3 +1630,62 @@ window.SearchUtils = {
     updateRelativeTimestamps,
     fetchJSON
 };
+
+// for flash messages
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide flash messages after 5 seconds
+    const flashMessages = document.querySelectorAll('.flash-message');
+    
+    flashMessages.forEach(function(message, index) {
+        // Stagger the appearance of multiple messages
+        setTimeout(() => {
+            message.style.animationDelay = (index * 100) + 'ms';
+        }, 0);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(function() {
+            hideFlashMessage(message);
+        }, 5000 + (index * 100));
+    });
+    
+    // Add click event to close buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('close-btn')) {
+            hideFlashMessage(e.target.closest('.flash-message'));
+        }
+    });
+});
+
+function hideFlashMessage(message) {
+    message.classList.add('fade-out');
+    setTimeout(function() {
+        if (message.parentNode) {
+            message.parentNode.removeChild(message);
+        }
+    }, 300);
+}
+
+// Function to add flash messages dynamically (for AJAX responses)
+function showFlashMessage(message, category = 'info') {
+    const container = document.querySelector('.flash-container') || createFlashContainer();
+    
+    const flashDiv = document.createElement('div');
+    flashDiv.className = `flash-message ${category}`;
+    flashDiv.innerHTML = `
+        ${message}
+        <button class="close-btn" type="button">&times;</button>
+    `;
+    
+    container.appendChild(flashDiv);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => hideFlashMessage(flashDiv), 5000);
+}
+
+function createFlashContainer() {
+    const container = document.createElement('div');
+    container.className = 'flash-container';
+    document.body.appendChild(container);
+    return container;
+}
