@@ -1,7 +1,5 @@
 /* Custom styles for Quizera */
 
-
-
 /* Smooth transitions */
 * {
     transition: all 0.3s ease;
@@ -344,5 +342,476 @@
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
+    }
+}
+
+/* FOR FLASH MESSAGES */
+/* =================================
+   FLASH MESSAGES SYSTEM
+   ================================= */
+
+/* Flash Messages Container */
+.flash-container {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    z-index: 999999 !important;
+    max-width: 320px;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Flash Message Base Styles */
+.flash-message {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 
+        0 10px 38px -10px rgba(22, 23, 24, 0.35),
+        0 10px 20px -15px rgba(22, 23, 24, 0.2);
+    padding: 14px 44px 14px 18px;
+    border-left: 4px solid #3b82f6;
+    pointer-events: auto;
+    position: relative;
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 500;
+    min-width: 280px;
+    max-width: 320px;
+    word-wrap: break-word;
+    backdrop-filter: blur(10px);
+    
+    /* Initial state for animation */
+    transform: translateX(100%) scale(0.9);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
+}
+
+/* Animation States */
+.flash-message.show {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+}
+
+.flash-message.fade-out {
+    transform: translateX(100%) scale(0.9);
+    opacity: 0;
+    transition: all 0.25s cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* Message Types with Enhanced Styling */
+.flash-message.success {
+    border-left-color: #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    color: #065f46;
+    box-shadow: 
+        0 10px 38px -10px rgba(16, 185, 129, 0.3),
+        0 10px 20px -15px rgba(16, 185, 129, 0.2);
+}
+
+.flash-message.error {
+    border-left-color: #ef4444;
+    background: linear-gradient(135deg, #fef2f2 0%, #fef7f7 100%);
+    color: #991b1b;
+    box-shadow: 
+        0 10px 38px -10px rgba(239, 68, 68, 0.3),
+        0 10px 20px -15px rgba(239, 68, 68, 0.2);
+}
+
+.flash-message.warning {
+    border-left-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+    color: #92400e;
+    box-shadow: 
+        0 10px 38px -10px rgba(245, 158, 11, 0.3),
+        0 10px 20px -15px rgba(245, 158, 11, 0.2);
+}
+
+.flash-message.info {
+    border-left-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+    color: #1e40af;
+    box-shadow: 
+        0 10px 38px -10px rgba(59, 130, 246, 0.3),
+        0 10px 20px -15px rgba(59, 130, 246, 0.2);
+}
+
+/* Message Text */
+.flash-message .message-text {
+    display: block;
+    padding-right: 20px;
+    padding-left: 24px; /* Space for icon */
+}
+
+/* Close Button */
+.flash-message .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    color: currentColor;
+    opacity: 0.4;
+    padding: 4px;
+    line-height: 1;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-family: monospace;
+}
+
+.flash-message .close-btn:hover {
+    opacity: 0.8;
+    background-color: rgba(0, 0, 0, 0.08);
+    transform: scale(1.1);
+}
+
+.flash-message .close-btn:active {
+    transform: scale(0.95);
+}
+
+/* Icons using CSS pseudo-elements */
+.flash-message::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 16px;
+    width: 16px;
+    height: 16px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.flash-message.success::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2310b981' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'/%3E%3C/svg%3E");
+}
+
+.flash-message.error::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ef4444' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.598 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'/%3E%3C/svg%3E");
+}
+
+.flash-message.warning::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f59e0b' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 9v2m0 4h.01M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z'/%3E%3C/svg%3E");
+}
+
+.flash-message.info::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%233b82f6' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'/%3E%3C/svg%3E");
+}
+
+/* Hover effects */
+.flash-message:hover {
+    transform: translateX(-2px) scale(1.02);
+    box-shadow: 
+        0 15px 50px -10px rgba(22, 23, 24, 0.4),
+        0 15px 30px -15px rgba(22, 23, 24, 0.25);
+}
+
+.flash-message.show:hover {
+    transform: translateX(-2px) scale(1.02);
+}
+
+/* Progress bar for auto-dismiss */
+.flash-message::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: currentColor;
+    opacity: 0.3;
+    width: 100%;
+    transform-origin: left;
+    animation: progressBar 5s linear forwards;
+    border-radius: 0 0 8px 8px;
+}
+
+@keyframes progressBar {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+    .flash-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .flash-message {
+        min-width: auto;
+        max-width: none;
+        padding: 12px 40px 12px 16px;
+        font-size: 13px;
+    }
+    
+    .flash-message .message-text {
+        padding-left: 20px;
+        padding-right: 16px;
+    }
+    
+    .flash-message::before {
+        width: 14px;
+        height: 14px;
+        left: 12px;
+        top: 14px;
+    }
+    
+    .flash-message .close-btn {
+        font-size: 16px;
+        width: 20px;
+        height: 20px;
+        top: 8px;
+        right: 8px;
+    }
+}
+
+/* Tablet responsive */
+@media (max-width: 768px) and (min-width: 641px) {
+    .flash-container {
+        max-width: 280px;
+    }
+    
+    .flash-message {
+        min-width: 250px;
+        max-width: 280px;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .flash-message {
+        border-width: 2px;
+        border-left-width: 6px;
+    }
+    
+    .flash-message.success {
+        background: #f0fdf4;
+        color: #064e3b;
+    }
+    
+    .flash-message.error {
+        background: #fef2f2;
+        color: #7f1d1d;
+    }
+    
+    .flash-message.warning {
+        background: #fffbeb;
+        color: #78350f;
+    }
+    
+    .flash-message.info {
+        background: #eff6ff;
+        color: #1e3a8a;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .flash-message {
+        transition: opacity 0.2s ease;
+    }
+    
+    .flash-message:hover {
+        transform: none;
+    }
+    
+    .flash-message::after {
+        animation: none;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .flash-message {
+        backdrop-filter: blur(20px);
+    }
+    
+    .flash-message.success {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+        color: #6ee7b7;
+        border-left-color: #34d399;
+    }
+    
+    .flash-message.error {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+        color: #fca5a5;
+        border-left-color: #f87171;
+    }
+    
+    .flash-message.warning {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+        color: #fcd34d;
+        border-left-color: #fbbf24;
+    }
+    
+    .flash-message.info {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+        color: #93c5fd;
+        border-left-color: #60a5fa;
+    }
+}
+
+/* Ensure high priority over other styles */
+body .flash-container,
+html .flash-container {
+    position: fixed !important;
+    z-index: 999999 !important;
+    pointer-events: none !important;
+}
+
+body .flash-message,
+html .flash-message {
+    pointer-events: auto !important;
+}
+
+/* Additional utility classes for flash messages */
+.flash-message-large {
+    padding: 18px 50px 18px 24px;
+    font-size: 16px;
+    min-width: 320px;
+}
+
+.flash-message-small {
+    padding: 10px 36px 10px 14px;
+    font-size: 12px;
+    min-width: 200px;
+}
+
+.flash-message-no-icon::before {
+    display: none;
+}
+
+.flash-message-no-icon .message-text {
+    padding-left: 0;
+}
+
+.flash-message-persistent::after {
+    display: none;
+}
+
+/* =================================
+   ADDITIONAL QUIZERA STYLES
+   ================================= */
+
+/* Custom button styles */
+.btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors;
+}
+
+.btn-secondary {
+    @apply bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded transition-colors;
+}
+
+.btn-success {
+    @apply bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors;
+}
+
+.btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition-colors;
+}
+
+/* Form styles */
+.form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.form-label {
+    @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+.form-error {
+    @apply text-red-600 text-sm mt-1;
+}
+
+/* Card styles */
+.card {
+    @apply bg-white rounded-lg shadow-md p-6;
+}
+
+.card-header {
+    @apply border-b border-gray-200 pb-4 mb-4;
+}
+
+.card-title {
+    @apply text-xl font-semibold text-gray-900;
+}
+
+/* Loading spinner */
+.spinner {
+    @apply inline-block w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin;
+}
+
+/* Fade transitions */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+    .mobile-hidden {
+        display: none;
+    }
+}
+
+@media (min-width: 641px) {
+    .mobile-only {
+        display: none;
+    }
+}
+
+/* Accessibility improvements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus styles */
+.focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Print styles */
+@media print {
+    .flash-container,
+    .no-print {
+        display: none !important;
     }
 }
