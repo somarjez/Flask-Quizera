@@ -1,473 +1,507 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ subject.name }} - Quizera</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-blue-600 text-white shadow-lg">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('home') }}" class="text-2xl font-bold">Quizera</a>
-                    <span class="text-blue-200">{{ subject.name }}</span>
-                </div>
-                
-                <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('dashboard') }}" class="hover:text-blue-200 transition-colors">
-                        <i class="fas fa-arrow-left mr-1"></i>Back to Dashboard
-                    </a>
-                    <a href="{{ url_for('logout') }}" class="hover:text-blue-200 transition-colors">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                </div>
+{% extends "base.html" %}
+
+{% block title %}{{ subject.name }} - Quizera{% endblock %}
+
+{% block extra_head %}
+<style>
+    .gradient-text {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .card-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .btn-hover {
+        transition: all 0.3s ease;
+    }
+    .btn-hover:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}
+
+{% block main_class %}container mx-auto px-4 py-8{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<nav class="flex mb-6" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+            <a href="{{ url_for('dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                <i class="fas fa-home mr-2"></i>Dashboard
+            </a>
+        </li>
+        <li aria-current="page">
+            <div class="flex items-center">
+                <i class="fas fa-chevron-right text-gray-400 mr-2"></i>
+                <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ subject.name }}</span>
+            </div>
+        </li>
+    </ol>
+</nav>
+
+<!-- Subject Header -->
+<div class="bg-white rounded-lg shadow-md p-8 mb-8">
+    <div class="flex items-center justify-between">
+        <div class="flex-1">
+            <h1 class="text-3xl font-bold text-gray-800 gradient-text mb-2">{{ subject.name }}</h1>
+            <p class="text-gray-600 mb-4">{{ subject.description }}</p>
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+                <span><i class="fas fa-user mr-1"></i>{{ subject.teacher_name }}</span>
+                <span><i class="fas fa-list-ul mr-1"></i>{{ topics|length }} Topics</span>
+                <span><i class="fas fa-calendar mr-1"></i>Created {{ subject.created_at.strftime('%B %d, %Y') }}</span>
             </div>
         </div>
-    </nav>
-
-    <!-- Flash Messages -->
-    <div class="container mx-auto px-4 pt-4">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="flash-message bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
-
-    <!-- Main Content -->
-    <div class="container mx-auto px-4 py-8">
-        <!-- Subject Header -->
-        <div class="bg-white rounded-lg shadow-md p-8 mb-8">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <h1 class="text-3xl font-bold text-gray-800 gradient-text mb-2">{{ subject.name }}</h1>
-                    <p class="text-gray-600 mb-4">{{ subject.description }}</p>
-                    <div class="flex items-center space-x-4 text-sm text-gray-500">
-                        <span><i class="fas fa-user mr-1"></i>{{ subject.teacher_name }}</span>
-                        <span><i class="fas fa-list-ul mr-1"></i>{{ topics|length }} Topics</span>
-                        <span><i class="fas fa-calendar mr-1"></i>Created {{ subject.created_at.strftime('%B %d, %Y') }}</span>
-                    </div>
-                </div>
-                
-                <!-- Action Buttons -->
-                <div class="flex space-x-2">
-                    {% if session.role == 'teacher' and subject.teacher_id == session.user_id %}
-                        <!-- Teacher Actions -->
-                        <a href="{{ url_for('create_topic', subject_id=subject.id) }}" 
-                           class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 btn-hover transition-all">
-                            <i class="fas fa-plus mr-2"></i>Add Topic
-                        </a>
-                        <button class="subject-edit-btn bg-yellow-500 text-white px-4 py-3 rounded-lg hover:bg-yellow-600 transition-colors"
-                                data-subject-id="{{ subject.id }}"
-                                data-subject-name="{{ subject.name }}"
-                                data-subject-description="{{ subject.description }}">
-                            <i class="fas fa-edit mr-1"></i>Edit
-                        </button>
-                        <button class="subject-delete-btn bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition-colors"
+        
+        <!-- Action Buttons -->
+        <div class="flex space-x-2">
+            {% if role == 'teacher' and subject.teacher_id == user_id %}
+                <!-- Teacher Actions -->
+                <a href="{{ url_for('create_topic', subject_id=subject.id) }}" 
+                   class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 btn-hover transition-all">
+                    <i class="fas fa-plus mr-2"></i>Add Topic
+                </a>
+                <button class="subject-edit-btn bg-yellow-500 text-white px-4 py-3 rounded-lg hover:bg-yellow-600 transition-colors"
+                        data-subject-id="{{ subject.id }}"
+                        data-subject-name="{{ subject.name }}"
+                        data-subject-description="{{ subject.description }}">
+                    <i class="fas fa-edit mr-1"></i>Edit
+                </button>
+                <button class="subject-delete-btn bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition-colors"
+                        data-subject-id="{{ subject.id }}"
+                        data-subject-name="{{ subject.name }}">
+                    <i class="fas fa-trash mr-1"></i>Delete
+                </button>
+            {% elif role == 'student' %}
+                <!-- Student Enrollment Actions -->
+                <div id="enrollmentSection">
+                    {% if is_enrolled %}
+                        <button id="unenrollBtn" 
+                                class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
                                 data-subject-id="{{ subject.id }}"
                                 data-subject-name="{{ subject.name }}">
-                            <i class="fas fa-trash mr-1"></i>Delete
+                            <i class="fas fa-user-minus mr-2"></i>Unenroll
                         </button>
-                    {% elif session.role == 'student' %}
-                        <!-- Student Enrollment Actions -->
-                        <div id="enrollmentSection">
-                            {% if is_enrolled %}
-                                <button id="unenrollBtn" 
-                                        class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
-                                        data-subject-id="{{ subject.id }}"
-                                        data-subject-name="{{ subject.name }}">
-                                    <i class="fas fa-user-minus mr-2"></i>Unenroll
-                                </button>
-                                <span class="text-green-600 text-sm ml-3">
-                                    <i class="fas fa-check-circle mr-1"></i>Enrolled
-                                </span>
-                            {% else %}
-                                <button id="enrollBtn" 
-                                        class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                                        data-subject-id="{{ subject.id }}"
-                                        data-subject-name="{{ subject.name }}">
-                                    <i class="fas fa-user-plus mr-2"></i>Enroll Now
-                                </button>
-                                <span class="text-gray-500 text-sm ml-3">
-                                    <i class="fas fa-info-circle mr-1"></i>Not Enrolled
-                                </span>
-                            {% endif %}
-                        </div>
+                        <span class="text-green-600 text-sm ml-3">
+                            <i class="fas fa-check-circle mr-1"></i>Enrolled
+                        </span>
+                    {% else %}
+                        <button id="enrollBtn" 
+                                class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                                data-subject-id="{{ subject.id }}"
+                                data-subject-name="{{ subject.name }}">
+                            <i class="fas fa-user-plus mr-2"></i>Enroll Now
+                        </button>
+                        <span class="text-gray-500 text-sm ml-3">
+                            <i class="fas fa-info-circle mr-1"></i>Not Enrolled
+                        </span>
                     {% endif %}
                 </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Progress Section for Students -->
+{% if role == 'student' and is_enrolled %}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">
+                <i class="fas fa-chart-line mr-2 text-green-600"></i>Your Progress
+            </h2>
+            <span id="progressPercentage" class="text-2xl font-bold text-green-600">{{ progress }}%</span>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
+            <div id="progressBar" class="bg-green-500 h-3 rounded-full transition-all duration-300" 
+                 style="width: {{ progress }}%"></div>
+        </div>
+        
+        <div class="flex justify-between text-sm text-gray-600">
+            <span id="progressText">{{ completed_topics|length }} of {{ topics|length }} topics completed</span>
+            <span id="progressBadge">
+                {% if progress == 100 %}
+                    <i class="fas fa-trophy text-yellow-500 mr-1"></i>Completed!
+                {% elif progress >= 75 %}
+                    <i class="fas fa-fire text-orange-500 mr-1"></i>Almost there!
+                {% elif progress >= 50 %}
+                    <i class="fas fa-thumbs-up text-blue-500 mr-1"></i>Great progress!
+                {% else %}
+                    <i class="fas fa-play text-gray-500 mr-1"></i>Keep going!
+                {% endif %}
+            </span>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Enrollment Required Notice -->
+{% if enrollment_required %}
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-lock text-yellow-500 text-2xl"></i>
+            </div>
+            <div class="ml-4 flex-1">
+                <h3 class="text-lg font-medium text-yellow-800">Enrollment Required</h3>
+                <p class="mt-1 text-yellow-700">
+                    You need to enroll in this subject to access topics and quizzes. 
+                    Click the "Enroll Now" button above to get started!
+                </p>
             </div>
         </div>
+    </div>
+{% endif %}
 
-        <!-- Progress Section for Students -->
-        {% if session.role == 'student' and is_enrolled %}
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-gray-800">
-                        <i class="fas fa-chart-line mr-2 text-green-600"></i>Your Progress
-                    </h2>
-                    <span id="progressPercentage" class="text-2xl font-bold text-green-600">{{ progress }}%</span>
-                </div>
-                
-                <!-- Progress Bar -->
-                <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
-                    <div id="progressBar" class="bg-green-500 h-3 rounded-full transition-all duration-300" 
-                         style="width: {{ progress }}%"></div>
-                </div>
-                
-                <div class="flex justify-between text-sm text-gray-600">
-                    <span id="progressText">{{ completed_topics|length }} of {{ topics|length }} topics completed</span>
-                    <span id="progressBadge">
-                        {% if progress == 100 %}
-                            <i class="fas fa-trophy text-yellow-500 mr-1"></i>Completed!
-                        {% elif progress >= 75 %}
-                            <i class="fas fa-fire text-orange-500 mr-1"></i>Almost there!
-                        {% elif progress >= 50 %}
-                            <i class="fas fa-thumbs-up text-blue-500 mr-1"></i>Great progress!
-                        {% else %}
-                            <i class="fas fa-play text-gray-500 mr-1"></i>Keep going!
-                        {% endif %}
-                    </span>
-                </div>
-            </div>
-        {% endif %}
-
-        <!-- Enrollment Required Notice -->
-        {% if enrollment_required %}
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-lock text-yellow-500 text-2xl"></i>
-                    </div>
-                    <div class="ml-4 flex-1">
-                        <h3 class="text-lg font-medium text-yellow-800">Enrollment Required</h3>
-                        <p class="mt-1 text-yellow-700">
-                            You need to enroll in this subject to access topics and quizzes. 
-                            Click the "Enroll Now" button above to get started!
-                        </p>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-
-        <!-- Topics Section -->
-        <div class="bg-white rounded-lg shadow-md p-8">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6">
-                <i class="fas fa-list-ul mr-2 text-blue-600"></i>Topics
-            </h2>
-            
-            {% if topics %}
-                <div class="space-y-4">
-                    {% for topic in topics %}
-                        <div class="border border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors card-hover
-                                    {% if session.role == 'student' and topic.is_completed %}bg-green-50 border-green-200{% endif %}">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-start space-x-4 flex-1">
-                                    <!-- Completion Status Icon for Students -->
-                                    {% if session.role == 'student' %}
-                                        <div class="flex-shrink-0 mt-1">
-                                            {% if topic.is_completed %}
-                                                <i class="fas fa-check-circle text-green-500 text-xl"></i>
-                                            {% else %}
-                                                <i class="far fa-circle text-gray-400 text-xl"></i>
-                                            {% endif %}
-                                        </div>
+<!-- Topics Section -->
+<div class="bg-white rounded-lg shadow-md p-8">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6">
+        <i class="fas fa-list-ul mr-2 text-blue-600"></i>Topics
+    </h2>
+    
+    {% if topics %}
+        <div class="space-y-4">
+            {% for topic in topics %}
+                <div class="border border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors card-hover
+                            {% if role == 'student' and topic.is_completed %}bg-green-50 border-green-200{% endif %}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-start space-x-4 flex-1">
+                            <!-- Completion Status Icon for Students -->
+                            {% if role == 'student' %}
+                                <div class="flex-shrink-0 mt-1">
+                                    {% if topic.is_completed %}
+                                        <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                                    {% else %}
+                                        <i class="far fa-circle text-gray-400 text-xl"></i>
                                     {% endif %}
-                                    
-                                    <div class="flex-1">
-                                        <h3 class="text-xl font-semibold text-gray-800 mb-2
-                                                   {% if session.role == 'student' and topic.is_completed %}text-green-800{% endif %}">
-                                            {{ topic.title }}
-                                            {% if session.role == 'student' and topic.is_completed %}
-                                                <span class="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">Completed</span>
-                                            {% endif %}
-                                        </h3>
-                                        {% if topic.content_text %}
-                                            <p class="text-gray-600 mb-3">{{ topic.content_text[:150] }}{% if topic.content_text|length > 150 %}...{% endif %}</p>
-                                        {% endif %}
-                                        <div class="flex items-center space-x-4 text-sm text-gray-500">
-                                            <span><i class="fas fa-clock mr-1"></i>{{ topic.created_at.strftime('%B %d, %Y') }}</span>
-                                            {% if topic.video_link %}
-                                                <span><i class="fas fa-video mr-1 text-red-500"></i>Video Available</span>
-                                            {% endif %}
-                                            {% if topic.content_text %}
-                                                <span><i class="fas fa-file-text mr-1 text-blue-500"></i>Text Content</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
                                 </div>
-                                
-                                <div class="ml-6 flex space-x-2">
-                                    <a href="{{ url_for('view_topic', topic_id=topic.id) }}" 
-                                       class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
-                                        <i class="fas fa-eye mr-1"></i>View
-                                    </a>
-                                    {% if session.role == 'teacher' and subject.teacher_id == session.user_id %}
-                                        <button class="topic-edit-btn bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
-                                                data-topic-id="{{ topic.id }}"
-                                                data-topic-title="{{ topic.title }}">
-                                            <i class="fas fa-edit mr-1"></i>Edit
-                                        </button>
-                                        <button class="topic-delete-btn bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-                                                data-topic-id="{{ topic.id }}"
-                                                data-topic-title="{{ topic.title }}">
-                                            <i class="fas fa-trash mr-1"></i>Delete
-                                        </button>
+                            {% endif %}
+                            
+                            <div class="flex-1">
+                                <h3 class="text-xl font-semibold text-gray-800 mb-2
+                                           {% if role == 'student' and topic.is_completed %}text-green-800{% endif %}">
+                                    {{ topic.title }}
+                                    {% if role == 'student' and topic.is_completed %}
+                                        <span class="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">Completed</span>
+                                    {% endif %}
+                                </h3>
+                                {% if topic.content_text %}
+                                    <p class="text-gray-600 mb-3">{{ topic.content_text[:150] }}{% if topic.content_text|length > 150 %}...{% endif %}</p>
+                                {% endif %}
+                                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                    <span><i class="fas fa-clock mr-1"></i>{{ topic.created_at.strftime('%B %d, %Y') }}</span>
+                                    {% if topic.video_link %}
+                                        <span><i class="fas fa-video mr-1 text-red-500"></i>Video Available</span>
+                                    {% endif %}
+                                    {% if topic.content_text %}
+                                        <span><i class="fas fa-file-text mr-1 text-blue-500"></i>Text Content</span>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
-                    {% endfor %}
+                        
+                        <div class="ml-6 flex space-x-2">
+                            <a href="{{ url_for('view_topic', topic_id=topic.id) }}" 
+                               class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-eye mr-1"></i>View
+                            </a>
+                            {% if role == 'teacher' and subject.teacher_id == user_id %}
+                                <button class="topic-edit-btn bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
+                                        data-topic-id="{{ topic.id }}"
+                                        data-topic-title="{{ topic.title }}">
+                                    <i class="fas fa-edit mr-1"></i>Edit
+                                </button>
+                                <button class="topic-delete-btn bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+                                        data-topic-id="{{ topic.id }}"
+                                        data-topic-title="{{ topic.title }}">
+                                    <i class="fas fa-trash mr-1"></i>Delete
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-            {% else %}
-                <div class="text-center py-16">
-                    <i class="fas fa-list-ul text-gray-400 text-6xl mb-4"></i>
-                    <h3 class="text-xl font-semibold text-gray-500 mb-2">
-                        {% if enrollment_required %}
-                            Enroll to View Topics
-                        {% else %}
-                            No Topics Yet
-                        {% endif %}
-                    </h3>
-                    <p class="text-gray-400 mb-6">
-                        {% if enrollment_required %}
-                            Enroll in this subject to access all available topics and learning materials.
-                        {% else %}
-                            This subject doesn't have any topics yet.
-                        {% endif %}
-                    </p>
-                    {% if session.role == 'teacher' and subject.teacher_id == session.user_id %}
-                        <a href="{{ url_for('create_topic', subject_id=subject.id) }}" 
-                           class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 btn-hover transition-all inline-block">
-                            <i class="fas fa-plus mr-2"></i>Create First Topic
-                        </a>
-                    {% endif %}
-                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-16">
+            <i class="fas fa-list-ul text-gray-400 text-6xl mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-500 mb-2">
+                {% if enrollment_required %}
+                    Enroll to View Topics
+                {% else %}
+                    No Topics Yet
+                {% endif %}
+            </h3>
+            <p class="text-gray-400 mb-6">
+                {% if enrollment_required %}
+                    Enroll in this subject to access all available topics and learning materials.
+                {% else %}
+                    This subject doesn't have any topics yet.
+                {% endif %}
+            </p>
+            {% if role == 'teacher' and subject.teacher_id == user_id %}
+                <a href="{{ url_for('create_topic', subject_id=subject.id) }}" 
+                   class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 btn-hover transition-all inline-block">
+                    <i class="fas fa-plus mr-2"></i>Create First Topic
+                </a>
             {% endif %}
         </div>
-    </div>
+    {% endif %}
+</div>
 
-    <!-- Enrollment Modal -->
-    <div id="enrollModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 class="text-lg font-semibold mb-4">Confirm Enrollment</h3>
-            <p id="enrollModalText" class="text-gray-600 mb-6"></p>
-            <div class="flex justify-end space-x-3">
-                <button id="cancelEnroll" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
-                <button id="confirmEnroll" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Enroll</button>
-            </div>
+<!-- Enrollment Modal -->
+<div id="enrollModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold mb-4">Confirm Enrollment</h3>
+        <p id="enrollModalText" class="text-gray-600 mb-6"></p>
+        <div class="flex justify-end space-x-3">
+            <button id="cancelEnroll" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+            <button id="confirmEnroll" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Enroll</button>
         </div>
     </div>
+</div>
 
-    <!-- Unenrollment Modal -->
-    <div id="unenrollModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 class="text-lg font-semibold mb-4">Confirm Unenrollment</h3>
-            <p id="unenrollModalText" class="text-gray-600 mb-6"></p>
-            <div class="flex justify-end space-x-3">
-                <button id="cancelUnenroll" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
-                <button id="confirmUnenroll" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Unenroll</button>
-            </div>
+<!-- Unenrollment Modal -->
+<div id="unenrollModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold mb-4">Confirm Unenrollment</h3>
+        <p id="unenrollModalText" class="text-gray-600 mb-6"></p>
+        <div class="flex justify-end space-x-3">
+            <button id="cancelUnenroll" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+            <button id="confirmUnenroll" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Unenroll</button>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script>
-        // Helper function to update progress badge
-        function updateProgressBadge(progress) {
-            const badge = document.getElementById('progressBadge');
-            if (!badge) return;
-            
-            let badgeContent = '';
-            if (progress == 100) {
-                badgeContent = '<i class="fas fa-trophy text-yellow-500 mr-1"></i>Completed!';
-            } else if (progress >= 75) {
-                badgeContent = '<i class="fas fa-fire text-orange-500 mr-1"></i>Almost there!';
-            } else if (progress >= 50) {
-                badgeContent = '<i class="fas fa-thumbs-up text-blue-500 mr-1"></i>Great progress!';
-            } else {
-                badgeContent = '<i class="fas fa-play text-gray-500 mr-1"></i>Keep going!';
-            }
-            badge.innerHTML = badgeContent;
+{% block extra_scripts %}
+<script>
+    // Helper function to update progress badge
+    function updateProgressBadge(progress) {
+        const badge = document.getElementById('progressBadge');
+        if (!badge) return;
+        
+        let badgeContent = '';
+        if (progress == 100) {
+            badgeContent = '<i class="fas fa-trophy text-yellow-500 mr-1"></i>Completed!';
+        } else if (progress >= 75) {
+            badgeContent = '<i class="fas fa-fire text-orange-500 mr-1"></i>Almost there!';
+        } else if (progress >= 50) {
+            badgeContent = '<i class="fas fa-thumbs-up text-blue-500 mr-1"></i>Great progress!';
+        } else {
+            badgeContent = '<i class="fas fa-play text-gray-500 mr-1"></i>Keep going!';
+        }
+        badge.innerHTML = badgeContent;
+    }
+
+    // Enrollment functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const enrollBtn = document.getElementById('enrollBtn');
+        const unenrollBtn = document.getElementById('unenrollBtn');
+        const enrollModal = document.getElementById('enrollModal');
+        const unenrollModal = document.getElementById('unenrollModal');
+        const enrollModalText = document.getElementById('enrollModalText');
+        const unenrollModalText = document.getElementById('unenrollModalText');
+        const confirmEnroll = document.getElementById('confirmEnroll');
+        const confirmUnenroll = document.getElementById('confirmUnenroll');
+        const cancelEnroll = document.getElementById('cancelEnroll');
+        const cancelUnenroll = document.getElementById('cancelUnenroll');
+        const enrollmentSection = document.getElementById('enrollmentSection');
+
+        // Show enrollment modal
+        if (enrollBtn) {
+            enrollBtn.addEventListener('click', function() {
+                const subjectName = this.dataset.subjectName;
+                enrollModalText.textContent = `Are you sure you want to enroll in "${subjectName}"? You'll gain access to all topics and quizzes for this subject.`;
+                enrollModal.classList.remove('hidden');
+            });
         }
 
-        // Enrollment functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const enrollBtn = document.getElementById('enrollBtn');
-            const unenrollBtn = document.getElementById('unenrollBtn');
-            const enrollModal = document.getElementById('enrollModal');
-            const unenrollModal = document.getElementById('unenrollModal');
-            const enrollModalText = document.getElementById('enrollModalText');
-            const unenrollModalText = document.getElementById('unenrollModalText');
-            const confirmEnroll = document.getElementById('confirmEnroll');
-            const confirmUnenroll = document.getElementById('confirmUnenroll');
-            const cancelEnroll = document.getElementById('cancelEnroll');
-            const cancelUnenroll = document.getElementById('cancelUnenroll');
-            const enrollmentSection = document.getElementById('enrollmentSection');
-
-            // Show enrollment modal
-            if (enrollBtn) {
-                enrollBtn.addEventListener('click', function() {
-                    const subjectName = this.dataset.subjectName;
-                    enrollModalText.textContent = `Are you sure you want to enroll in "${subjectName}"? You'll gain access to all topics and quizzes for this subject.`;
-                    enrollModal.classList.remove('hidden');
-                });
-            }
-
-            // Show unenrollment modal
-            if (unenrollBtn) {
-                unenrollBtn.addEventListener('click', function() {
-                    const subjectName = this.dataset.subjectName;
-                    unenrollModalText.textContent = `Are you sure you want to unenroll from "${subjectName}"? You'll lose access to all topics and quizzes for this subject.`;
-                    unenrollModal.classList.remove('hidden');
-                });
-            }
-
-            // Handle enrollment confirmation
-            if (confirmEnroll) {
-                confirmEnroll.addEventListener('click', function() {
-                    const subjectId = enrollBtn.dataset.subjectId;
-                    
-                    fetch(`/subject/${subjectId}/enroll`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Update UI to show enrolled state
-                            enrollmentSection.innerHTML = `
-                                <button id="unenrollBtn" 
-                                        class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
-                                        data-subject-id="${subjectId}"
-                                        data-subject-name="${enrollBtn.dataset.subjectName}">
-                                    <i class="fas fa-user-minus mr-2"></i>Unenroll
-                                </button>
-                                <span class="text-green-600 text-sm ml-3">
-                                    <i class="fas fa-check-circle mr-1"></i>Enrolled
-                                </span>
-                            `;
-                            
-                            // Show success message
-                            showFlashMessage(data.message, 'success');
-                            
-                            // Refresh page to show topics
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1500);
-                        } else {
-                            showFlashMessage(data.message, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showFlashMessage('An error occurred while enrolling.', 'error');
-                    });
-                    
-                    enrollModal.classList.add('hidden');
-                });
-            }
-
-            // Handle unenrollment confirmation
-            if (confirmUnenroll) {
-                confirmUnenroll.addEventListener('click', function() {
-                    const subjectId = unenrollBtn.dataset.subjectId;
-                    
-                    fetch(`/subject/${subjectId}/unenroll`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Update UI to show unenrolled state
-                            enrollmentSection.innerHTML = `
-                                <button id="enrollBtn" 
-                                        class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                                        data-subject-id="${subjectId}"
-                                        data-subject-name="${unenrollBtn.dataset.subjectName}">
-                                    <i class="fas fa-user-plus mr-2"></i>Enroll Now
-                                </button>
-                                <span class="text-gray-500 text-sm ml-3">
-                                    <i class="fas fa-info-circle mr-1"></i>Not Enrolled
-                                </span>
-                            `;
-                            
-                            // Show success message
-                            showFlashMessage(data.message, 'success');
-                            
-                            // Refresh page to hide topics
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1500);
-                        } else {
-                            showFlashMessage(data.message, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showFlashMessage('An error occurred while unenrolling.', 'error');
-                    });
-                    
-                    unenrollModal.classList.add('hidden');
-                });
-            }
-
-            // Cancel modals
-            if (cancelEnroll) {
-                cancelEnroll.addEventListener('click', () => {
-                    enrollModal.classList.add('hidden');
-                });
-            }
-
-            if (cancelUnenroll) {
-                cancelUnenroll.addEventListener('click', () => {
-                    unenrollModal.classList.add('hidden');
-                });
-            }
-
-            // Close modals on backdrop click
-            enrollModal?.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.add('hidden');
-                }
+        // Show unenrollment modal
+        if (unenrollBtn) {
+            unenrollBtn.addEventListener('click', function() {
+                const subjectName = this.dataset.subjectName;
+                unenrollModalText.textContent = `Are you sure you want to unenroll from "${subjectName}"? You'll lose access to all topics and quizzes for this subject.`;
+                unenrollModal.classList.remove('hidden');
             });
+        }
 
-            unenrollModal?.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.add('hidden');
-                }
+        // Handle enrollment confirmation
+        if (confirmEnroll) {
+            confirmEnroll.addEventListener('click', function() {
+                const subjectId = enrollBtn.dataset.subjectId;
+                
+                fetch(`/subject/${subjectId}/enroll`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI to show enrolled state
+                        enrollmentSection.innerHTML = `
+                            <button id="unenrollBtn" 
+                                    class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
+                                    data-subject-id="${subjectId}"
+                                    data-subject-name="${enrollBtn.dataset.subjectName}">
+                                <i class="fas fa-user-minus mr-2"></i>Unenroll
+                            </button>
+                            <span class="text-green-600 text-sm ml-3">
+                                <i class="fas fa-check-circle mr-1"></i>Enrolled
+                            </span>
+                        `;
+                        
+                        // Show success message using base template flash system
+                        showFlashMessage(data.message, 'success');
+                        
+                        // Refresh page to show topics
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showFlashMessage(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showFlashMessage('An error occurred while enrolling.', 'error');
+                });
+                
+                enrollModal.classList.add('hidden');
             });
+        }
+
+        // Handle unenrollment confirmation
+        if (confirmUnenroll) {
+            confirmUnenroll.addEventListener('click', function() {
+                const subjectId = unenrollBtn.dataset.subjectId;
+                
+                fetch(`/subject/${subjectId}/unenroll`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI to show unenrolled state
+                        enrollmentSection.innerHTML = `
+                            <button id="enrollBtn" 
+                                    class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                                    data-subject-id="${subjectId}"
+                                    data-subject-name="${unenrollBtn.dataset.subjectName}">
+                                <i class="fas fa-user-plus mr-2"></i>Enroll Now
+                            </button>
+                            <span class="text-gray-500 text-sm ml-3">
+                                <i class="fas fa-info-circle mr-1"></i>Not Enrolled
+                            </span>
+                        `;
+                        
+                        // Show success message
+                        showFlashMessage(data.message, 'success');
+                        
+                        // Refresh page to hide topics
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showFlashMessage(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showFlashMessage('An error occurred while unenrolling.', 'error');
+                });
+                
+                unenrollModal.classList.add('hidden');
+            });
+        }
+
+        // Cancel modals
+        if (cancelEnroll) {
+            cancelEnroll.addEventListener('click', () => {
+                enrollModal.classList.add('hidden');
+            });
+        }
+        if (cancelUnenroll) {
+            cancelUnenroll.addEventListener('click', () => {
+                unenrollModal.classList.add('hidden');
+            });
+        }
+
+        // Close modals on backdrop click
+        enrollModal?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
         });
+        unenrollModal?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+    });
 
-        // Flash message helper
-        function showFlashMessage(message, type) {
-            const flashContainer = document.querySelector('.container.mx-auto.px-4.pt-4');
-            const flashDiv = document.createElement('div');
-            const bgColor = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700';
-            
-            flashDiv.className = `flash-message ${bgColor} border-l-4 p-4 mb-4 rounded`;
-            flashDiv.textContent = message;
-            
-            flashContainer.appendChild(flashDiv);
-            
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                flashDiv.remove();
-            }, 5000);
+    // Flash message helper that works with base template
+    function showFlashMessage(message, type) {
+        // Create flash message in the style of base template
+        const flashContainer = document.querySelector('.container.mx-auto.px-4');
+        if (!flashContainer) return;
+        
+        const colorMap = {
+            'success': 'green',
+            'error': 'red',
+            'warning': 'yellow',
+            'info': 'blue'
+        };
+        
+        const color = colorMap[type] || 'blue';
+        const iconMap = {
+            'success': 'check-circle',
+            'error': 'exclamation-circle',
+            'warning': 'exclamation-triangle',
+            'info': 'info-circle'
+        };
+        
+        const icon = iconMap[type] || 'info-circle';
+        
+        const flashDiv = document.createElement('div');
+        flashDiv.className = `bg-${color}-100 border border-${color}-400 text-${color}-700 px-4 py-3 rounded mb-2 flex items-center justify-between flash-message`;
+        flashDiv.innerHTML = `
+            <span>
+                <i class="fas fa-${icon} mr-2"></i>
+                ${message}
+            </span>
+            <button onclick="this.parentElement.remove()" 
+                    class="text-${color}-700 hover:text-${color}-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        `;
+        
+        // Insert after navigation
+        const nav = document.querySelector('nav');
+        if (nav && nav.nextElementSibling) {
+            nav.parentNode.insertBefore(flashDiv, nav.nextElementSibling);
+        } else {
+            flashContainer.insertBefore(flashDiv, flashContainer.firstChild);
         }
-    </script>
-</body>
-</html>
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            flashDiv.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}

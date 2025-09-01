@@ -217,10 +217,39 @@
                                             <option value="enumeration">Paragraph</option>
                                         </select>
                                         <textarea name="bulk_question_text[]" placeholder="Question text" class="w-full border border-gray-200 rounded-md p-3 text-sm" rows="2" required></textarea>
-                                        <div class="mt-3">
-                                            <textarea name="bulk_choices[]" placeholder="Choices (one per line) or correct answers" class="w-full border border-gray-200 rounded-md p-3 text-sm bg-gray-50" rows="3"></textarea>
-                                            <p class="text-xs text-gray-500 mt-1">For multiple choice: enter options one per line. For other types: enter acceptable answers.</p>
+                                        
+                                        <!-- Multiple Choice Options -->
+                                        <div class="bulk-mc-options hidden mt-3">
+                                            <label class="text-sm text-gray-600 mb-2 block">Multiple Choice Options:</label>
+                                            <div class="space-y-2 mb-3">
+                                                <input type="text" name="bulk_option_a[]" placeholder="Option A" class="w-full border border-gray-200 rounded px-3 py-2 text-sm">
+                                                <input type="text" name="bulk_option_b[]" placeholder="Option B" class="w-full border border-gray-200 rounded px-3 py-2 text-sm">
+                                                <input type="text" name="bulk_option_c[]" placeholder="Option C" class="w-full border border-gray-200 rounded px-3 py-2 text-sm">
+                                                <input type="text" name="bulk_option_d[]" placeholder="Option D" class="w-full border border-gray-200 rounded px-3 py-2 text-sm">
+                                            </div>
+                                            <select name="bulk_correct_answer[]" class="border border-gray-200 rounded px-3 py-2 text-sm">
+                                                <option value="A">Correct Answer: A</option>
+                                                <option value="B">Correct Answer: B</option>
+                                                <option value="C">Correct Answer: C</option>
+                                                <option value="D">Correct Answer: D</option>
+                                            </select>
                                         </div>
+
+                                        <!-- True/False Options -->
+                                        <div class="bulk-tf-options hidden mt-3">
+                                            <label class="text-sm text-gray-600 mb-2 block">Correct Answer:</label>
+                                            <select name="bulk_tf_answer[]" class="border border-gray-200 rounded px-3 py-2 text-sm">
+                                                <option value="true">True</option>
+                                                <option value="false">False</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Open Ended Options -->
+                                        <div class="bulk-open-options hidden mt-3">
+                                            <label class="text-sm text-gray-600 mb-2 block">Correct Answers (separated by commas):</label>
+                                            <textarea name="bulk_answers[]" placeholder="Enter acceptable answers separated by commas" class="w-full border border-gray-200 rounded-md p-3 text-sm bg-gray-50" rows="2"></textarea>
+                                        </div>
+                                        
                                         <div class="mt-3 flex items-center space-x-4">
                                             <div class="flex items-center space-x-2">
                                                 <label class="text-sm text-gray-600">Points:</label>
@@ -295,7 +324,7 @@
                             <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
                                 <div class="mb-4">
                                     <h5 class="text-sm font-medium text-gray-700 mb-2">Column Headers (Required):</h5>
-                                    <code class="text-sm bg-white px-2 py-1 rounded border">question_type,question_text,choices_answers,points</code>
+                                    <code class="text-sm bg-white px-2 py-1 rounded border">question_type,question_text,choices,answers,points</code>
                                 </div>
                                 
                                 <table class="w-full text-left text-sm">
@@ -303,7 +332,8 @@
                                         <tr class="border-b border-gray-300">
                                             <th class="py-2 px-3 font-medium text-gray-700">Question Type</th>
                                             <th class="py-2 px-3 font-medium text-gray-700">Question Text</th>
-                                            <th class="py-2 px-3 font-medium text-gray-700">Choices/Answers</th>
+                                            <th class="py-2 px-3 font-medium text-gray-700">Choices</th>
+                                            <th class="py-2 px-3 font-medium text-gray-700">Answers</th>
                                             <th class="py-2 px-3 font-medium text-gray-700">Points</th>
                                         </tr>
                                     </thead>
@@ -312,23 +342,27 @@
                                             <td class="py-2 px-3">multiple_choice</td>
                                             <td class="py-2 px-3">"What is 2+2?"</td>
                                             <td class="py-2 px-3">"2|3|4|5"</td>
+                                            <td class="py-2 px-3">"C"</td>
                                             <td class="py-2 px-3">1</td>
                                         </tr>
                                         <tr class="border-b border-gray-200">
                                             <td class="py-2 px-3">true_false</td>
                                             <td class="py-2 px-3">"The sky is blue"</td>
-                                            <td class="py-2 px-3">"true|false"</td>
+                                            <td class="py-2 px-3">""</td>
+                                            <td class="py-2 px-3">"true"</td>
                                             <td class="py-2 px-3">1</td>
                                         </tr>
                                         <tr class="border-b border-gray-200">
                                             <td class="py-2 px-3">identification</td>
                                             <td class="py-2 px-3">"Capital of France?"</td>
+                                            <td class="py-2 px-3">""</td>
                                             <td class="py-2 px-3">"Paris|paris"</td>
                                             <td class="py-2 px-3">2</td>
                                         </tr>
                                         <tr>
                                             <td class="py-2 px-3">enumeration</td>
                                             <td class="py-2 px-3">"Explain photosynthesis"</td>
+                                            <td class="py-2 px-3">""</td>
                                             <td class="py-2 px-3">"Process by which plants convert light energy"</td>
                                             <td class="py-2 px-3">3</td>
                                         </tr>
@@ -339,10 +373,11 @@
                                     <h5 class="text-sm font-medium text-blue-800 mb-2">Important Notes:</h5>
                                     <ul class="text-xs text-blue-700 space-y-1">
                                         <li>• Use quotes around text containing commas</li>
-                                        <li>• Separate multiple choices/answers with | (pipe) character</li>
+                                        <li>• For multiple choice: separate choices with | (pipe), answer should be A, B, C, or D</li>
+                                        <li>• For true/false: leave choices empty, answer should be "true" or "false"</li>
+                                        <li>• For identification/enumeration: leave choices empty, separate multiple answers with |</li>
                                         <li>• Valid question types: multiple_choice, true_false, identification, enumeration</li>
                                         <li>• Points must be a number between 1-10</li>
-                                        <li>• First row must contain the exact column headers shown above</li>
                                     </ul>
                                 </div>
                             </div>
@@ -505,7 +540,7 @@
                 }
 
                 const header = this.parseCSVLine(lines[0]);
-                const expectedHeaders = ['question_type', 'question_text', 'choices_answers', 'points'];
+                const expectedHeaders = ['question_type', 'question_text', 'choices', 'answers', 'points'];
                 
                 if (!this.validateHeaders(header, expectedHeaders)) {
                     throw new Error(`Invalid headers. Expected: ${expectedHeaders.join(', ')}`);
@@ -587,11 +622,11 @@
         }
 
         parseQuestionRow(rowData, rowNumber) {
-            if (rowData.length < 4) {
-                throw new Error('Insufficient columns (expected 4: question_type, question_text, choices_answers, points)');
+            if (rowData.length < 5) {
+                throw new Error('Insufficient columns (expected 5: question_type, question_text, choices, answers, points)');
             }
 
-            const [questionType, questionText, choicesAnswers, pointsStr] = rowData;
+            const [questionType, questionText, choices, answers, pointsStr] = rowData;
 
             const validTypes = ['multiple_choice', 'true_false', 'identification', 'enumeration'];
             if (!validTypes.includes(questionType.toLowerCase().trim())) {
@@ -608,28 +643,75 @@
             }
 
             const type = questionType.toLowerCase().trim();
-            if (!choicesAnswers.trim()) {
-                throw new Error('Choices/answers cannot be empty');
-            }
-
-            const choices = choicesAnswers.split('|').map(c => c.trim()).filter(c => c);
             
-            if (type === 'multiple_choice' && choices.length < 2) {
-                throw new Error('Multiple choice questions must have at least 2 options');
+            // Validate based on question type
+            if (type === 'multiple_choice') {
+                if (!choices.trim()) {
+                    throw new Error('Multiple choice questions must have choices');
+                }
+                if (!answers.trim()) {
+                    throw new Error('Multiple choice questions must have a correct answer (A, B, C, or D)');
+                }
+                
+                const choicesArray = choices.split('|').map(c => c.trim()).filter(c => c);
+                if (choicesArray.length < 2) {
+                    throw new Error('Multiple choice questions must have at least 2 options');
+                }
+                
+                const correctAnswer = answers.trim().toUpperCase();
+                if (!['A', 'B', 'C', 'D'].includes(correctAnswer)) {
+                    throw new Error('Multiple choice answer must be A, B, C, or D');
+                }
+                
+                return {
+                    type: type,
+                    question: questionText.trim(),
+                    choicesArray: choicesArray,
+                    correct_answer: correctAnswer,
+                    points: points,
+                    rowNumber: rowNumber
+                };
+            }
+            
+            if (type === 'true_false') {
+                if (!answers.trim()) {
+                    throw new Error('True/false questions must have an answer');
+                }
+                
+                const answer = answers.trim().toLowerCase();
+                if (!['true', 'false'].includes(answer)) {
+                    throw new Error('True/false answer must be "true" or "false"');
+                }
+                
+                return {
+                    type: type,
+                    question: questionText.trim(),
+                    correct_answer: answer === 'true',
+                    points: points,
+                    rowNumber: rowNumber
+                };
+            }
+            
+            if (type === 'identification' || type === 'enumeration') {
+                if (!answers.trim()) {
+                    throw new Error(`${type} questions must have answers`);
+                }
+                
+                const answersArray = answers.split('|').map(a => a.trim()).filter(a => a);
+                if (answersArray.length === 0) {
+                    throw new Error('At least one answer must be provided');
+                }
+                
+                return {
+                    type: type,
+                    question: questionText.trim(),
+                    answersArray: answersArray,
+                    points: points,
+                    rowNumber: rowNumber
+                };
             }
 
-            if (type === 'true_false' && choices.length !== 2) {
-                throw new Error('True/false questions must have exactly 2 options (true|false)');
-            }
-
-            return {
-                type: type,
-                question: questionText.trim(),
-                choices: choicesAnswers.trim(),
-                choicesArray: choices,
-                points: points,
-                rowNumber: rowNumber
-            };
+            throw new Error('Invalid question type');
         }
 
         displayPreview(questions, errors = []) {
@@ -659,6 +741,15 @@
                         'enumeration': 'Paragraph'
                     }[q.type] || q.type;
 
+                    let answerDisplay = '';
+                    if (q.type === 'multiple_choice') {
+                        answerDisplay = `Options: ${q.choicesArray.join(', ')} | Correct: ${q.correct_answer}`;
+                    } else if (q.type === 'true_false') {
+                        answerDisplay = `Answer: ${q.correct_answer ? 'True' : 'False'}`;
+                    } else if (q.answersArray) {
+                        answerDisplay = `Answers: ${q.answersArray.join(', ')}`;
+                    }
+
                     previewHTML += `
                         <div class="p-4 border-b border-gray-200 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
                             <div class="flex items-start space-x-3">
@@ -670,7 +761,7 @@
                                     </div>
                                     <p class="text-sm font-medium text-gray-900 mb-2">${this.escapeHtml(q.question)}</p>
                                     <div class="text-xs text-gray-600">
-                                        <strong>Options/Answers:</strong> ${this.escapeHtml(q.choices)}
+                                        ${answerDisplay}
                                     </div>
                                 </div>
                             </div>
@@ -752,11 +843,11 @@
 
         downloadSampleCSV() {
             const sampleData = [
-                ['question_type', 'question_text', 'choices_answers', 'points'],
-                ['multiple_choice', 'What is 2 + 2?', '2|3|4|5', '1'],
-                ['true_false', 'The sky is blue', 'true|false', '1'],
-                ['identification', 'What is the capital of France?', 'Paris|paris', '2'],
-                ['enumeration', 'Explain photosynthesis in your own words', 'Process by which plants convert light energy into chemical energy', '3']
+                ['question_type', 'question_text', 'choices', 'answers', 'points'],
+                ['multiple_choice', 'What is 2 + 2?', '2|3|4|5', 'C', '1'],
+                ['true_false', 'The sky is blue', '', 'true', '1'],
+                ['identification', 'What is the capital of France?', '', 'Paris|paris', '2'],
+                ['enumeration', 'Explain photosynthesis in your own words', '', 'Process by which plants convert light energy into chemical energy', '3']
             ];
 
             const csvContent = sampleData.map(row => 
@@ -790,7 +881,6 @@
 
     // Main application logic
     let csvUploader;
-    let csvData = [];
     let bulkQuestionCount = 1;
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -847,6 +937,39 @@
         questionTypeSelect.addEventListener('change', toggleQuestionOptions);
 
         // Bulk questions functionality
+        function updateBulkQuestionOptions(questionDiv) {
+            const select = questionDiv.querySelector('.bulk-type-select');
+            const mcOptions = questionDiv.querySelector('.bulk-mc-options');
+            const tfOptions = questionDiv.querySelector('.bulk-tf-options');
+            const openOptions = questionDiv.querySelector('.bulk-open-options');
+            
+            function toggleOptions() {
+                const selectedType = select.value;
+                
+                mcOptions.classList.add('hidden');
+                tfOptions.classList.add('hidden');
+                openOptions.classList.add('hidden');
+                
+                switch(selectedType) {
+                    case 'multiple_choice':
+                        mcOptions.classList.remove('hidden');
+                        break;
+                    case 'true_false':
+                        tfOptions.classList.remove('hidden');
+                        break;
+                    case 'identification':
+                    case 'enumeration':
+                        openOptions.classList.remove('hidden');
+                        break;
+                }
+            }
+            
+            select.addEventListener('change', toggleOptions);
+        }
+
+        // Initialize bulk question options for first question
+        updateBulkQuestionOptions(document.querySelector('.bulk-question'));
+
         document.getElementById('addBulkQuestion').addEventListener('click', function() {
             bulkQuestionCount++;
             const bulkQuestionsDiv = document.getElementById('bulkQuestions');
@@ -864,10 +987,39 @@
                             <option value="enumeration">Paragraph</option>
                         </select>
                         <textarea name="bulk_question_text[]" placeholder="Question text" class="w-full border border-gray-200 rounded-md p-3 text-sm" rows="2" required></textarea>
-                        <div class="mt-3">
-                            <textarea name="bulk_choices[]" placeholder="Choices (one per line) or correct answers" class="w-full border border-gray-200 rounded-md p-3 text-sm bg-gray-50" rows="3"></textarea>
-                            <p class="text-xs text-gray-500 mt-1">For multiple choice: enter options one per line. For other types: enter acceptable answers.</p>
+                        
+                        <!-- Multiple Choice Options -->
+                        <div class="bulk-mc-options hidden mt-3">
+                            <label class="text-sm text-gray-600 mb-2 block">Multiple Choice Options:</label>
+                            <div class="space-y-2 mb-3">
+                                <input type="text" name="bulk_option_a[]" placeholder="Option A" class="w-full border border-gray-200 rounded px-3 py-2 text-sm">
+                                <input type="text" name="bulk_option_b[]" placeholder="Option B" class="w-full border border-gray-200 rounded px-3 py-2 text-sm">
+                                <input type="text" name="bulk_option_c[]" placeholder="Option C" class="w-full border border-gray-200 rounded px-3 py-2 text-sm">
+                                <input type="text" name="bulk_option_d[]" placeholder="Option D" class="w-full border border-gray-200 rounded px-3 py-2 text-sm">
+                            </div>
+                            <select name="bulk_correct_answer[]" class="border border-gray-200 rounded px-3 py-2 text-sm">
+                                <option value="A">Correct Answer: A</option>
+                                <option value="B">Correct Answer: B</option>
+                                <option value="C">Correct Answer: C</option>
+                                <option value="D">Correct Answer: D</option>
+                            </select>
                         </div>
+
+                        <!-- True/False Options -->
+                        <div class="bulk-tf-options hidden mt-3">
+                            <label class="text-sm text-gray-600 mb-2 block">Correct Answer:</label>
+                            <select name="bulk_tf_answer[]" class="border border-gray-200 rounded px-3 py-2 text-sm">
+                                <option value="true">True</option>
+                                <option value="false">False</option>
+                            </select>
+                        </div>
+
+                        <!-- Open Ended Options -->
+                        <div class="bulk-open-options hidden mt-3">
+                            <label class="text-sm text-gray-600 mb-2 block">Correct Answers (separated by commas):</label>
+                            <textarea name="bulk_answers[]" placeholder="Enter acceptable answers separated by commas" class="w-full border border-gray-200 rounded-md p-3 text-sm bg-gray-50" rows="2"></textarea>
+                        </div>
+                        
                         <div class="mt-3 flex items-center space-x-4">
                             <div class="flex items-center space-x-2">
                                 <label class="text-sm text-gray-600">Points:</label>
@@ -881,6 +1033,7 @@
                 </div>
             `;
             bulkQuestionsDiv.appendChild(newQuestion);
+            updateBulkQuestionOptions(newQuestion);
             updateRemoveButtons();
         });
 
@@ -1007,10 +1160,9 @@
             const questionsData = [];
             
             let valid = true;
-            questions.forEach(question => {
+            questions.forEach((question, index) => {
                 const type = question.querySelector('select[name="bulk_question_type[]"]').value;
                 const text = question.querySelector('textarea[name="bulk_question_text[]"]').value.trim();
-                const choices = question.querySelector('textarea[name="bulk_choices[]"]').value.trim();
                 const points = question.querySelector('input[name="bulk_points[]"]').value;
                 
                 if (!type || !text) {
@@ -1018,12 +1170,39 @@
                     return;
                 }
                 
-                questionsData.push({
+                const questionData = {
                     type: type,
                     text: text,
-                    choices: choices,
                     points: parseInt(points) || 1
-                });
+                };
+
+                if (type === 'multiple_choice') {
+                    const optionA = question.querySelector('input[name="bulk_option_a[]"]').value.trim();
+                    const optionB = question.querySelector('input[name="bulk_option_b[]"]').value.trim();
+                    const optionC = question.querySelector('input[name="bulk_option_c[]"]').value.trim();
+                    const optionD = question.querySelector('input[name="bulk_option_d[]"]').value.trim();
+                    const correctAnswer = question.querySelector('select[name="bulk_correct_answer[]"]').value;
+                    
+                    if (!optionA || !optionB) {
+                        valid = false;
+                        return;
+                    }
+                    
+                    questionData.options = [optionA, optionB, optionC, optionD];
+                    questionData.correct_answer = correctAnswer;
+                } else if (type === 'true_false') {
+                    const tfAnswer = question.querySelector('select[name="bulk_tf_answer[]"]').value;
+                    questionData.correct_answer = tfAnswer === 'true';
+                } else if (type === 'identification' || type === 'enumeration') {
+                    const answers = question.querySelector('textarea[name="bulk_answers[]"]').value.trim();
+                    if (!answers) {
+                        valid = false;
+                        return;
+                    }
+                    questionData.correct_answers = answers.split(',').map(a => a.trim()).filter(a => a);
+                }
+                
+                questionsData.push(questionData);
             });
             
             if (!valid) {

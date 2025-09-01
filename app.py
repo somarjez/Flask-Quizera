@@ -1273,7 +1273,7 @@ def create_subject():
         except Exception as e:
             flash(f'Error creating subject: {e}')
     
-    return render_template('create_subject.html')
+    return render_template('create_subject.html', username=session.get('username'), role=session.get('role'))
 
 # Helper function to get student's completed topics
 def get_student_completed_topics(student_id, subject_id=None):
@@ -1490,13 +1490,14 @@ def view_subject(subject_id):
                              topics=topics, 
                              is_enrolled=is_enrolled,
                              progress=progress,
-                             completed_topics=completed_topics)
-        
+                             completed_topics=completed_topics,
+                             username=session.get('username'),
+                             role=session.get('role'),
+                             user_id=session.get('user_id'))
+
     except Exception as e:
         flash(f'Error loading subject: {e}')
         return redirect(url_for('dashboard'))
-
-# Updated view_topic route with completion status
 @app.route('/topic/<topic_id>')
 def view_topic(topic_id):
     if 'user_id' not in session:
@@ -1532,11 +1533,17 @@ def view_topic(topic_id):
             return redirect(url_for('dashboard'))
         
         topic_data['is_completed'] = is_completed
-        return render_template('topic_detail.html', topic=topic_data)
+        
+        return render_template('topic_detail.html', 
+                             topic=topic_data,
+                             username=session.get('username'),
+                             role=session.get('role'),
+                             user_id=session.get('user_id'))
         
     except Exception as e:
         flash(f'Error loading topic: {e}')
         return redirect(url_for('dashboard'))
+    
 
 @app.route('/student/<student_id>/progress/<subject_id>')
 def get_student_progress(student_id, subject_id):
@@ -1609,7 +1616,7 @@ def create_topic(subject_id):
         except Exception as e:
             flash(f'Error creating topic: {e}')
     
-    return render_template('create_topic.html', subject_id=subject_id)
+    return render_template('create_topic.html', subject_id=subject_id, username=session.get('username'), role=session.get('role'))
 
 # @app.route('/topic/<topic_id>')
 # def view_topic(topic_id):
@@ -1798,7 +1805,7 @@ def create_quiz():
         except Exception as e:
             flash(f'Error creating quiz: {e}')
     
-    return render_template('create_quiz.html', subjects=subjects)
+    return render_template('create_quiz.html', subjects=subjects, username=session.get('username'), role=session.get('role'))
 
 @app.route('/quiz/<quiz_id>/manage')
 def manage_quiz(quiz_id):
@@ -1826,7 +1833,7 @@ def manage_quiz(quiz_id):
             question_data['id'] = doc.id
             questions.append(question_data)
         
-        return render_template('manage_quiz.html', quiz=quiz_data, questions=questions)
+        return render_template('manage_quiz.html', quiz=quiz_data, questions=questions, username=session.get('username'), role=session.get('role'))
     except Exception as e:
         flash(f'Error loading quiz: {e}')
         return redirect(url_for('dashboard'))
@@ -1899,6 +1906,29 @@ def manage_quiz(quiz_id):
     
 #     return render_template('add_question.html', quiz_id=quiz_id, quiz=quiz_data)
 
+@app.route('/quiz/<quiz_id>/publish')
+def publish_quiz(quiz_id):
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        flash('Access denied. Teachers only.')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        quiz_ref = db.collection('quizzes').document(quiz_id)
+        quiz_doc = quiz_ref.get()
+        
+        if not quiz_doc.exists or quiz_doc.to_dict()['teacher_id'] != session['user_id']:
+            flash('Quiz not found or access denied.')
+            return redirect(url_for('dashboard'))
+        
+        quiz_ref.update({'is_published': True})
+        flash('Quiz published successfully!')
+        
+    except Exception as e:
+        flash(f'Error publishing quiz: {e}')
+    
+    return redirect(url_for('manage_quiz', quiz_id=quiz_id))
+
+
 @app.route('/quiz/<quiz_id>/add-question', methods=['GET', 'POST'])
 def add_question(quiz_id):
     if 'user_id' not in session or session.get('role') != 'teacher':
@@ -1949,26 +1979,79 @@ def add_question(quiz_id):
                         q_type = question.get('type')
                         
                         if q_type == 'multiple_choice':
+                            # Get choices from choicesArray or parse from choices string
                             choices = question.get('choicesArray', [])
+                            if not choices and question.get('choices'):
+                                choices = [choice.strip() for choice in question.get('choices').split('|')]
+                            
                             if len(choices) >= 2:
                                 # Pad with empty options if less than 4
                                 while len(choices) < 4:
                                     choices.append('')
                                 question_data['options'] = choices[:4]
-                                # For CSV import, assume first option is correct (can be changed later)
-                                question_data['correct_answer'] = 'A'
+                                
+                                # Get correct answer
+                                correct_answer = question.get('correct_answer', 'A')
+                                # Convert index to letter if numeric
+                                if correct_answer.isdigit():
+                                    correct_index = int(correct_answer)
+                                    if 0 <= correct_index < 4:
+                                        correct_answer = chr(65 + correct_index)  # Convert 0->A, 1->B, etc.
+                                    else:
+                                        correct_answer = 'A'  # Default fallback
+                                question_data['correct_answer'] = correct_answer
+                            else:
+                                # For CSV with old format compatibility
+                                choices_from_bulk = question.get('choicesArray', [])
+                                if choices_from_bulk and len(choices_from_bulk) >= 2:
+                                    while len(choices_from_bulk) < 4:
+                                        choices_from_bulk.append('')
+                                    question_data['options'] = choices_from_bulk[:4]
+                                    question_data['correct_answer'] = 'A'  # Default
+                                else:
+                                    continue
                         
                         elif q_type == 'true_false':
-                            question_data['correct_answer'] = True  # Default, can be changed later
+                            # Get correct answer from answers field
+                            correct_answer = question.get('answers', question.get('correct_answer', 'true'))
+                            
+                            # Handle different types of correct_answer values
+                            if isinstance(correct_answer, bool):
+                                question_data['correct_answer'] = correct_answer
+                            elif isinstance(correct_answer, str):
+                                correct_answer_lower = correct_answer.lower()
+                                if correct_answer_lower in ['true', '1', 'yes', 't']:
+                                    question_data['correct_answer'] = True
+                                else:
+                                    question_data['correct_answer'] = False
+                            elif isinstance(correct_answer, (int, float)):
+                                question_data['correct_answer'] = bool(correct_answer)
+                            else:
+                                # Default fallback
+                                question_data['correct_answer'] = True
                         
                         elif q_type in ['identification', 'enumeration']:
-                            choices = question.get('choicesArray', [])
-                            if choices:
-                                question_data['correct_answers'] = choices
+                            # Get answers from answersArray or parse from answers string
+                            answers = question.get('answersArray', [])
+                            if not answers and question.get('answers'):
+                                answers_value = question.get('answers')
+                                if isinstance(answers_value, str):
+                                    answers = [answer.strip() for answer in answers_value.split('|')]
+                                elif isinstance(answers_value, list):
+                                    answers = [str(answer).strip() for answer in answers_value]
+                            elif not answers and question.get('choices'):
+                                # Fallback for bulk questions
+                                choices_value = question.get('choices')
+                                if isinstance(choices_value, str):
+                                    answers = [answer.strip() for answer in choices_value.split('\n') if answer.strip()]
+                                elif isinstance(choices_value, list):
+                                    answers = [str(answer).strip() for answer in choices_value if str(answer).strip()]
+                            
+                            if answers:
+                                question_data['correct_answers'] = answers
                             else:
-                                # Fallback to raw choices string
-                                choices_str = question.get('choices', '')
-                                question_data['correct_answers'] = [choices_str] if choices_str else ['']
+                                # Skip questions without answers
+                                continue
                         
                         # Add question to database
                         db.collection('questions').add(question_data)
@@ -2036,29 +2119,7 @@ def add_question(quiz_id):
             except Exception as e:
                 flash(f'Error adding question: {e}')
     
-    return render_template('add_question.html', quiz_id=quiz_id, quiz=quiz_data)
-
-@app.route('/quiz/<quiz_id>/publish')
-def publish_quiz(quiz_id):
-    if 'user_id' not in session or session.get('role') != 'teacher':
-        flash('Access denied. Teachers only.')
-        return redirect(url_for('dashboard'))
-    
-    try:
-        quiz_ref = db.collection('quizzes').document(quiz_id)
-        quiz_doc = quiz_ref.get()
-        
-        if not quiz_doc.exists or quiz_doc.to_dict()['teacher_id'] != session['user_id']:
-            flash('Quiz not found or access denied.')
-            return redirect(url_for('dashboard'))
-        
-        quiz_ref.update({'is_published': True})
-        flash('Quiz published successfully!')
-        
-    except Exception as e:
-        flash(f'Error publishing quiz: {e}')
-    
-    return redirect(url_for('manage_quiz', quiz_id=quiz_id))
+    return render_template('add_question.html', quiz_id=quiz_id, quiz=quiz_data, username=session.get('username'), role=session.get('role'))
 
 # Subject Edit and Delete Routes
 @app.route('/subject/<subject_id>/edit', methods=['POST'])
@@ -2174,7 +2235,7 @@ def edit_quiz(quiz_id):
             
             quiz_ref.update(update_data)
             flash('Quiz updated successfully!')
-            return redirect(url_for('manage_quiz', quiz_id=quiz_id))
+            return redirect(url_for('manage_quiz', quiz_id=quiz_id), username=session.get('username'), role=session.get('role'))
         
         # Get teacher's subjects for dropdown
         subjects = []
@@ -2184,7 +2245,7 @@ def edit_quiz(quiz_id):
             subject_data['id'] = doc.id
             subjects.append(subject_data)
         
-        return render_template('edit_quiz.html', quiz=quiz_data, subjects=subjects)
+        return render_template('edit_quiz.html', quiz=quiz_data, subjects=subjects, username=session.get('username'), role=session.get('role'))
         
     except Exception as e:
         flash(f'Error accessing quiz: {e}')
@@ -2417,7 +2478,6 @@ def delete_question(quiz_id, question_id):
 #     except Exception as e:
 #         flash(f'Error loading quiz: {e}')
 #         return redirect(url_for('dashboard'))
-
 @app.route('/quiz/<quiz_id>/take')
 def take_quiz(quiz_id):
     if 'user_id' not in session:
@@ -2460,11 +2520,30 @@ def take_quiz(quiz_id):
             flash('This quiz has no questions yet.')
             return redirect(url_for('dashboard'))
         
-        return render_template('take_quiz.html', quiz=quiz_data, questions=questions)
+        # Check if user has already taken this quiz (if attempts are limited)
+        if quiz_data.get('max_attempts', 0) > 0:
+            attempts_count = db.collection('quiz_attempts').where('quiz_id', '==', quiz_id).where('user_id', '==', session['user_id']).stream()
+            current_attempts = len(list(attempts_count))
+            if current_attempts >= quiz_data['max_attempts']:
+                flash(f'You have already used all {quiz_data["max_attempts"]} attempts for this quiz.')
+                return redirect(url_for('quiz_results', quiz_id=quiz_id))
         
+        # Add subject name if not present
+        if 'subject_name' not in quiz_data and quiz_data.get('subject_id'):
+            subject_doc = db.collection('subjects').document(quiz_data['subject_id']).get()
+            if subject_doc.exists:
+                quiz_data['subject_name'] = subject_doc.to_dict().get('name', 'Unknown Subject')
+        
+        return render_template('take_quiz.html', 
+                             quiz=quiz_data, 
+                             questions=questions,
+                             username=session.get('username'),
+                             role=session.get('role'))
+
     except Exception as e:
         flash(f'Error loading quiz: {e}')
         return redirect(url_for('dashboard'))
+
 
 @app.route('/quiz/<quiz_id>/submit', methods=['POST'])
 def submit_quiz(quiz_id):
@@ -2611,7 +2690,7 @@ def debug_routes():
 # Make sure your quiz_results route is properly defined with error handling
 @app.route('/quiz/<quiz_id>/results')
 def quiz_results(quiz_id):
-    print(f"DEBUG: Accessing quiz results for quiz_id: {quiz_id}")  # Debug print
+    print(f"DEBUG: Accessing quiz results for quiz_id: {quiz_id}")
     
     if 'user_id' not in session:
         flash('Please log in to view results.')
@@ -2622,7 +2701,7 @@ def quiz_results(quiz_id):
         quiz_ref = db.collection('quizzes').document(quiz_id)
         quiz_doc = quiz_ref.get()
         
-        print(f"DEBUG: Quiz document exists: {quiz_doc.exists}")  # Debug print
+        print(f"DEBUG: Quiz document exists: {quiz_doc.exists}")
         
         if not quiz_doc.exists:
             flash('Quiz not found.')
@@ -2631,13 +2710,26 @@ def quiz_results(quiz_id):
         quiz_data = quiz_doc.to_dict()
         quiz_data['id'] = quiz_doc.id
         
-        print(f"DEBUG: Quiz data loaded: {quiz_data.get('title', 'No title')}")  # Debug print
+        print(f"DEBUG: Quiz data loaded: {quiz_data.get('title', 'No title')}")
         
         # For teachers, allow viewing results of their own quizzes
-        # For students, only allow viewing results of published quizzes
-        if session.get('role') == 'student' and not quiz_data.get('is_published', False):
-            flash('This quiz is not available.')
-            return redirect(url_for('dashboard'))
+        # For students, only allow viewing results of published quizzes they're enrolled in
+        if session.get('role') == 'student':
+            if not quiz_data.get('is_published', False):
+                flash('This quiz is not available.')
+                return redirect(url_for('dashboard'))
+            
+            # Check enrollment for students
+            is_enrolled = check_enrollment(session['user_id'], quiz_data['subject_id'])
+            if not is_enrolled:
+                flash('You must be enrolled in this subject to view quiz results.')
+                return redirect(url_for('view_subject', subject_id=quiz_data['subject_id']))
+        
+        elif session.get('role') == 'teacher':
+            # Teachers can only view results for their own quizzes
+            if quiz_data.get('teacher_id') != session['user_id']:
+                flash('You can only view results for your own quizzes.')
+                return redirect(url_for('dashboard'))
         
         # Get user's attempts for this quiz
         attempts = []
@@ -2648,15 +2740,36 @@ def quiz_results(quiz_id):
             attempt_data['id'] = doc.id
             attempts.append(attempt_data)
         
-        print(f"DEBUG: Found {len(attempts)} attempts")  # Debug print
+        print(f"DEBUG: Found {len(attempts)} attempts")
         
-        return render_template('quiz_results.html', quiz=quiz_data, attempts=attempts)
+        # Add question count to quiz data if not present
+        if 'question_count' not in quiz_data:
+            questions_count = len(list(db.collection('questions').where('quiz_id', '==', quiz_id).stream()))
+            quiz_data['question_count'] = questions_count
+        
+        # Get subject and teacher names for display
+        if 'subject_name' not in quiz_data and quiz_data.get('subject_id'):
+            subject_doc = db.collection('subjects').document(quiz_data['subject_id']).get()
+            if subject_doc.exists:
+                quiz_data['subject_name'] = subject_doc.to_dict().get('name', 'Unknown Subject')
+        
+        if 'teacher_name' not in quiz_data and quiz_data.get('teacher_id'):
+            teacher_doc = db.collection('users').document(quiz_data['teacher_id']).get()
+            if teacher_doc.exists:
+                teacher_data = teacher_doc.to_dict()
+                quiz_data['teacher_name'] = f"{teacher_data.get('first_name', '')} {teacher_data.get('last_name', '')}".strip()
+        
+        return render_template('quiz_results.html', 
+                             quiz=quiz_data, 
+                             attempts=attempts,
+                             username=session.get('username'),
+                             role=session.get('role'))
         
     except Exception as e:
-        print(f"ERROR in quiz_results: {e}")  # Debug print
+        print(f"ERROR in quiz_results: {e}")
         flash(f'Error loading results: {e}')
         return redirect(url_for('dashboard'))
-
+    
 # @app.route('/quiz-attempt/<attempt_id>')
 # def view_attempt(attempt_id):
 #     if 'user_id' not in session:
@@ -2717,7 +2830,7 @@ def view_attempt(attempt_id):
             return redirect(url_for('dashboard'))
         
         attempt_data = attempt_doc.to_dict()
-        attempt_data['id'] = attempt_doc.id  # Add the document ID
+        attempt_data['id'] = attempt_doc.id
         
         # Verify user owns this attempt
         if attempt_data['user_id'] != session['user_id']:
@@ -2732,9 +2845,15 @@ def view_attempt(attempt_id):
             if quiz_doc.exists:
                 quiz_data = quiz_doc.to_dict()
                 quiz_data['id'] = quiz_doc.id
+                
+                # Add subject name if available
+                if 'subject_name' not in quiz_data and quiz_data.get('subject_id'):
+                    subject_doc = db.collection('subjects').document(quiz_data['subject_id']).get()
+                    if subject_doc.exists:
+                        quiz_data['subject_name'] = subject_doc.to_dict().get('name', 'Unknown Subject')
+                        
         except Exception as e:
             print(f"Error loading quiz data: {e}")
-            # quiz_data remains None
         
         # Get questions with details
         questions = []
@@ -2746,12 +2865,69 @@ def view_attempt(attempt_id):
         
         return render_template('attempt_detail.html', 
                              attempt=attempt_data, 
-                             quiz=quiz_data,  # This could be None
-                             questions=questions)
-        
+                             quiz=quiz_data,
+                             questions=questions,
+                             username=session.get('username'),
+                             role=session.get('role'))
+
     except Exception as e:
         flash(f'Error loading attempt: {e}')
         return redirect(url_for('dashboard'))
+
+# @app.route('/compare-attempts/<attempt1_id>/<attempt2_id>')
+# def compare_attempts(attempt1_id, attempt2_id):
+#     if 'user_id' not in session:
+#         flash('Please log in to compare attempts.')
+#         return redirect(url_for('login'))
+    
+#     try:
+#         # Get both attempts
+#         attempt1_ref = db.collection('quiz_attempts').document(attempt1_id)
+#         attempt1_doc = attempt1_ref.get()
+        
+#         attempt2_ref = db.collection('quiz_attempts').document(attempt2_id)
+#         attempt2_doc = attempt2_ref.get()
+        
+#         if not attempt1_doc.exists or not attempt2_doc.exists:
+#             flash('One or both attempts not found.')
+#             return redirect(url_for('dashboard'))
+        
+#         attempt1_data = attempt1_doc.to_dict()
+#         attempt1_data['id'] = attempt1_doc.id
+        
+#         attempt2_data = attempt2_doc.to_dict()
+#         attempt2_data['id'] = attempt2_doc.id
+        
+#         # Verify user owns both attempts
+#         if (attempt1_data['user_id'] != session['user_id'] or 
+#             attempt2_data['user_id'] != session['user_id']):
+#             flash('Access denied.')
+#             return redirect(url_for('dashboard'))
+        
+#         # Get quiz details
+#         quiz_ref = db.collection('quizzes').document(attempt1_data['quiz_id'])
+#         quiz_doc = quiz_ref.get()
+#         quiz_data = quiz_doc.to_dict() if quiz_doc.exists else None
+        
+#         # Get questions
+#         questions = []
+#         questions_ref = db.collection('questions').where('quiz_id', '==', attempt1_data['quiz_id']).order_by('created_at')
+#         for doc in questions_ref.stream():
+#             question_data = doc.to_dict()
+#             question_data['id'] = doc.id
+#             questions.append(question_data)
+        
+#         return render_template('compare_attempts.html', 
+#                              attempt1=attempt1_data, 
+#                              attempt2=attempt2_data,
+#                              quiz=quiz_data,
+#                              questions=questions,
+#                              username=session.get('username'),
+#                              role=session.get('role'))
+        
+#     except Exception as e:
+#         flash(f'Error comparing attempts: {e}')
+#         return redirect(url_for('dashboard'))
 
 @app.route('/subject/<subject_id>/enroll', methods=['POST'])
 def enroll_subject(subject_id):
