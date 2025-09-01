@@ -69,6 +69,7 @@ def update_avatar():
     except Exception as e:
         print(f"ERROR updating avatar: {e}")
         return jsonify({'success': False, 'message': 'Error updating avatar'}), 500
+
 @app.route('/')
 def home():
     # Get all subjects from teachers
@@ -500,7 +501,7 @@ def login():
             if pending_docs:
                 flash('Please check your email and click the confirmation link to activate your account. <a href="/resend-confirmation" class="text-blue-600 hover:text-blue-800">Resend confirmation email</a>')
             else:
-                flash('Invalid email or password.')
+                flash('Invalid email or password.', 'error')
             return render_template('login.html')
         
         user_doc = user_docs[0]
@@ -519,10 +520,10 @@ def login():
             session['email'] = user_data['email']
             session['role'] = user_data['role']
             
-            flash(f'Welcome back, {user_data["username"]}!')
+            flash(f'Welcome back, {user_data["username"]}!', 'success')
             return redirect(url_for('dashboard'))
         else:
-            flash('Invalid email or password.')
+            flash('Invalid email or password.', 'error')
             return render_template('login.html')
     
     return render_template('login.html')
@@ -1147,7 +1148,7 @@ def get_student_recent_activities(student_id, limit=5):
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
-        flash('Please log in to access your dashboard.')
+        flash('Please log in to access your dashboard.', 'error')
         return redirect(url_for('login'))
     
     user_role = session.get('role')
@@ -1317,7 +1318,7 @@ def dashboard():
 @app.route('/create-subject', methods=['GET', 'POST'])
 def create_subject():
     if 'user_id' not in session or session.get('role') != 'teacher':
-        flash('Access denied. Teachers only.')
+        flash('Access denied. Teachers only.', 'error')
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
@@ -1335,10 +1336,10 @@ def create_subject():
         
         try:
             db.collection('subjects').add(subject_data)
-            flash('Subject created successfully!')
+            flash('Subject created successfully!', 'success')
             return redirect(url_for('dashboard'))
         except Exception as e:
-            flash(f'Error creating subject: {e}')
+            flash(f'Error creating subject: {e}', 'error')
     
     return render_template('create_subject.html', username=session.get('username'), role=session.get('role'))
 
@@ -1500,7 +1501,7 @@ def unmark_topic_complete(topic_id):
 @app.route('/subject/<subject_id>')
 def view_subject(subject_id):
     if 'user_id' not in session:
-        flash('Please log in to view subjects.')
+        flash('Please log in to view subjects.', 'error')
         return redirect(url_for('login'))
     
     try:
@@ -1509,7 +1510,7 @@ def view_subject(subject_id):
         subject_doc = subject_ref.get()
         
         if not subject_doc.exists:
-            flash('Subject not found.')
+            flash('Subject not found.', 'error')
             return redirect(url_for('dashboard'))
         
         subject_data = subject_doc.to_dict()
@@ -1537,7 +1538,7 @@ def view_subject(subject_id):
         
         # Teachers can always view their own subjects
         elif session.get('role') == 'teacher' and subject_data['teacher_id'] != session['user_id']:
-            flash('Access denied.')
+            flash('Access denied.', 'error')
             return redirect(url_for('dashboard'))
         
         # Get topics for this subject (only if enrolled or teacher)
@@ -3093,7 +3094,7 @@ def generate_flashcards():
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('You have been logged out successfully.')
+    flash('You have been logged out successfully.', 'success')
     return redirect(url_for('home'))
 
 # @app.route('/forgot-password', methods=['GET', 'POST'])
