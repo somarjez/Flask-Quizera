@@ -1,5 +1,240 @@
 /* Custom styles for Quizera */
 
+/* Custom styles for Quizera E-Learning Platform */
+/* FOR BASE.HTML
+/* Navigation Styles */
+.nav-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.nav-button:hover::before {
+    left: 100%;
+}
+
+/* Logo image styles */
+nav img, footer img {
+    object-fit: cover;
+    border: 2px solid rgba(251, 146, 60, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced hover effects for navigation */
+.nav-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Flash message animations */
+.flash-message {
+    animation: slideInFromTop 0.5s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.flash-message::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Footer Styles */
+footer {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+.footer-link {
+    position: relative;
+    display: inline-block;
+    padding: 2px 0;
+}
+
+.footer-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #f97316, #fb923c);
+    transition: width 0.3s ease;
+}
+
+.footer-link:hover::after {
+    width: 100%;
+}
+
+.footer-social-link {
+    padding: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-social-link:hover {
+    background: rgba(251, 146, 60, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced gradient backgrounds */
+nav {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3730a3 100%);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+    .nav-button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    
+    .nav-button span {
+        display: none;
+    }
+    
+    nav .container {
+        padding: 0 16px;
+    }
+    
+    footer .grid {
+        grid-template-columns: 1fr;
+        gap: 6rem;
+        text-align: center;
+    }
+    
+    footer .col-span-2 {
+        grid-column: span 1;
+    }
+}
+
+/* Loading animation for images */
+nav img, footer img {
+    opacity: 0;
+    animation: fadeInImage 0.5s ease-out forwards;
+}
+
+@keyframes fadeInImage {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Enhanced button hover effects */
+.nav-button {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar for better UX */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #2563eb, #1e40af);
+}
+
+/* Focus states for accessibility */
+.nav-button:focus,
+.footer-link:focus,
+.footer-social-link:focus {
+    outline: 2px solid #f97316;
+    outline-offset: 2px;
+}
+
+/* Smooth page transitions */
+main {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Enhanced typography */
+nav h1, footer h3 {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Interactive elements feedback */
+.nav-button:active {
+    transform: translateY(1px);
+}
+
+/* Brand color consistency */
+:root {
+    --primary-blue: #1e40af;
+    --secondary-blue: #3730a3;
+    --accent-orange: #f97316;
+    --light-orange: #fb923c;
+}
+
 /* Smooth transitions */
 * {
     transition: all 0.3s ease;
@@ -146,3 +381,4 @@
         border: 1px solid #3b82f6;
         color: #1e40af;
     }
+
