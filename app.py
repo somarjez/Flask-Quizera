@@ -3531,6 +3531,397 @@ def browse_subjects():
         print(f"Error fetching available subjects: {e}")
         flash('Error loading subjects.')
         return redirect(url_for('dashboard'))
+
+# Add these routes to your Flask app
+
+@app.route('/search')
+def search_profiles():
+    """Search for user profiles"""
+    if 'user_id' not in session:
+        flash('Please log in to search profiles.')
+        return redirect(url_for('login'))
+    
+    query = request.args.get('q', '').strip()
+    role_filter = request.args.get('role', '')  # 'student', 'teacher', or empty for all
+    page = int(request.args.get('page', 1))
+    per_page = 12
+    
+    results = []
+    total_results = 0
+    
+    if query:
+        try:
+            # Get all users from Firestore
+            users_ref = db.collection('users')
+            all_users = list(users_ref.stream())
+            
+            # Filter users based on query and role
+            filtered_users = []
+            for user_doc in all_users:
+                user_data = user_doc.to_dict()
+                user_data['id'] = user_doc.id
+                
+                # Skip current user
+                if user_data['id'] == session['user_id']:
+                    continue
+                
+                # Role filter
+                if role_filter and user_data.get('role', '') != role_filter:
+                    continue
+                
+                # Search in username, full_name, email, institution
+                search_fields = [
+                    user_data.get('username', '').lower(),
+                    user_data.get('full_name', '').lower(),
+                    user_data.get('email', '').lower(),
+                    user_data.get('institution', '').lower()
+                ]
+                
+                query_lower = query.lower()
+                if any(query_lower in field for field in search_fields):
+                    filtered_users.append(user_data)
+            
+            total_results = len(filtered_users)
+            
+            # Implement pagination
+            start_idx = (page - 1) * per_page
+            end_idx = start_idx + per_page
+            results = filtered_users[start_idx:end_idx]
+            
+            # Calculate pagination info
+            total_pages = (total_results + per_page - 1) // per_page
+            has_prev = page > 1
+            has_next = page < total_pages
+            prev_num = page - 1 if has_prev else None
+            next_num = page + 1 if has_next else None
+            
+        except Exception as e:
+            print(f"Error searching profiles: {e}")
+            flash('Error occurred while searching profiles.')
+            results = []
+            total_results = 0
+            total_pages = 0
+            has_prev = False
+            has_next = False
+            prev_num = None
+            next_num = None
+    else:
+        total_pages = 0
+        has_prev = False
+        has_next = False
+        prev_num = None
+        next_num = None
+    
+    return render_template('search_results.html',
+                         results=results,
+                         query=query,
+                         role_filter=role_filter,
+                         total_results=total_results,
+                         page=page,
+                         total_pages=total_pages,
+                         has_prev=has_prev,
+                         has_next=has_next,
+                         prev_num=prev_num,
+                         next_num=next_num,
+                         username=session.get('username'),
+                         role=session.get('role'))
+
+@app.route('/user/<user_id>')
+def view_user_profile(user_id):
+    """View another user's public profile"""
+    if 'user_id' not in session:
+        flash('Please log in to view profiles.')
+        return redirect(url_for('login'))
+    
+    # Prevent users from viewing their own profile through this route
+    if user_id == session['user_id']:
+        return redirect(url_for('profile'))
+    
+    try:
+        # Get user data
+        user_doc = db.collection('users').document(user_id).get()
+        if not user_doc.exists:
+            flash('User not found.')
+            return redirect(url_for('search_profiles'))
+        
+        user_data = user_doc.to_dict()
+        user_data['id'] = user_doc.id
+        
+        # Create user object
+        class PublicUserProfile:
+            def __init__(self, data):
+                self.id = data.get('id')
+                self.username = data.get('username', '')
+                self.full_name = data.get('full_name', '')
+                self.role = data.get('role', '')
+                self.bio = data.get('bio', '')
+                self.institution = data.get('institution', '')
+                self.avatar_type = data.get('avatar_type', 'initial')
+                self.avatar_id = data.get('avatar_id', 'blue')
+                self.created_at = data.get('created_at', None)
+        
+        viewed_user = PublicUserProfile(user_data)
+        
+        # Get public statistics and activities
+        stats = {}
+        recent_activities = []
+        subjects = []
+        
+        if viewed_user.role == 'teacher':
+            # Get teacher's subjects
+            subjects_query = db.collection('subjects').where('teacher_id', '==', user_id)
+            subjects_docs = list(subjects_query.stream())
+            
+            for subject_doc in subjects_docs:
+                subject_data = subject_doc.to_dict()
+                subject_data['id'] = subject_doc.id
+                subjects.append(subject_data)
+            
+            # Calculate teacher stats
+            quizzes_query = db.collection('quizzes').where('teacher_id', '==', user_id)
+            quizzes_docs = list(quizzes_query.stream())
+            quizzes_count = len(quizzes_docs)
+            
+            # Get enrolled students count
+            enrollments_query = db.collection('enrollments').where('teacher_id', '==', user_id).where('status', '==', 'active')
+            enrolled_students_docs = list(enrollments_query.stream())
+            total_students = len(set(doc.to_dict()['student_id'] for doc in enrolled_students_docs))
+            
+            # Calculate total quiz attempts on teacher's quizzes
+            total_attempts = 0
+            total_score = 0
+            
+            for quiz_doc in quizzes_docs:
+                quiz_id = quiz_doc.id
+                attempts_query = db.collection('quiz_attempts').where('quiz_id', '==', quiz_id)
+                attempts_docs = list(attempts_query.stream())
+                
+                for attempt_doc in attempts_docs:
+                    attempt_data = attempt_doc.to_dict()
+                    total_attempts += 1
+                    total_score += attempt_data.get('percentage', 0)
+            
+            avg_score = (total_score / total_attempts) if total_attempts > 0 else 0
+            
+            stats = {
+                'subjects_count': len(subjects),
+                'quizzes_count': quizzes_count,
+                'total_students': total_students,
+                'total_attempts': total_attempts,
+                'avg_score': round(avg_score, 1) if avg_score > 0 else 0,
+                'teaching_experience': calculate_teaching_experience(viewed_user.created_at)
+            }
+            
+        else:  # Student
+            # Get student's enrollments and quiz attempts
+            attempts_query = db.collection('quiz_attempts').where('user_id', '==', user_id)
+            attempts_docs = list(attempts_query.stream())
+            
+            enrollments_query = db.collection('enrollments').where('student_id', '==', user_id).where('status', '==', 'active')
+            enrollments_docs = list(enrollments_query.stream())
+            
+            # Get subjects the student is enrolled in
+            for enrollment_doc in enrollments_docs:
+                enrollment_data = enrollment_doc.to_dict()
+                subjects.append({
+                    'name': enrollment_data.get('subject_name', ''),
+                    'teacher_name': enrollment_data.get('teacher_name', ''),
+                    'enrolled_at': enrollment_data.get('enrolled_at', '')
+                })
+            
+            quizzes_taken = len(attempts_docs)
+            total_score = sum(attempt.to_dict().get('percentage', 0) for attempt in attempts_docs)
+            average_score = (total_score / quizzes_taken) if quizzes_taken > 0 else 0
+            
+            stats = {
+                'quizzes_taken': quizzes_taken,
+                'average_score': round(average_score, 1),
+                'subjects_enrolled': len(subjects),
+                'learning_streak': calculate_learning_streak(user_id),
+                'member_since': calculate_member_duration(viewed_user.created_at)
+            }
+        
+        # Get recent public activities (last 10)
+        recent_activities = get_public_recent_activities(user_id, viewed_user.role)
+        
+        return render_template('user_profile.html',
+                             viewed_user=viewed_user,
+                             stats=stats,
+                             recent_activities=recent_activities,
+                             subjects=subjects,
+                             username=session.get('username'),
+                             role=session.get('role'))
+    
+    except Exception as e:
+        print(f"Error loading user profile: {e}")
+        import traceback
+        traceback.print_exc()
+        flash('Error loading user profile.')
+        return redirect(url_for('search_profiles'))
+
+# Helper functions
+def calculate_teaching_experience(created_at):
+    """Calculate teaching experience in months"""
+    if not created_at:
+        return 0
+    
+    from datetime import datetime
+    if hasattr(created_at, 'timestamp'):
+        created_date = datetime.fromtimestamp(created_at.timestamp())
+    else:
+        created_date = created_at
+    
+    now = datetime.now()
+    diff = now - created_date
+    months = diff.days // 30
+    return max(1, months)
+
+def calculate_member_duration(created_at):
+    """Calculate how long user has been a member"""
+    if not created_at:
+        return "Recently joined"
+    
+    from datetime import datetime
+    if hasattr(created_at, 'timestamp'):
+        created_date = datetime.fromtimestamp(created_at.timestamp())
+    else:
+        created_date = created_at
+    
+    now = datetime.now()
+    diff = now - created_date
+    
+    if diff.days < 30:
+        return "Recently joined"
+    elif diff.days < 365:
+        months = diff.days // 30
+        return f"{months} month{'s' if months > 1 else ''} ago"
+    else:
+        years = diff.days // 365
+        return f"{years} year{'s' if years > 1 else ''} ago"
+
+def calculate_learning_streak(user_id):
+    """Calculate current learning streak for student"""
+    try:
+        # Get recent quiz attempts ordered by date
+        attempts_query = db.collection('quiz_attempts')\
+            .where('user_id', '==', user_id)\
+            .order_by('created_at', direction=firestore.Query.DESCENDING)\
+            .limit(30)  # Check last 30 attempts
+        
+        attempts = list(attempts_query.stream())
+        
+        if not attempts:
+            return 0
+        
+        # Calculate consecutive days with quiz attempts
+        from datetime import datetime, timedelta
+        
+        streak = 0
+        current_date = datetime.now().date()
+        
+        # Group attempts by date
+        attempts_by_date = {}
+        for attempt in attempts:
+            attempt_data = attempt.to_dict()
+            attempt_date = attempt_data.get('created_at')
+            if attempt_date:
+                if hasattr(attempt_date, 'timestamp'):
+                    date_key = datetime.fromtimestamp(attempt_date.timestamp()).date()
+                else:
+                    date_key = attempt_date.date()
+                attempts_by_date[date_key] = True
+        
+        # Count consecutive days
+        check_date = current_date
+        while check_date in attempts_by_date:
+            streak += 1
+            check_date -= timedelta(days=1)
+        
+        return streak
+    
+    except Exception as e:
+        print(f"Error calculating learning streak: {e}")
+        return 0
+
+def get_public_recent_activities(user_id, user_role, limit=10):
+    """Get public recent activities for a user"""
+    activities = []
+    try:
+        if user_role == 'teacher':
+            # Get recent enrollments in teacher's subjects
+            enrollments_query = db.collection('enrollments')\
+                .where('teacher_id', '==', user_id)\
+                .order_by('enrolled_at', direction=firestore.Query.DESCENDING)\
+                .limit(limit)
+            
+            enrollments = list(enrollments_query.stream())
+            for enrollment in enrollments:
+                data = enrollment.to_dict()
+                activities.append({
+                    'type': 'enrollment',
+                    'description': f"New student enrolled in {data.get('subject_name', 'a subject')}",
+                    'created_at': data.get('enrolled_at', datetime.now()),
+                    'icon': 'user-plus'
+                })
+            
+            # Get recent quiz creations
+            quizzes_query = db.collection('quizzes')\
+                .where('teacher_id', '==', user_id)\
+                .order_by('created_at', direction=firestore.Query.DESCENDING)\
+                .limit(5)
+            
+            quizzes = list(quizzes_query.stream())
+            for quiz in quizzes:
+                data = quiz.to_dict()
+                activities.append({
+                    'type': 'quiz_created',
+                    'description': f"Created quiz: {data.get('title', 'Untitled Quiz')}",
+                    'created_at': data.get('created_at', datetime.now()),
+                    'icon': 'plus-circle'
+                })
+        
+        else:  # Student
+            # Get recent quiz attempts
+            attempts_query = db.collection('quiz_attempts')\
+                .where('user_id', '==', user_id)\
+                .order_by('created_at', direction=firestore.Query.DESCENDING)\
+                .limit(limit)
+            
+            attempts = list(attempts_query.stream())
+            for attempt in attempts:
+                data = attempt.to_dict()
+                score = data.get('percentage', 0)
+                activities.append({
+                    'type': 'quiz_attempt',
+                    'description': f"Completed a quiz with {score}% score",
+                    'created_at': data.get('created_at', datetime.now()),
+                    'icon': 'check-circle' if score >= 70 else 'x-circle',
+                    'score': score
+                })
+            
+            # Get recent enrollments
+            enrollments_query = db.collection('enrollments')\
+                .where('student_id', '==', user_id)\
+                .order_by('enrolled_at', direction=firestore.Query.DESCENDING)\
+                .limit(5)
+            
+            enrollments = list(enrollments_query.stream())
+            for enrollment in enrollments:
+                data = enrollment.to_dict()
+                activities.append({
+                    'type': 'enrollment',
+                    'description': f"Enrolled in {data.get('subject_name', 'a subject')}",
+                    'created_at': data.get('enrolled_at', datetime.now()),
+                    'icon': 'book-open'
+                })
+        
+        # Sort by date and limit
+        activities.sort(key=lambda x: x['created_at'], reverse=True)
+        return activities[:limit]
+    
+    except Exception as e:
+        print(f"Error getting public activities: {e}")
+        return []
     
 if __name__ == '__main__':
     # app.run(debug=True)

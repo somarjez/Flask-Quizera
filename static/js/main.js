@@ -1330,3 +1330,303 @@ document.addEventListener('click', function(e) {
         e.target.remove();
     }
 });
+
+// FOR SEARCH_PROFILE.HTML, AND VIEW_PROFILE.HMTL
+
+// Search functionality enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Auto-complete search suggestions
+    const searchInput = document.querySelector('input[name="q"]');
+    if (searchInput) {
+        let debounceTimer;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+            
+            // Debounce search suggestions
+            debounceTimer = setTimeout(() => {
+                if (query.length >= 2) {
+                    showSearchSuggestions(query);
+                } else {
+                    hideSearchSuggestions();
+                }
+            }, 300);
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target)) {
+                hideSearchSuggestions();
+            }
+        });
+        
+        // Handle keyboard navigation in search
+        searchInput.addEventListener('keydown', function(e) {
+            const suggestions = document.querySelector('.search-suggestions');
+            if (!suggestions) return;
+            
+            const items = suggestions.querySelectorAll('.suggestion-item');
+            let currentIndex = Array.from(items).findIndex(item => 
+                item.classList.contains('highlighted')
+            );
+            
+            switch(e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    currentIndex = (currentIndex + 1) % items.length;
+                    highlightSuggestion(items, currentIndex);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    currentIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+                    highlightSuggestion(items, currentIndex);
+                    break;
+                case 'Enter':
+                    if (currentIndex >= 0 && items[currentIndex]) {
+                        e.preventDefault();
+                        items[currentIndex].click();
+                    }
+                    break;
+                case 'Escape':
+                    hideSearchSuggestions();
+                    searchInput.blur();
+                    break;
+            }
+        });
+    }
+    
+    // Profile card animations
+    const profileCards = document.querySelectorAll('.profile-card');
+    profileCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Lazy loading for profile images
+    const profileImages = document.querySelectorAll('img[data-src]');
+    if (profileImages.length > 0) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.removeAttribute('data-src');
+                    observer.unobserve(img);
+                }
+            });
+        });
+        
+        profileImages.forEach(img => imageObserver.observe(img));
+    }
+    
+    // Statistics counter animation
+    const statNumbers = document.querySelectorAll('.stat-number');
+    const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCounter(entry.target);
+                statsObserver.unobserve(entry.target);
+            }
+        });
+    });
+    
+    statNumbers.forEach(stat => statsObserver.observe(stat));
+    
+    // Achievement badge hover effects
+    const achievementBadges = document.querySelectorAll('.achievement-badge');
+    achievementBadges.forEach(badge => {
+        badge.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.1) rotate(5deg)';
+        });
+        
+        badge.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1) rotate(0deg)';
+        });
+    });
+    
+    // Filter buttons functionality
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            filterButtons.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Update URL with filter
+            const role = this.dataset.role;
+            const url = new URL(window.location);
+            if (role) {
+                url.searchParams.set('role', role);
+            } else {
+                url.searchParams.delete('role');
+            }
+            window.history.pushState({}, '', url);
+            
+            // You can add AJAX functionality here to filter without page reload
+        });
+    });
+    
+    // Recent activity timestamps
+    updateRelativeTimestamps();
+    setInterval(updateRelativeTimestamps, 60000); // Update every minute
+    
+    // Smooth scroll for anchor links
+    const anchorLinks = document.querySelectorAll('a[href^="#"]');
+    anchorLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+});
+
+// Search suggestions functionality
+function showSearchSuggestions(query) {
+    // This would typically make an AJAX call to get suggestions
+    // For now, we'll create a placeholder
+    const searchContainer = document.querySelector('.search-container') || 
+                           document.querySelector('input[name="q"]').parentElement;
+    
+    // Remove existing suggestions
+    hideSearchSuggestions();
+    
+    // Create suggestions container
+    const suggestions = document.createElement('div');
+    suggestions.className = 'search-suggestions absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 mt-1';
+    
+    // Mock suggestions (replace with actual API call)
+    const mockSuggestions = [
+        { type: 'user', name: 'John Doe', role: 'teacher' },
+        { type: 'user', name: 'Jane Smith', role: 'student' },
+        { type: 'subject', name: 'Data Structures' }
+    ].filter(item => 
+        item.name.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    if (mockSuggestions.length > 0) {
+        mockSuggestions.forEach(suggestion => {
+            const item = document.createElement('div');
+            item.className = 'suggestion-item px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0';
+            item.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 rounded-full ${suggestion.role === 'teacher' ? 'bg-blue-500' : 'bg-green-500'}"></div>
+                    <span class="font-medium">${suggestion.name}</span>
+                    <span class="text-xs text-gray-500">${suggestion.role || suggestion.type}</span>
+                </div>
+            `;
+            
+            item.addEventListener('click', () => {
+                document.querySelector('input[name="q"]').value = suggestion.name;
+                hideSearchSuggestions();
+                // Trigger search
+                document.querySelector('form').submit();
+            });
+            
+            suggestions.appendChild(item);
+        });
+        
+        searchContainer.appendChild(suggestions);
+    }
+}
+
+function hideSearchSuggestions() {
+    const suggestions = document.querySelector('.search-suggestions');
+    if (suggestions) {
+        suggestions.remove();
+    }
+}
+
+function highlightSuggestion(items, index) {
+    items.forEach(item => item.classList.remove('highlighted'));
+    if (items[index]) {
+        items[index].classList.add('highlighted');
+        items[index].style.backgroundColor = '#EBF4FF';
+    }
+}
+
+// Animate counter numbers
+function animateCounter(element) {
+    const target = parseInt(element.textContent) || 0;
+    const increment = target / 20;
+    let current = 0;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+            element.textContent = target;
+            clearInterval(timer);
+        } else {
+            element.textContent = Math.floor(current);
+        }
+    }, 50);
+}
+
+// Update relative timestamps
+function updateRelativeTimestamps() {
+    const timestamps = document.querySelectorAll('[data-timestamp]');
+    timestamps.forEach(element => {
+        const timestamp = parseInt(element.dataset.timestamp);
+        const now = Date.now();
+        const diff = now - timestamp;
+        
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        
+        let relative;
+        if (minutes < 1) {
+            relative = 'Just now';
+        } else if (minutes < 60) {
+            relative = `${minutes}m ago`;
+        } else if (hours < 24) {
+            relative = `${hours}h ago`;
+        } else if (days < 7) {
+            relative = `${days}d ago`;
+        } else {
+            const date = new Date(timestamp);
+            relative = date.toLocaleDateString();
+        }
+        
+        element.textContent = relative;
+    });
+}
+
+// Utility function for AJAX requests
+function fetchJSON(url, options = {}) {
+    return fetch(url, {
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        },
+        ...options
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    });
+}
+
+// Export functions for use in other scripts
+window.SearchUtils = {
+    showSearchSuggestions,
+    hideSearchSuggestions,
+    animateCounter,
+    updateRelativeTimestamps,
+    fetchJSON
+};

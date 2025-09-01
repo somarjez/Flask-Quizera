@@ -4,44 +4,51 @@
 
 {% block content %}
     <!-- Hero Section -->
-    <section class="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
-        <div class="container mx-auto px-4 text-center">
+    <section class="bg-gradient-to-br from-indigo-800 via-purple-700 to-blue-900 py-20 relative overflow-hidden">
+        <!-- Background decoration -->
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-20 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+            <div class="absolute bottom-20 right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-white rounded-full blur-3xl"></div>
+        </div>
+        
+        <div class="container mx-auto px-4 text-center relative z-10">
             {% if username %}
                 <!-- Logged in user hero -->
-                <h1 class="text-5xl font-bold text-gray-800 mb-6">Welcome back, {{ username }}!</h1>
-                <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                <h1 class="text-5xl font-bold text-white mb-6">Welcome back, {{ username }}!</h1>
+                <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
                     Ready to continue your Computer Science learning journey? 
                     Explore new subjects or continue with your enrolled courses.
                 </p>
                 <div class="flex justify-center space-x-4">
                     {% if role == 'student' %}
-                        <a href="{{ url_for('dashboard') }}" class="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors">
+                        <a href="{{ url_for('dashboard') }}" class="bg-white text-indigo-700 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg">
                             My Dashboard
                         </a>
-                        <a href="#features" class="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg border border-blue-600 hover:bg-blue-50 transition-colors">
+                        <a href="#features" class="bg-transparent text-white px-8 py-3 rounded-lg text-lg font-semibold border-2 border-white hover:bg-white hover:text-indigo-700 transition-all transform hover:scale-105">
                             Browse Subjects
                         </a>
                     {% elif role == 'teacher' %}
-                        <a href="{{ url_for('dashboard') }}" class="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors">
+                        <a href="{{ url_for('dashboard') }}" class="bg-white text-indigo-700 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg">
                             My Dashboard
                         </a>
-                        <a href="{{ url_for('create_subject') if url_for('create_subject') else '#' }}" class="bg-green-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-green-700 transition-colors">
+                        <a href="{{ url_for('create_subject') if url_for('create_subject') else '#' }}" class="bg-green-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-green-600 transition-all transform hover:scale-105 shadow-lg">
                             Create Subject
                         </a>
                     {% endif %}
                 </div>
             {% else %}
                 <!-- Not logged in user hero -->
-                <h1 class="text-5xl font-bold text-gray-800 mb-6">Welcome to Quizera</h1>
-                <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                <h1 class="text-5xl font-bold text-white mb-6">Welcome to Quizera</h1>
+                <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
                     The ultimate e-learning platform designed specifically for Computer Science students. 
                     Learn, practice, and excel with interactive quizzes and comprehensive study materials.
                 </p>
                 <div class="flex justify-center space-x-4">
-                    <a href="{{ url_for('signup') }}" class="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors">
+                    <a href="{{ url_for('signup') }}" class="bg-orange-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-orange-600 transition-all transform hover:scale-105 shadow-lg">
                         Get Started
                     </a>
-                    <a href="#features" class="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg border border-blue-600 hover:bg-blue-50 transition-colors">
+                    <a href="#features" class="bg-transparent text-white px-8 py-3 rounded-lg text-lg font-semibold border-2 border-white hover:bg-white hover:text-indigo-700 transition-all">
                         Learn More
                     </a>
                 </div>
@@ -50,7 +57,7 @@
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="py-16">
+    <section id="features" class="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
         <div class="container mx-auto px-4">
             <h2 class="text-4xl font-bold text-center text-gray-800 mb-12">
                 {% if username %}
@@ -61,36 +68,36 @@
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Feature 1 -->
-                <div class="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow">
-                    <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all transform hover:-translate-y-2 border border-gray-100">
+                    <div class="bg-gradient-to-br from-blue-400 to-blue-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">Interactive Learning</h3>
-                    <p class="text-gray-600">Engage with dynamic quizzes and interactive content designed to make learning Computer Science concepts fun and effective.</p>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Interactive Learning</h3>
+                    <p class="text-gray-600 leading-relaxed">Engage with dynamic quizzes and interactive content designed to make learning Computer Science concepts fun and effective.</p>
                 </div>
 
                 <!-- Feature 2 -->
-                <div class="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow">
-                    <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all transform hover:-translate-y-2 border border-gray-100">
+                    <div class="bg-gradient-to-br from-green-400 to-green-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">Progress Tracking</h3>
-                    <p class="text-gray-600">Monitor your learning progress with detailed analytics and performance insights to identify areas for improvement.</p>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Progress Tracking</h3>
+                    <p class="text-gray-600 leading-relaxed">Monitor your learning progress with detailed analytics and performance insights to identify areas for improvement.</p>
                 </div>
 
                 <!-- Feature 3 -->
-                <div class="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow">
-                    <div class="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all transform hover:-translate-y-2 border border-gray-100">
+                    <div class="bg-gradient-to-br from-purple-400 to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">Expert Teachers</h3>
-                    <p class="text-gray-600">Learn from experienced Computer Science educators who create comprehensive quizzes and study materials.</p>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Expert Teachers</h3>
+                    <p class="text-gray-600 leading-relaxed">Learn from experienced Computer Science educators who create comprehensive quizzes and study materials.</p>
                 </div>
             </div>
         </div>
@@ -116,13 +123,13 @@
                     <input type="text" 
                            id="searchInput" 
                            placeholder="Search subjects, descriptions, or teachers..." 
-                           class="w-full px-4 py-3 pl-10 pr-12 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
-                    <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                           class="w-full px-4 py-4 pl-12 pr-12 text-gray-700 bg-white border-2 border-gray-200 rounded-xl shadow-md focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4">
                         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </div>
-                    <button id="clearSearch" class="absolute inset-y-0 right-0 flex items-center pr-3 hidden">
+                    <button id="clearSearch" class="absolute inset-y-0 right-0 flex items-center pr-4 hidden">
                         <svg class="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -130,11 +137,11 @@
                 </div>
 
                 <!-- Filter and Sort Options -->
-                <div class="flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex flex-wrap gap-4 items-center justify-between bg-gray-50 p-4 rounded-xl">
                     <!-- Filter by Teacher -->
                     <div class="flex items-center space-x-2">
                         <label for="teacherFilter" class="text-sm font-medium text-gray-700">Teacher:</label>
-                        <select id="teacherFilter" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500">
+                        <select id="teacherFilter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-indigo-500 bg-white">
                             <option value="">All Teachers</option>
                         </select>
                     </div>
@@ -142,7 +149,7 @@
                     <!-- Sort Options -->
                     <div class="flex items-center space-x-2">
                         <label for="sortBy" class="text-sm font-medium text-gray-700">Sort by:</label>
-                        <select id="sortBy" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500">
+                        <select id="sortBy" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-indigo-500 bg-white">
                             <option value="name">Name (A-Z)</option>
                             <option value="name-desc">Name (Z-A)</option>
                             <option value="date">Newest First</option>
@@ -154,13 +161,13 @@
                     <!-- View Toggle -->
                     <div class="flex items-center space-x-2">
                         <span class="text-sm font-medium text-gray-700">View:</span>
-                        <div class="flex border border-gray-300 rounded-md">
-                            <button id="gridView" class="px-3 py-2 bg-blue-500 text-white text-sm rounded-l-md hover:bg-blue-600 transition-colors">
+                        <div class="flex border-2 border-gray-300 rounded-lg overflow-hidden">
+                            <button id="gridView" class="px-3 py-2 bg-indigo-500 text-white text-sm hover:bg-indigo-600 transition-colors">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M4 6h4v4H4V6zm6 0h4v4h-4V6zm6 0h4v4h-4V6zM4 12h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 18h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"/>
                                 </svg>
                             </button>
-                            <button id="listView" class="px-3 py-2 bg-gray-200 text-gray-600 text-sm rounded-r-md hover:bg-gray-300 transition-colors">
+                            <button id="listView" class="px-3 py-2 bg-gray-200 text-gray-600 text-sm hover:bg-gray-300 transition-colors">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/>
                                 </svg>
@@ -170,16 +177,16 @@
                 </div>
 
                 <!-- Results Summary -->
-                <div id="resultsSummary" class="text-sm text-gray-600 mb-4">
+                <div id="resultsSummary" class="text-sm text-gray-600 mb-4 mt-4">
                     <span id="resultsCount">{{ subjects|length if subjects else 0 }}</span> subjects found
                 </div>
             </div>
             
             {% if subjects %}
                 <!-- Grid View (default) -->
-                <div class="subjects-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="subjectsGrid">
+                <div class="subjects-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="subjectsGrid">
                     {% for subject in subjects %}
-                        <div class="subject-card bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1" 
+                        <div class="subject-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2 border border-gray-100 overflow-hidden" 
                              data-subject-name="{{ subject.name|lower }}" 
                              data-subject-description="{{ subject.description|lower }}" 
                              data-subject-teacher="{{ subject.teacher_name|lower }}"
@@ -190,28 +197,28 @@
                                 <div class="flex items-start justify-between mb-3">
                                     <h3 class="subject-title text-xl font-semibold text-gray-800 line-clamp-2">{{ subject.name }}</h3>
                                     {% if username and role == 'student' %}
-                                        <span class="enrollment-badge ml-2 px-2 py-1 rounded-full text-xs font-medium {{ 'bg-green-100 text-green-800' if subject.is_enrolled else 'bg-gray-100 text-gray-600' }}">
+                                        <span class="enrollment-badge ml-2 px-3 py-1 rounded-full text-xs font-semibold {{ 'bg-green-100 text-green-700' if subject.is_enrolled else 'bg-orange-100 text-orange-700' }}">
                                             {{ 'Enrolled' if subject.is_enrolled else 'Available' }}
                                         </span>
                                     {% endif %}
                                 </div>
                                 
-                                <p class="subject-description text-gray-600 mb-4 line-clamp-3">{{ subject.description }}</p>
+                                <p class="subject-description text-gray-600 mb-4 line-clamp-3 leading-relaxed">{{ subject.description }}</p>
                                 
                                 <!-- Subject Stats -->
                                 <div class="flex items-center space-x-4 text-sm text-gray-500 mb-4">
-                                    <span class="flex items-center">
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <span class="flex items-center bg-blue-50 px-3 py-1 rounded-lg">
+                                        <svg class="w-4 h-4 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                                         </svg>
                                         {% if username %}
                                             {{ subject.get('topic_count', 0) }} Topics
                                         {% else %}
-                                            Sign up to view topics
+                                            Sign up to view
                                         {% endif %}
                                     </span>
-                                    <span class="flex items-center">
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <span class="flex items-center bg-purple-50 px-3 py-1 rounded-lg">
+                                        <svg class="w-4 h-4 mr-1 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                                         </svg>
                                         {{ subject.created_at.strftime('%b %Y') if subject.created_at else 'Recently' }}
@@ -220,23 +227,23 @@
                             </div>
                             
                             <!-- Subject Footer -->
-                            <div class="px-6 py-4 bg-gray-100 rounded-b-lg">
+                            <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-blue-50 border-t border-gray-100">
                                 <div class="flex justify-between items-center">
                                     <div class="flex items-center">
-                                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-                                            <span class="text-white text-sm font-medium">{{ subject.teacher_name[0].upper() if subject.teacher_name else '?' }}</span>
+                                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mr-3 shadow-md">
+                                            <span class="text-white text-sm font-semibold">{{ subject.teacher_name[0].upper() if subject.teacher_name else '?' }}</span>
                                         </div>
-                                        <span class="subject-teacher text-sm text-gray-600">{{ subject.teacher_name }}</span>
+                                        <span class="subject-teacher text-sm font-medium text-gray-700">{{ subject.teacher_name }}</span>
                                     </div>
                                     
                                     <div class="flex space-x-2">
                                         {% if username %}
                                             <a href="{{ url_for('view_subject', subject_id=subject.id) }}" 
-                                               class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 transition-colors">
+                                               class="bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-600 transition-all transform hover:scale-105 shadow-md">
                                                 View Details
                                             </a>
                                             {% if role == 'student' and not subject.is_enrolled %}
-                                                <button class="quick-enroll-btn bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600 transition-colors"
+                                                <button class="quick-enroll-btn bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition-all transform hover:scale-105 shadow-md"
                                                         data-subject-id="{{ subject.id }}"
                                                         data-subject-name="{{ subject.name }}">
                                                     Quick Enroll
@@ -244,7 +251,7 @@
                                             {% endif %}
                                         {% else %}
                                             <a href="{{ url_for('signup') }}" 
-                                               class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 transition-colors">
+                                               class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-600 transition-all transform hover:scale-105 shadow-md">
                                                 Sign Up to Access
                                             </a>
                                         {% endif %}
@@ -258,7 +265,7 @@
                 <!-- List View (hidden by default) -->
                 <div class="subjects-list hidden" id="subjectsList">
                     {% for subject in subjects %}
-                        <div class="subject-card-list bg-white rounded-lg shadow-md mb-4 hover:shadow-lg transition-shadow" 
+                        <div class="subject-card-list bg-white rounded-xl shadow-lg mb-6 hover:shadow-xl transition-all border border-gray-100 overflow-hidden" 
                              data-subject-name="{{ subject.name|lower }}" 
                              data-subject-description="{{ subject.description|lower }}" 
                              data-subject-teacher="{{ subject.teacher_name|lower }}"
@@ -267,43 +274,43 @@
                             <div class="p-6">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1 mr-6">
-                                        <div class="flex items-center mb-2">
+                                        <div class="flex items-center mb-3">
                                             <h3 class="subject-title text-xl font-semibold text-gray-800 mr-3">{{ subject.name }}</h3>
                                             {% if username and role == 'student' %}
-                                                <span class="enrollment-badge px-2 py-1 rounded-full text-xs font-medium {{ 'bg-green-100 text-green-800' if subject.is_enrolled else 'bg-gray-100 text-gray-600' }}">
+                                                <span class="enrollment-badge px-3 py-1 rounded-full text-xs font-semibold {{ 'bg-green-100 text-green-700' if subject.is_enrolled else 'bg-orange-100 text-orange-700' }}">
                                                     {{ 'Enrolled' if subject.is_enrolled else 'Available' }}
                                                 </span>
                                             {% endif %}
                                         </div>
                                         
-                                        <p class="subject-description text-gray-600 mb-3">{{ subject.description }}</p>
+                                        <p class="subject-description text-gray-600 mb-4 leading-relaxed">{{ subject.description }}</p>
                                         
                                         <div class="flex items-center space-x-6 text-sm text-gray-500">
                                             <span class="flex items-center">
-                                                <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-2">
-                                                    <span class="text-white text-xs font-medium">{{ subject.teacher_name[0].upper() if subject.teacher_name else '?' }}</span>
+                                                <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mr-2 shadow-md">
+                                                    <span class="text-white text-xs font-semibold">{{ subject.teacher_name[0].upper() if subject.teacher_name else '?' }}</span>
                                                 </div>
-                                                <span class="subject-teacher">{{ subject.teacher_name }}</span>
+                                                <span class="subject-teacher font-medium">{{ subject.teacher_name }}</span>
                                             </span>
-                                            <span>
+                                            <span class="bg-blue-50 px-3 py-1 rounded-lg font-medium text-blue-700">
                                                 {% if username %}
                                                     {{ subject.get('topic_count', 0) }} Topics
                                                 {% else %}
-                                                    Sign up to view topics
+                                                    Sign up to view
                                                 {% endif %}
                                             </span>
-                                            <span>{{ subject.created_at.strftime('%B %d, %Y') if subject.created_at else 'Recently' }}</span>
+                                            <span class="bg-purple-50 px-3 py-1 rounded-lg font-medium text-purple-700">{{ subject.created_at.strftime('%B %d, %Y') if subject.created_at else 'Recently' }}</span>
                                         </div>
                                     </div>
                                     
-                                    <div class="flex flex-col space-y-2">
+                                    <div class="flex flex-col space-y-3">
                                         {% if username %}
                                             <a href="{{ url_for('view_subject', subject_id=subject.id) }}" 
-                                               class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 transition-colors text-center">
+                                               class="bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-600 transition-all transform hover:scale-105 text-center shadow-md">
                                                 View Details
                                             </a>
                                             {% if role == 'student' and not subject.is_enrolled %}
-                                                <button class="quick-enroll-btn bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600 transition-colors"
+                                                <button class="quick-enroll-btn bg-green-500 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition-all transform hover:scale-105 shadow-md"
                                                         data-subject-id="{{ subject.id }}"
                                                         data-subject-name="{{ subject.name }}">
                                                     Quick Enroll
@@ -311,7 +318,7 @@
                                             {% endif %}
                                         {% else %}
                                             <a href="{{ url_for('signup') }}" 
-                                               class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 transition-colors text-center">
+                                               class="bg-orange-500 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-orange-600 transition-all transform hover:scale-105 text-center shadow-md">
                                                 Sign Up to Access
                                             </a>
                                         {% endif %}
@@ -324,27 +331,27 @@
 
                 <!-- No Results Message -->
                 <div id="noResultsMessage" class="hidden text-center py-16">
-                    <div class="max-w-md mx-auto">
+                    <div class="max-w-md mx-auto bg-white rounded-xl p-8 shadow-lg">
                         <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                         <h3 class="text-xl font-semibold text-gray-500 mb-2">No subjects found</h3>
                         <p class="text-gray-400 mb-4">Try adjusting your search terms or filters to find what you're looking for.</p>
-                        <button id="resetFilters" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+                        <button id="resetFilters" class="bg-indigo-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-600 transition-all transform hover:scale-105 shadow-md">
                             Reset Filters
                         </button>
                     </div>
                 </div>
             {% else %}
                 <div class="text-center">
-                    <div class="bg-gray-100 rounded-lg p-8">
+                    <div class="bg-white rounded-xl p-8 shadow-lg max-w-md mx-auto">
                         <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                         </svg>
                         <h3 class="text-xl font-semibold text-gray-600 mb-2">No Subjects Available Yet</h3>
                         <p class="text-gray-500 mb-4">Teachers haven't created any subjects yet. Check back soon!</p>
                         {% if not username %}
-                            <a href="{{ url_for('signup') }}" class="text-blue-600 hover:text-blue-800 font-medium">
+                            <a href="{{ url_for('signup') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">
                                 Sign up to get notified when subjects are available
                             </a>
                         {% endif %}
@@ -357,12 +364,12 @@
     <!-- Quick Enrollment Modal (only show for logged in students) -->
     {% if username and role == 'student' %}
         <div id="quickEnrollModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <h3 class="text-lg font-semibold mb-4">Quick Enrollment</h3>
-                <p id="quickEnrollText" class="text-gray-600 mb-6"></p>
+            <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Quick Enrollment</h3>
+                <p id="quickEnrollText" class="text-gray-600 mb-6 leading-relaxed"></p>
                 <div class="flex justify-end space-x-3">
-                    <button id="cancelQuickEnroll" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
-                    <button id="confirmQuickEnroll" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Enroll</button>
+                    <button id="cancelQuickEnroll" class="px-6 py-3 text-gray-600 hover:text-gray-800 font-semibold transition-colors">Cancel</button>
+                    <button id="confirmQuickEnroll" class="px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-all transform hover:scale-105 shadow-md">Enroll</button>
                 </div>
             </div>
         </div>
@@ -370,17 +377,24 @@
 
     <!-- Call to Action (only show for non-logged in users) -->
     {% if not username %}
-        <section class="py-16 bg-blue-600 text-white">
-            <div class="container mx-auto px-4 text-center">
-                <h2 class="text-3xl font-bold mb-6">Ready to Start Learning?</h2>
-                <p class="text-xl mb-8 max-w-2xl mx-auto">
+        <section class="py-16 bg-gradient-to-br from-indigo-800 via-purple-700 to-blue-900 text-white relative overflow-hidden">
+            <!-- Background decoration -->
+            <div class="absolute inset-0 opacity-10">
+                <div class="absolute top-10 left-20 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+                <div class="absolute bottom-10 right-20 w-40 h-40 bg-white rounded-full blur-3xl"></div>
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-white rounded-full blur-3xl"></div>
+            </div>
+            
+            <div class="container mx-auto px-4 text-center relative z-10">
+                <h2 class="text-4xl font-bold mb-6">Ready to Start Learning?</h2>
+                <p class="text-xl mb-8 max-w-2xl mx-auto text-blue-100">
                     Join thousands of Computer Science students who are already improving their skills with Quizera.
                 </p>
                 <div class="flex justify-center space-x-4">
-                    <a href="{{ url_for('signup') }}" class="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg hover:bg-gray-100 transition-colors">
+                    <a href="{{ url_for('signup') }}" class="bg-white text-indigo-700 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg">
                         Sign Up Now
                     </a>
-                    <a href="{{ url_for('login') }}" class="border border-white text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition-colors">
+                    <a href="{{ url_for('login') }}" class="border-2 border-white text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-white hover:text-indigo-700 transition-all transform hover:scale-105">
                         I Have an Account
                     </a>
                 </div>
@@ -574,8 +588,8 @@ document.addEventListener('DOMContentLoaded', function() {
         gridView.addEventListener('click', () => {
             currentView = 'grid';
             gridView.classList.remove('bg-gray-200', 'text-gray-600');
-            gridView.classList.add('bg-blue-500', 'text-white');
-            listView.classList.remove('bg-blue-500', 'text-white');
+            gridView.classList.add('bg-indigo-500', 'text-white');
+            listView.classList.remove('bg-indigo-500', 'text-white');
             listView.classList.add('bg-gray-200', 'text-gray-600');
             
             if (subjectsGrid) subjectsGrid.classList.remove('hidden');
@@ -588,8 +602,8 @@ document.addEventListener('DOMContentLoaded', function() {
         listView.addEventListener('click', () => {
             currentView = 'list';
             listView.classList.remove('bg-gray-200', 'text-gray-600');
-            listView.classList.add('bg-blue-500', 'text-white');
-            gridView.classList.remove('bg-blue-500', 'text-white');
+            listView.classList.add('bg-indigo-500', 'text-white');
+            gridView.classList.remove('bg-indigo-500', 'text-white');
             gridView.classList.add('bg-gray-200', 'text-gray-600');
             
             if (subjectsList) subjectsList.classList.remove('hidden');
@@ -666,8 +680,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (badge) {
                 badge.className = isEnrolled ? 
-                    'enrollment-badge ml-2 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800' :
-                    'enrollment-badge ml-2 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600';
+                    'enrollment-badge ml-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700' :
+                    'enrollment-badge ml-2 px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700';
                 badge.textContent = isEnrolled ? 'Enrolled' : 'Available';
             }
             
@@ -679,7 +693,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function showMessage(message, type) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
+        messageDiv.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-2xl font-semibold ${
             type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
         }`;
         messageDiv.textContent = message;
@@ -714,6 +728,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .subjects-list {
     display: block;
+}
+
+/* Additional smooth animations */
+.subject-card, .subject-card-list {
+    transition: all 0.3s ease;
+}
+
+.subject-card:hover, .subject-card-list:hover {
+    transform: translateY(-8px);
+}
+
+/* Enhanced button animations */
+button, a {
+    transition: all 0.2s ease;
+}
+
+/* Smooth gradient animations */
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-10px) rotate(1deg); }
+    66% { transform: translateY(5px) rotate(-1deg); }
+}
+
+.hero-decoration {
+    animation: float 6s ease-in-out infinite;
 }
 </style>
 {% endblock %}

@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ viewed_user.full_name or viewed_user.username }} - Profile{% endblock %}
+
+{% block main_class %}container mx-auto px-4 py-8{% endblock %}
+
+{% block content %}
+<!-- -->
+    
+    <!-- Profile Header -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-32"></div>
+        <div class="px-8 pb-8">
+            <!-- Avatar -->
+            <div class="flex items-start -mt-16 mb-6">
+                <div class="relative">
+                    {% if viewed_user.avatar_type == 'animal' and viewed_user.avatar_id %}
+                        <div class="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center text-6xl animal-avatar border-4 border-white shadow-lg">
+                            {{ viewed_user.avatar_id | get_animal_emoji }}
+                        </div>
+                    {% else %}
+                        <div class="w-32 h-32 rounded-full bg-{{ viewed_user.avatar_id if viewed_user and viewed_user.avatar_id and viewed_user.avatar_type == 'initial' else 'blue' }}-500 flex items-center justify-center text-white font-bold text-4xl border-4 border-white shadow-lg initial-avatar">
+                            {{ (viewed_user.full_name[0] if viewed_user.full_name else viewed_user.username[0] if viewed_user.username else 'U') | upper }}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Role Badge -->
+                    <div class="absolute -bottom-2 -right-2">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                   {% if viewed_user.role == 'teacher' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
+                            {% if viewed_user.role == 'teacher' %}
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6L23 9l-11-6z"/>
+                                </svg>
+                                Teacher
+                            {% else %}
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                                    <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                                </svg>
+                                Student
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="ml-8 mt-16">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                        {{ viewed_user.full_name or viewed_user.username }}
+                    </h1>
+                    <p class="text-xl text-gray-600 mb-2">@{{ viewed_user.username }}</p>
+                    {% if viewed_user.institution %}
+                        <div class="flex items-center text-gray-500 mb-4">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            <span>{{ viewed_user.institution }}</span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if viewed_user.bio %}
+                        <p class="text-gray-700 max-w-2xl">{{ viewed_user.bio }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-8">
+            <!-- Statistics -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Statistics</h2>
+                
+                {% if viewed_user.role == 'teacher' %}
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-4 bg-blue-50 rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600">{{ stats.subjects_count }}</div>
+                            <div class="text-sm text-gray-600">Subject{{ 's' if stats.subjects_count != 1 }}</div>
+                        </div>
+                        <div class="text-center p-4 bg-green-50 rounded-lg">
+                            <div class="text-2xl font-bold text-green-600">{{ stats.quizzes_count }}</div>
+                            <div class="text-sm text-gray-600">Quiz{{ 'zes' if stats.quizzes_count != 1 else '' }}</div>
+                        </div>
+                        <div class="text-center p-4 bg-purple-50 rounded-lg">
+                            <div class="text-2xl font-bold text-purple-600">{{ stats.total_students }}</div>
+                            <div class="text-sm text-gray-600">Student{{ 's' if stats.total_students != 1 }}</div>
+                        </div>
+                        <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                            <div class="text-2xl font-bold text-yellow-600">{{ stats.avg_score }}%</div>
+                            <div class="text-sm text-gray-600">Avg Score</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600">Total Quiz Attempts</span>
+                            <span class="font-semibold">{{ stats.total_attempts }}</span>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600">Teaching Experience</span>
+                            <span class="font-semibold">{{ stats.teaching_experience }} month{{ 's' if stats.teaching_experience != 1 }}</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-4 bg-blue-50 rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600">{{ stats.quizzes_taken }}</div>
+                            <div class="text-sm text-gray-600">Quiz{{ 'zes' if stats.quizzes_taken != 1 else '' }} Taken</div>
+                        </div>
+                        <div class="text-center p-4 bg-green-50 rounded-lg">
+                            <div class="text-2xl font-bold text-green-600">{{ stats.average_score }}%</div>
+                            <div class="text-sm text-gray-600">Avg Score</div>
+                        </div>
+                        <div class="text-center p-4 bg-purple-50 rounded-lg">
+                            <div class="text-2xl font-bold text-purple-600">{{ stats.subjects_enrolled }}</div>
+                            <div class="text-sm text-gray-600">Subject{{ 's' if stats.subjects_enrolled != 1 }}</div>
+                        </div>
+                        <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                            <div class="text-2xl font-bold text-yellow-600">{{ stats.learning_streak }}</div>
+                            <div class="text-sm text-gray-600">Day Streak</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-1 gap-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600">Member Since</span>
+                            <span class="font-semibold">{{ stats.member_since }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Recent Activity</h2>
+                
+                {% if recent_activities %}
+                    <div class="space-y-4">
+                        {% for activity in recent_activities %}
+                            <div class="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                        {% if activity.icon == 'user-plus' %}
+                                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                                            </svg>
+                                        {% elif activity.icon == 'plus-circle' %}
+                                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                            </svg>
+                                        {% elif activity.icon == 'check-circle' %}
+                                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        {% elif activity.icon == 'x-circle' %}
+                                            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        {% elif activity.icon == 'book-open' %}
+                                            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                            </svg>
+                                        {% else %}
+                                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-900">{{ activity.description }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        {% if activity.created_at %}
+                                            {{ activity.created_at.strftime('%B %d, %Y at %I:%M %p') if activity.created_at.strftime else 'Recently' }}
+                                        {% else %}
+                                            Recently
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        <p class="text-gray-500">No recent activities to display</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-8">
+            <!-- Subjects/Enrollments -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    {% if viewed_user.role == 'teacher' %}
+                        Teaching Subjects
+                    {% else %}
+                        Enrolled Subjects
+                    {% endif %}
+                </h3>
+                
+                {% if subjects %}
+                    <div class="space-y-3">
+                        {% for subject in subjects %}
+                            <div class="p-3 bg-gray-50 rounded-lg">
+                                {% if viewed_user.role == 'teacher' %}
+                                    <h4 class="font-medium text-gray-900">{{ subject.name }}</h4>
+                                    <p class="text-sm text-gray-600 mt-1">{{ subject.get('description', 'No description available') }}</p>
+                                    {% if subject.get('topic_count') %}
+                                        <p class="text-xs text-gray-500 mt-2">{{ subject.topic_count }} topics</p>
+                                    {% endif %}
+                                {% else %}
+                                    <h4 class="font-medium text-gray-900">{{ subject.name }}</h4>
+                                    <p class="text-sm text-gray-600">by {{ subject.teacher_name }}</p>
+                                    {% if subject.enrolled_at %}
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            Enrolled {{ subject.enrolled_at.strftime('%B %d, %Y') if subject.enrolled_at.strftime else 'recently' }}
+                                        </p>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 text-center py-4">
+                        {% if viewed_user.role == 'teacher' %}
+                            No subjects created yet
+                        {% else %}
+                            Not enrolled in any subjects yet
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
+            
+            <!-- Achievement Badges -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Achievements</h3>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    {% if viewed_user.role == 'teacher' %}
+                        {% if stats.subjects_count >= 5 %}
+                            <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                <div class="text-2xl mb-1">🎓</div>
+                                <div class="text-xs text-gray-600">Subject Master</div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if stats.total_students >= 50 %}
+                            <div class="text-center p-3 bg-green-50 rounded-lg">
+                                <div class="text-2xl mb-1">👥</div>
+                                <div class="text-xs text-gray-600">Popular Teacher</div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if stats.avg_score >= 80 %}
+                            <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                                <div class="text-2xl mb-1">⭐</div>
+                                <div class="text-xs text-gray-600">Excellence</div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if stats.teaching_experience >= 12 %}
+                            <div class="text-center p-3 bg-purple-50 rounded-lg">
+                                <div class="text-2xl mb-1">🏆</div>
+                                <div class="text-xs text-gray-600">Veteran</div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        {% if stats.quizzes_taken >= 10 %}
+                            <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                <div class="text-2xl mb-1">📚</div>
+                                <div class="text-xs text-gray-600">Quiz Master</div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if stats.average_score >= 90 %}
+                            <div class="text-center p-3 bg-green-50 rounded-lg">
+                                <div class="text-2xl mb-1">🎯</div>
+                                <div class="text-xs text-gray-600">High Achiever</div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if stats.learning_streak >= 7 %}
+                            <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                                <div class="text-2xl mb-1">🔥</div>
+                                <div class="text-xs text-gray-600">On Fire</div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if stats.subjects_enrolled >= 5 %}
+                            <div class="text-center p-3 bg-purple-50 rounded-lg">
+                                <div class="text-2xl mb-1">🌟</div>
+                                <div class="text-xs text-gray-600">Dedicated</div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Default badge if no achievements -->
+                    {% if (viewed_user.role == 'teacher' and stats.subjects_count < 5 and stats.total_students < 50 and stats.avg_score < 80 and stats.teaching_experience < 12) or (viewed_user.role == 'student' and stats.quizzes_taken < 10 and stats.average_score < 90 and stats.learning_streak < 7 and stats.subjects_enrolled < 5) %}
+                        <div class="col-span-2 text-center p-4 bg-gray-50 rounded-lg">
+                            <div class="text-2xl mb-2">🚀</div>
+                            <div class="text-sm text-gray-600">Getting Started</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Info -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Profile Info</h3>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Role</span>
+                        <span class="font-medium capitalize">{{ viewed_user.role }}</span>
+                    </div>
+                    
+                    {% if viewed_user.created_at %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Joined</span>
+                            <span class="font-medium">
+                                {{ viewed_user.created_at.strftime('%B %Y') if viewed_user.created_at.strftime else 'Recently' }}
+                            </span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if viewed_user.role == 'teacher' %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Students Taught</span>
+                            <span class="font-medium">{{ stats.total_students }}</span>
+                        </div>
+                    {% else %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Learning Level</span>
+                            <span class="font-medium">
+                                {% if stats.average_score >= 90 %}Expert
+                                {% elif stats.average_score >= 80 %}Advanced
+                                {% elif stats.average_score >= 70 %}Intermediate
+                                {% elif stats.average_score >= 60 %}Beginner
+                                {% else %}Getting Started
+                                {% endif %}
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

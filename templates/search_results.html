@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results - Quizera{% endblock %}
+
+{% block main_class %}container mx-auto px-4 py-8{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Search Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">
+            {% if query %}
+                Search Results for "{{ query }}"
+            {% else %}
+                Search Users
+            {% endif %}
+        </h1>
+        
+        <!-- Search Form -->
+        <form method="GET" class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                    <label for="q" class="block text-sm font-medium text-gray-700 mb-2">Search Query</label>
+                    <input type="text" 
+                           id="q" 
+                           name="q" 
+                           value="{{ query }}" 
+                           placeholder="Search by name, username, email, or institution..."
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <div>
+                    <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Filter by Role</label>
+                    <select id="role" 
+                            name="role" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All Users</option>
+                        <option value="student" {{ 'selected' if role_filter == 'student' }}>Students</option>
+                        <option value="teacher" {{ 'selected' if role_filter == 'teacher' }}>Teachers</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" 
+                        class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>Search</span>
+                </button>
+            </div>
+        </form>
+        
+        <!-- Results Count -->
+        {% if query %}
+            <p class="text-gray-600">
+                Found {{ total_results }} result{{ 's' if total_results != 1 else '' }}
+                {% if role_filter %}
+                    for {{ role_filter }}s
+                {% endif %}
+            </p>
+        {% endif %}
+    </div>
+    
+    <!-- Search Results -->
+    {% if query %}
+        {% if results %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {% for user in results %}
+                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+                        <div class="p-6">
+                            <!-- Avatar and Basic Info -->
+                            <div class="flex items-center space-x-4 mb-4">
+                                <div class="flex-shrink-0">
+                                    {% if user.avatar_type == 'animal' and user.avatar_id %}
+                                        <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-3xl animal-avatar border-2 border-gray-200">
+                                            {{ user.avatar_id | get_animal_emoji }}
+                                        </div>
+                                    {% else %}
+                                        <div class="w-16 h-16 rounded-full bg-{{ user.avatar_id if user and user.avatar_id and user.avatar_type == 'initial' else 'blue' }}-500 flex items-center justify-center text-white text-xl font-bold initial-avatar border-2 border-gray-200">
+                                            {{ (user.full_name[0] if user.full_name else user.username[0] if user.username else 'U') | upper }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-lg font-semibold text-gray-900 truncate">
+                                        {{ user.full_name or user.username }}
+                                    </h3>
+                                    <p class="text-sm text-gray-600">@{{ user.username }}</p>
+                                    <div class="flex items-center mt-1">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                   {% if user.role == 'teacher' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                            {% if user.role == 'teacher' %}
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6L23 9l-11-6z"/>
+                                                </svg>
+                                                Teacher
+                                            {% else %}
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                                                    <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                                                </svg>
+                                                Student
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Bio -->
+                            {% if user.bio %}
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ user.bio }}</p>
+                            {% endif %}
+                            
+                            <!-- Institution -->
+                            {% if user.institution %}
+                                <div class="flex items-center text-sm text-gray-500 mb-4">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                    </svg>
+                                    <span class="truncate">{{ user.institution }}</span>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- View Profile Button -->
+                            <div class="pt-4 border-t border-gray-100">
+                                <a href="{{ url_for('view_user_profile', user_id=user.id) }}" 
+                                   class="w-full bg-blue-50 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors text-center block text-sm font-medium">
+                                    View Profile
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+                <div class="flex justify-center items-center space-x-2 mt-8">
+                    {% if has_prev %}
+                        <a href="{{ url_for('search_profiles', q=query, role=role_filter, page=prev_num) }}" 
+                           class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            Previous
+                        </a>
+                    {% endif %}
+                    
+                    <!-- Page numbers -->
+                    {% for p in range(max(1, page-2), min(total_pages+1, page+3)) %}
+                        {% if p == page %}
+                            <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">{{ p }}</span>
+                        {% else %}
+                            <a href="{{ url_for('search_profiles', q=query, role=role_filter, page=p) }}" 
+                               class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                {{ p }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if has_next %}
+                        <a href="{{ url_for('search_profiles', q=query, role=role_filter, page=next_num) }}" 
+                           class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            Next
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+        {% else %}
+            <!-- No Results -->
+            <div class="text-center py-12">
+                <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No results found</h3>
+                <p class="text-gray-600">
+                    We couldn't find any users matching "{{ query }}"
+                    {% if role_filter %} in the {{ role_filter }} category{% endif %}.
+                    Try adjusting your search terms.
+                </p>
+            </div>
+        {% endif %}
+    {% else %}
+        <!-- Initial state - no search performed -->
+        <div class="text-center py-12">
+            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Search for Users</h3>
+            <p class="text-gray-600">Enter a search term above to find students and teachers on the platform.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
