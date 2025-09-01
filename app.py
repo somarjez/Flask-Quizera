@@ -740,6 +740,7 @@ def login():
 #         print(f"Error loading profile: {e}")
 #         flash('Error loading profile.')
 #         return redirect(url_for('dashboard'))
+
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'user_id' not in session:
@@ -1143,7 +1144,6 @@ def get_student_recent_activities(student_id, limit=5):
 #                              enrolled_subjects=enrolled_subjects,
 #                              available_subjects=available_subjects, 
 #                              quizzes=enrolled_quizzes)
-    
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -1174,16 +1174,35 @@ def dashboard():
             for doc in quizzes_ref.stream():
                 quiz_data = doc.to_dict()
                 quiz_data['id'] = doc.id
+                
+                # Add subject name to quiz if not present
+                if 'subject_name' not in quiz_data and quiz_data.get('subject_id'):
+                    subject_doc = db.collection('subjects').document(quiz_data['subject_id']).get()
+                    if subject_doc.exists:
+                        quiz_data['subject_name'] = subject_doc.to_dict().get('name', 'Unknown Subject')
+                
+                # Add question count if not present
+                if 'question_count' not in quiz_data:
+                    questions_count = len(list(db.collection('questions').where('quiz_id', '==', doc.id).stream()))
+                    quiz_data['question_count'] = questions_count
+                
                 quizzes.append(quiz_data)
+                
         except Exception as e:
             print(f"Error fetching teacher data: {e}")
         
-        return render_template('dashboard.html', role='teacher', username=username, subjects=subjects, quizzes=quizzes)
+        return render_template('dashboard.html', 
+                             role='teacher', 
+                             username=username, 
+                             subjects=subjects, 
+                             quizzes=quizzes)
     
     elif user_role == 'student':
-        # Get student's enrolled subjects only (FIXED)
+        # Get student's enrolled subjects with progress tracking
         enrolled_subjects = []
         enrolled_quizzes = []
+        subject_progress = {}
+        quiz_progress_data = {}
         
         try:
             # Get ONLY ACTIVE enrolled subjects
@@ -1213,8 +1232,51 @@ def dashboard():
                     subject_data['enrollment_date'] = enrollment_data.get('enrolled_at')
                     
                     enrolled_subjects.append(subject_data)
+                    
+                    # Calculate quiz progress for this subject
+                    subject_quizzes = list(db.collection('quizzes')
+                                         .where('subject_id', '==', subject_id)
+                                         .where('is_published', '==', True)
+                                         .stream())
+                    
+                    total_quizzes = len(subject_quizzes)
+                    passed_quizzes = 0
+                    
+                    for quiz_doc in subject_quizzes:
+                        quiz_id = quiz_doc.id
+                        
+                        # Get user's best attempt for this quiz
+                        attempts = list(db.collection('quiz_attempts')
+                                      .where('quiz_id', '==', quiz_id)
+                                      .where('user_id', '==', session['user_id'])
+                                      .stream())
+                        
+                        if attempts:
+                            best_score = max(attempt.to_dict().get('percentage', 0) for attempt in attempts)
+                            attempts_count = len(attempts)
+                            is_passed = best_score >= 70  # Assuming 70% is passing
+                            
+                            if is_passed:
+                                passed_quizzes += 1
+                            
+                            quiz_progress_data[quiz_id] = {
+                                'best_score': best_score,
+                                'attempts_count': attempts_count,
+                                'is_passed': is_passed
+                            }
+                        else:
+                            quiz_progress_data[quiz_id] = {
+                                'best_score': 0,
+                                'attempts_count': 0,
+                                'is_passed': False
+                            }
+                    
+                    subject_progress[subject_id] = {
+                        'total_quizzes': total_quizzes,
+                        'passed_quizzes': passed_quizzes
+                    }
             
-            # Get quizzes ONLY from enrolled subjects (FIXED)
+            # Get quizzes ONLY from enrolled subjects with progress data
             for subject_id in enrolled_subject_ids:
                 quizzes_ref = db.collection('quizzes').where('subject_id', '==', subject_id).where('is_published', '==', True)
                 for doc in quizzes_ref.stream():
@@ -1239,12 +1301,17 @@ def dashboard():
             import traceback
             traceback.print_exc()
         
-        # Return ONLY enrolled subjects and their quizzes - NO available_subjects
+        # Return enrolled subjects with progress data
         return render_template('dashboard.html', 
                              role='student', 
                              username=username, 
                              enrolled_subjects=enrolled_subjects,
-                             quizzes=enrolled_quizzes)
+                             quizzes=enrolled_quizzes,
+                             subject_progress=subject_progress,
+                             quiz_progress_data=quiz_progress_data)
+    
+    # Default redirect if role is not recognized
+    return redirect(url_for('login'))
     
 # Subject Management Routes
 @app.route('/create-subject', methods=['GET', 'POST'])
@@ -1462,7 +1529,7 @@ def view_subject(subject_id):
                                      topics=[], 
                                      is_enrolled=False, 
                                      enrollment_required=True,
-                                     progress=0)
+                                     progress=0, username=session.get('username'), role=session.get('role'))
             else:
                 # Calculate progress and get completed topics
                 progress = calculate_subject_progress(session['user_id'], subject_id)
@@ -1498,6 +1565,7 @@ def view_subject(subject_id):
     except Exception as e:
         flash(f'Error loading subject: {e}')
         return redirect(url_for('dashboard'))
+    
 @app.route('/topic/<topic_id>')
 def view_topic(topic_id):
     if 'user_id' not in session:
