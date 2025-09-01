@@ -4,6 +4,12 @@
 
 {% block main_class %}container mx-auto px-4 py-8{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="max-w-6xl mx-auto">
     <!-- Search Header -->
@@ -195,4 +201,8 @@
         </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}
