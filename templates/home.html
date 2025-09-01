@@ -2,6 +2,12 @@
 
 {% block title %}Quizera - E-Learning Platform for Computer Science{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
 {% block content %}
     <!-- Hero Section -->
     <section class="bg-gradient-to-br from-indigo-800 via-purple-700 to-blue-900 py-20 relative overflow-hidden">
@@ -404,6 +410,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
