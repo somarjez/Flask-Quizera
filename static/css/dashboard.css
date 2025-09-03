@@ -1,0 +1,262 @@
+  .gradient-text {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .card-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    /* Formal Landscape Certificate Styles */
+    .certificate-container {
+        width: 297mm;
+        height: 210mm;
+        background: linear-gradient(135deg, #ffffff 0%, #fefefe 50%, #ffffff 100%);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        border: 1px solid #e5e7eb;
+    }
+    
+    .certificate-border {
+        border: 12px solid #1f2937;
+        border-radius: 8px;
+        margin: 15px;
+        height: calc(100% - 30px);
+        position: relative;
+        background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    }
+    
+    .certificate-inner-border {
+        border: 3px solid #d4af37;
+        border-radius: 4px;
+        margin: 12px;
+        height: calc(100% - 24px);
+        position: relative;
+        background: #ffffff;
+    }
+    
+    .certificate-header {
+        text-align: center;
+        padding: 25px 0 15px 0;
+        border-bottom: 2px solid #d4af37;
+        margin: 0 50px;
+    }
+    
+    .certificate-logo {
+        font-size: 36px;
+        font-weight: 900;
+        color: #1f2937;
+        margin-bottom: 8px;
+        letter-spacing: 4px;
+        font-family: 'Times New Roman', serif;
+    }
+    
+    .certificate-subtitle {
+        color: #4b5563;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        font-family: 'Arial', sans-serif;
+    }
+    
+    .certificate-institution {
+        color: #6b7280;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-top: 5px;
+        font-family: 'Arial', sans-serif;
+    }
+    
+    .certificate-title {
+        font-size: 28px;
+        font-weight: bold;
+        color: #1f2937;
+        margin: 25px 0 20px 0;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-family: 'Times New Roman', serif;
+    }
+    
+    .certificate-body {
+        text-align: center;
+        padding: 0 80px;
+        line-height: 1.6;
+        font-family: 'Times New Roman', serif;
+    }
+    
+    .certificate-text {
+        font-size: 14px;
+        color: #374151;
+        margin-bottom: 15px;
+        font-weight: 400;
+    }
+    
+    .certificate-name {
+        font-size: 32px;
+        font-weight: bold;
+        color: #1f2937;
+        margin: 20px 0;
+        border-bottom: 2px solid #d4af37;
+        display: inline-block;
+        padding-bottom: 5px;
+        font-family: 'Times New Roman', serif;
+    }
+    
+    .certificate-subject {
+        font-size: 20px;
+        font-weight: bold;
+        color: #1f2937;
+        margin: 20px 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-family: 'Times New Roman', serif;
+    }
+    
+    .certificate-achievement {
+        font-size: 13px;
+        color: #374151;
+        margin: 15px 0;
+        font-style: italic;
+    }
+    
+    .certificate-footer {
+        position: absolute;
+        bottom: 30px;
+        left: 0;
+        right: 0;
+        padding: 0 50px;
+    }
+    
+    .certificate-signatures {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        margin-top: 40px;
+    }
+    
+    .signature-section {
+        text-align: center;
+        position: relative;
+        width: 180px;
+    }
+    
+    .signature-line {
+        width: 180px;
+        border-top: 1px solid #374151;
+        margin-bottom: 8px;
+    }
+    
+    .signature-label {
+        font-size: 11px;
+        color: #4b5563;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-family: 'Arial', sans-serif;
+    }
+    
+    .signature-title {
+        font-size: 10px;
+        color: #6b7280;
+        margin-top: 3px;
+        font-family: 'Arial', sans-serif;
+    }
+    
+    .certificate-seal {
+        position: absolute;
+        top: 40%;
+        right: 50px;
+        transform: translateY(-50%);
+        width: 100px;
+        height: 100px;
+        border: 3px solid #d4af37;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle, #fef3c7 0%, #f59e0b 100%);
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+    }
+    
+    .seal-text {
+        font-size: 8px;
+        font-weight: bold;
+        color: #92400e;
+        text-align: center;
+        line-height: 1.1;
+        font-family: 'Arial', sans-serif;
+    }
+    
+    .certificate-date-section {
+        position: absolute;
+        bottom: 30px;
+        right: 50px;
+        text-align: center;
+        font-family: 'Times New Roman', serif;
+    }
+    
+    .certificate-date {
+        font-size: 11px;
+        color: #374151;
+        font-weight: 500;
+    }
+    
+    .certificate-decorations {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+    
+    .decoration-corner {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(45deg, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+    }
+    
+    .decoration-corner.top-left {
+        top: 0;
+        left: 0;
+        border-radius: 0 0 60px 0;
+    }
+    
+    .decoration-corner.top-right {
+        top: 0;
+        right: 0;
+        border-radius: 0 0 0 60px;
+    }
+    
+    .decoration-corner.bottom-left {
+        bottom: 0;
+        left: 0;
+        border-radius: 0 60px 0 0;
+    }
+    
+    .decoration-corner.bottom-right {
+        bottom: 0;
+        right: 0;
+        border-radius: 60px 0 0 0;
+    }
+    
+    @media print {
+        .certificate-container {
+            width: 297mm;
+            height: 210mm;
+            margin: 0;
+            box-shadow: none;
+        }
+    }
