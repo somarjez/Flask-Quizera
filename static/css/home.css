@@ -1,0 +1,46 @@
+.line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.subjects-grid {
+    display: grid;
+}
+
+.subjects-list {
+    display: block;
+}
+
+/* Additional smooth animations */
+.subject-card, .subject-card-list {
+    transition: all 0.3s ease;
+}
+
+.subject-card:hover, .subject-card-list:hover {
+    transform: translateY(-8px);
+}
+
+/* Enhanced button animations */
+button, a {
+    transition: all 0.2s ease;
+}
+
+/* Smooth gradient animations */
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-10px) rotate(1deg); }
+    66% { transform: translateY(5px) rotate(-1deg); }
+}
+
+.hero-decoration {
+    animation: float 6s ease-in-out infinite;
+}
