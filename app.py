@@ -2461,7 +2461,7 @@ def edit_question(quiz_id, question_id):
             except Exception as e:
                 flash(f'Error updating question: {e}')
         
-        return render_template('edit_question.html', quiz=quiz_data, question=question_data, quiz_id=quiz_id)
+        return render_template('edit_question.html', quiz=quiz_data, question=question_data, quiz_id=quiz_id, username=session.get('username'), role=session.get('role'))
         
     except Exception as e:
         flash(f'Error accessing question: {e}')
