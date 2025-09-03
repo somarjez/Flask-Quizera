@@ -1,0 +1,40 @@
+ .gradient-text {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .card-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .quiz-timer {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #1e40af;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        font-weight: bold;
+        z-index: 1000;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .question-card {
+        border-left: 4px solid #3b82f6;
+    }
+    .option-btn {
+        transition: all 0.2s ease;
+    }
+    .option-btn:hover {
+        background-color: #eff6ff;
+        border-color: #3b82f6;
+    }
+    .option-btn.selected {
+        background-color: #dbeafe;
+        border-color: #1d4ed8;
+        color: #1d4ed8;
+    }
