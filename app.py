@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from config import Config, db
 from google.cloud.firestore import Increment  # Add this import
 import uuid
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import datetime
 from firebase_admin import firestore
 from google.cloud.firestore_v1 import Increment
@@ -101,43 +102,6 @@ def home():
                          username=username, 
                          role=role)
 
-# @app.route('/signup', methods=['GET', 'POST'])
-# def signup():
-#     if request.method == 'POST':
-#         username = request.form['username']
-#         email = request.form['email']
-#         password = request.form['password']
-#         role = request.form['role']
-        
-#         # Check if user already exists
-#         users_ref = db.collection('users')
-#         existing_user = users_ref.where('email', '==', email).get()
-        
-#         if existing_user:
-#             flash('Email already exists. Please use a different email.')
-#             return render_template('signup.html')
-        
-#         # Hash password
-#         hashed_password = generate_password_hash(password)
-        
-#         # Create user document
-#         user_data = {
-#             'username': username,
-#             'email': email,
-#             'password': hashed_password,
-#             'role': role,
-#             'created_at': datetime.now()
-#         }
-        
-#         try:
-#             doc_ref = users_ref.add(user_data)
-#             flash('Account created successfully! Please log in.')
-#             return redirect(url_for('login'))
-#         except Exception as e:
-#             flash(f'Error creating account: {e}')
-#             return render_template('signup.html')
-    
-#     return render_template('signup.html')
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -450,39 +414,6 @@ def resend_confirmation():
     
     return render_template('resend_confirmation.html')
 
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == 'POST':
-#         email = request.form['email']
-#         password = request.form['password']
-        
-#         # Find user by email
-#         users_ref = db.collection('users')
-#         user_docs = users_ref.where('email', '==', email).get()
-        
-#         if not user_docs:
-#             flash('Invalid email or password.')
-#             return render_template('login.html')
-        
-#         user_doc = user_docs[0]
-#         user_data = user_doc.to_dict()
-        
-#         # Check password
-#         if check_password_hash(user_data['password'], password):
-#             # Store user info in session
-#             session['user_id'] = user_doc.id
-#             session['username'] = user_data['username']
-#             session['email'] = user_data['email']
-#             session['role'] = user_data['role']
-            
-#             flash(f'Welcome back, {user_data["username"]}!')
-#             return redirect(url_for('dashboard'))
-#         else:
-#             flash('Invalid email or password.')
-#             return render_template('login.html')
-    
-#     return render_template('login.html')
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -527,220 +458,6 @@ def login():
             return render_template('login.html')
     
     return render_template('login.html')
-
-# @app.route('/profile')
-# def profile():
-#     if 'user_id' not in session:
-#         flash('Please log in to view your profile.')
-#         return redirect(url_for('login'))
-    
-#     user_id = session['user_id']
-#     username = session['username']
-#     email = session['email']
-#     role = session['role']
-    
-#     return render_template('profile.html', 
-#                          username=username, 
-#                          email=email, 
-#                          role=role)
-
-# @app.route('/profile', methods=['GET', 'POST'])
-# def profile():
-#     if 'user_id' not in session:
-#         flash('Please log in to view your profile.')
-#         return redirect(url_for('login'))
-    
-#     user_id = session['user_id']
-    
-#     # Get user data from Firestore
-#     try:
-#         user_doc = db.collection('users').document(user_id).get()
-#         if not user_doc.exists:
-#             flash('User profile not found.')
-#             return redirect(url_for('login'))
-        
-#         user_data = user_doc.to_dict()
-#         user_data['id'] = user_doc.id
-        
-#         # Handle POST request for profile updates
-#         if request.method == 'POST':
-#             # Update profile information
-#             updated_data = {}
-            
-#             # Basic profile fields
-#             if request.form.get('username'):
-#                 updated_data['username'] = request.form['username']
-#                 session['username'] = request.form['username']  # Update session
-            
-#             if request.form.get('full_name'):
-#                 updated_data['full_name'] = request.form['full_name']
-            
-#             if request.form.get('email'):
-#                 updated_data['email'] = request.form['email']
-#                 session['email'] = request.form['email']  # Update session
-            
-#             if request.form.get('bio'):
-#                 updated_data['bio'] = request.form['bio']
-            
-#             if request.form.get('institution'):
-#                 updated_data['institution'] = request.form['institution']
-            
-#             # Handle password change
-#             current_password = request.form.get('current_password')
-#             new_password = request.form.get('new_password')
-#             confirm_new_password = request.form.get('confirm_new_password')
-            
-#             if current_password and new_password:
-#                 if check_password_hash(user_data['password'], current_password):
-#                     if new_password == confirm_new_password:
-#                         updated_data['password'] = generate_password_hash(new_password)
-#                         flash('Password updated successfully!', 'success')
-#                     else:
-#                         flash('New passwords do not match.', 'error')
-#                         return redirect(url_for('profile'))
-#                 else:
-#                     flash('Current password is incorrect.', 'error')
-#                     return redirect(url_for('profile'))
-            
-#             # Update user document
-#             if updated_data:
-#                 updated_data['updated_at'] = datetime.now()
-#                 db.collection('users').document(user_id).update(updated_data)
-#                 flash('Profile updated successfully!', 'success')
-#                 return redirect(url_for('profile'))
-        
-#         # Create a proper user object with default values for missing properties
-#         class UserProfile:
-#             def __init__(self, data):
-#                 self.id = data.get('id')
-#                 self.username = data.get('username', '')
-#                 self.email = data.get('email', '')
-#                 self.role = data.get('role', '')
-#                 self.full_name = data.get('full_name', '')
-#                 self.bio = data.get('bio', '')
-#                 self.institution = data.get('institution', '')
-#                 self.profile_picture = data.get('profile_picture', None)
-#                 self.created_at = data.get('created_at', None)
-#                 self.updated_at = data.get('updated_at', None)
-        
-#         user = UserProfile(user_data)
-        
-#         # Get user statistics
-#         stats = {}
-#         recent_activities = []
-        
-#         try:
-#             if user_data['role'] == 'teacher':
-#                 # Calculate teacher statistics
-#                 subjects_query = db.collection('subjects').where('teacher_id', '==', user_id)
-#                 subjects_docs = list(subjects_query.stream())
-#                 subjects_count = len(subjects_docs)
-                
-#                 quizzes_query = db.collection('quizzes').where('teacher_id', '==', user_id)
-#                 quizzes_docs = list(quizzes_query.stream())
-#                 quizzes_count = len(quizzes_docs)
-                
-#                 # Calculate topics count
-#                 topics_count = 0
-#                 for subject_doc in subjects_docs:
-#                     subject_data = subject_doc.to_dict()
-#                     topics_count += subject_data.get('topic_count', 0)
-                
-#                 # Calculate quiz attempts and student engagement
-#                 total_attempts = 0
-#                 total_score = 0
-#                 unique_students = set()
-                
-#                 for quiz_doc in quizzes_docs:
-#                     quiz_id = quiz_doc.id
-#                     attempts_query = db.collection('quiz_attempts').where('quiz_id', '==', quiz_id)
-#                     attempts_docs = list(attempts_query.stream())
-                    
-#                     for attempt_doc in attempts_docs:
-#                         attempt_data = attempt_doc.to_dict()
-#                         total_attempts += 1
-#                         total_score += attempt_data.get('percentage', 0)
-#                         unique_students.add(attempt_data.get('user_id'))
-                
-#                 avg_score = (total_score / total_attempts) if total_attempts > 0 else 0
-#                 total_students = len(unique_students)
-                
-#                 stats = {
-#                     'subjects_count': subjects_count,
-#                     'quizzes_count': quizzes_count,
-#                     'topics_count': topics_count,
-#                     'total_students': total_students,
-#                     'avg_completion_rate': 85,  # Placeholder - calculate based on your needs
-#                     'total_attempts': total_attempts,
-#                     'avg_score': round(avg_score, 1),
-#                     'active_students': total_students,
-#                     'monthly_views': total_attempts * 3,  # Rough estimate
-#                     'teaching_hours': topics_count * 2  # Rough estimate
-#                 }
-#             else:
-#                 # Calculate student statistics
-#                 attempts_query = db.collection('quiz_attempts').where('user_id', '==', user_id)
-#                 attempts_docs = list(attempts_query.stream())
-                
-#                 quizzes_taken = len(attempts_docs)
-#                 total_score = sum(attempt.to_dict().get('percentage', 0) for attempt in attempts_docs)
-#                 average_score = (total_score / quizzes_taken) if quizzes_taken > 0 else 0
-                
-#                 # Get unique subjects from taken quizzes
-#                 unique_subjects = set()
-#                 for attempt_doc in attempts_docs:
-#                     attempt_data = attempt_doc.to_dict()
-#                     quiz_id = attempt_data.get('quiz_id')
-#                     if quiz_id:
-#                         quiz_doc = db.collection('quizzes').document(quiz_id).get()
-#                         if quiz_doc.exists:
-#                             quiz_data = quiz_doc.to_dict()
-#                             subject_id = quiz_data.get('subject_id')
-#                             if subject_id:
-#                                 unique_subjects.add(subject_id)
-                
-#                 stats = {
-#                     'quizzes_taken': quizzes_taken,
-#                     'average_score': round(average_score, 1),
-#                     'subjects_enrolled': len(unique_subjects),
-#                     'study_hours': quizzes_taken * 0.5  # Rough estimate
-#                 }
-                
-#         except Exception as e:
-#             print(f"Error calculating stats: {e}")
-#             # Provide default empty stats
-#             if user_data['role'] == 'teacher':
-#                 stats = {
-#                     'subjects_count': 0,
-#                     'quizzes_count': 0,
-#                     'topics_count': 0,
-#                     'total_students': 0,
-#                     'avg_completion_rate': 0,
-#                     'total_attempts': 0,
-#                     'avg_score': 0,
-#                     'active_students': 0,
-#                     'monthly_views': 0,
-#                     'teaching_hours': 0
-#                 }
-#             else:
-#                 stats = {
-#                     'quizzes_taken': 0,
-#                     'average_score': 0,
-#                     'subjects_enrolled': 0,
-#                     'study_hours': 0
-#                 }
-        
-#         return render_template('profile.html', 
-#                              user=user,
-#                              username=user.username,
-#                              role=user.role,
-#                              stats=stats,
-#                              recent_activities=recent_activities)
-    
-#     except Exception as e:
-#         print(f"Error loading profile: {e}")
-#         flash('Error loading profile.')
-#         return redirect(url_for('dashboard'))
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
@@ -1687,64 +1404,6 @@ def create_topic(subject_id):
     
     return render_template('create_topic.html', subject_id=subject_id, username=session.get('username'), role=session.get('role'))
 
-# @app.route('/topic/<topic_id>')
-# def view_topic(topic_id):
-#     if 'user_id' not in session:
-#         flash('Please log in to view topics.')
-#         return redirect(url_for('login'))
-    
-#     try:
-#         topic_ref = db.collection('topics').document(topic_id)
-#         topic_doc = topic_ref.get()
-        
-#         if not topic_doc.exists:
-#             flash('Topic not found.')
-#             return redirect(url_for('dashboard'))
-        
-#         topic_data = topic_doc.to_dict()
-#         topic_data['id'] = topic_doc.id
-        
-#         return render_template('topic_detail.html', topic=topic_data)
-#     except Exception as e:
-#         flash(f'Error loading topic: {e}')
-#         return redirect(url_for('dashboard'))
-
-# Updated view_topic route
-# @app.route('/topic/<topic_id>')
-# def view_topic(topic_id):
-#     if 'user_id' not in session:
-#         flash('Please log in to view topics.')
-#         return redirect(url_for('login'))
-    
-#     try:
-#         topic_ref = db.collection('topics').document(topic_id)
-#         topic_doc = topic_ref.get()
-        
-#         if not topic_doc.exists:
-#             flash('Topic not found.')
-#             return redirect(url_for('dashboard'))
-        
-#         topic_data = topic_doc.to_dict()
-#         topic_data['id'] = topic_doc.id
-        
-#         # Check enrollment for students
-#         if session.get('role') == 'student':
-#             is_enrolled = check_enrollment(session['user_id'], topic_data['subject_id'])
-#             if not is_enrolled:
-#                 flash('You must be enrolled in this subject to view topics.')
-#                 return redirect(url_for('view_subject', subject_id=topic_data['subject_id']))
-        
-#         # Check teacher ownership
-#         elif session.get('role') == 'teacher' and topic_data['teacher_id'] != session['user_id']:
-#             flash('Access denied.')
-#             return redirect(url_for('dashboard'))
-        
-#         return render_template('topic_detail.html', topic=topic_data)
-        
-#     except Exception as e:
-#         flash(f'Error loading topic: {e}')
-#         return redirect(url_for('dashboard'))
-
 # Topic Edit and Delete Routes
 @app.route('/topic/<topic_id>/edit', methods=['GET', 'POST'])
 def edit_topic(topic_id):
@@ -1907,74 +1566,6 @@ def manage_quiz(quiz_id):
         flash(f'Error loading quiz: {e}')
         return redirect(url_for('dashboard'))
 
-# @app.route('/quiz/<quiz_id>/add-question', methods=['GET', 'POST'])
-# def add_question(quiz_id):
-#     if 'user_id' not in session or session.get('role') != 'teacher':
-#         flash('Access denied. Teachers only.')
-#         return redirect(url_for('dashboard'))
-    
-#     # Verify quiz ownership
-#     try:
-#         quiz_ref = db.collection('quizzes').document(quiz_id)
-#         quiz_doc = quiz_ref.get()
-        
-#         if not quiz_doc.exists or quiz_doc.to_dict()['teacher_id'] != session['user_id']:
-#             flash('Quiz not found or access denied.')
-#             return redirect(url_for('dashboard'))
-        
-#         quiz_data = quiz_doc.to_dict()
-#     except Exception as e:
-#         flash('Error accessing quiz.')
-#         return redirect(url_for('dashboard'))
-    
-#     if request.method == 'POST':
-#         question_type = request.form['question_type']
-#         question_text = request.form['question_text']
-#         points = int(request.form.get('points', 1))
-        
-#         question_data = {
-#             'quiz_id': quiz_id,
-#             'question_type': question_type,
-#             'question_text': question_text,
-#             'points': points,
-#             'created_at': datetime.now()
-#         }
-        
-#         # Handle different question types
-#         if question_type == 'multiple_choice':
-#             options = [
-#                 request.form.get('option_a', ''),
-#                 request.form.get('option_b', ''),
-#                 request.form.get('option_c', ''),
-#                 request.form.get('option_d', '')
-#             ]
-#             correct_answer = request.form['correct_answer']
-#             question_data.update({
-#                 'options': options,
-#                 'correct_answer': correct_answer
-#             })
-        
-#         elif question_type == 'true_false':
-#             correct_answer = request.form['tf_answer'] == 'true'
-#             question_data['correct_answer'] = correct_answer
-        
-#         elif question_type in ['identification', 'enumeration']:
-#             correct_answers = [ans.strip() for ans in request.form['correct_answers'].split(',')]
-#             question_data['correct_answers'] = correct_answers
-        
-#         try:
-#             db.collection('questions').add(question_data)
-            
-#             # Update question count in quiz
-#             quiz_ref.update({'question_count': Increment(1)})
-            
-#             flash('Question added successfully!')
-#             return redirect(url_for('manage_quiz', quiz_id=quiz_id))
-#         except Exception as e:
-#             flash(f'Error adding question: {e}')
-    
-#     return render_template('add_question.html', quiz_id=quiz_id, quiz=quiz_data)
-
 @app.route('/quiz/<quiz_id>/publish')
 def publish_quiz(quiz_id):
     if 'user_id' not in session or session.get('role') != 'teacher':
@@ -1991,10 +1582,44 @@ def publish_quiz(quiz_id):
         
         quiz_ref.update({'is_published': True})
         flash('Quiz published successfully!')
-        
+        # NEW: notifications
+        quiz_data = quiz_doc.to_dict()
+        subject_id = quiz_data.get('subject_id')
+        title = quiz_data.get('title', 'A quiz')
+        subject_name = quiz_data.get('subject_name', 'Subject')
+        try:
+            # notify teacher
+            create_notification(
+                user_id=session['user_id'],
+                title='Quiz published',
+                message=f"Published '{title}' in {subject_name}",
+                notif_type='quiz',
+                link_url=url_for('manage_quiz', quiz_id=quiz_id),
+                icon='check-circle',
+                metadata={'quiz_id': quiz_id, 'subject_id': subject_id}
+            )
+            # notify enrolled students
+            if subject_id:
+                enr = (db.collection('enrollments')
+                         .where('subject_id', '==', subject_id)
+                         .where('status', '==', 'active'))
+                for d in enr.stream():
+                    s = d.to_dict()
+                    create_notification(
+                        user_id=s['student_id'],
+                        title='New quiz available',
+                        message=f"'{title}' is now available in {subject_name}",
+                        notif_type='quiz',
+                        link_url=url_for('take_quiz', quiz_id=quiz_id),
+                        icon='bell',
+                        metadata={'quiz_id': quiz_id, 'subject_id': subject_id},
+                        actor_id=session['user_id'],
+                        actor_name=session.get('username')
+                    )
+        except Exception as ne:
+            print(f"Notify error on publish: {ne}")
     except Exception as e:
-        flash(f'Error publishing quiz: {e}')
-    
+        flash(f'Error publishing quiz: {e}')    
     return redirect(url_for('manage_quiz', quiz_id=quiz_id))
 
 
@@ -2504,49 +2129,7 @@ def delete_question(quiz_id, question_id):
     except Exception as e:
         print(f"Error deleting question: {e}")
         return jsonify({'success': False, 'message': 'Error deleting question'}), 500
-    
-# Add these routes to your Flask app
-
-# @app.route('/quiz/<quiz_id>/take')
-# def take_quiz(quiz_id):
-#     if 'user_id' not in session:
-#         flash('Please log in to take quizzes.')
-#         return redirect(url_for('login'))
-    
-#     try:
-#         # Get quiz details
-#         quiz_ref = db.collection('quizzes').document(quiz_id)
-#         quiz_doc = quiz_ref.get()
-        
-#         if not quiz_doc.exists:
-#             flash('Quiz not found.')
-#             return redirect(url_for('dashboard'))
-        
-#         quiz_data = quiz_doc.to_dict()
-#         quiz_data['id'] = quiz_doc.id
-        
-#         # Check if quiz is published
-#         if not quiz_data.get('is_published', False):
-#             flash('This quiz is not available.')
-#             return redirect(url_for('dashboard'))
-        
-#         # Get questions for this quiz
-#         questions = []
-#         questions_ref = db.collection('questions').where('quiz_id', '==', quiz_id).order_by('created_at')
-#         for doc in questions_ref.stream():
-#             question_data = doc.to_dict()
-#             question_data['id'] = doc.id
-#             questions.append(question_data)
-        
-#         if not questions:
-#             flash('This quiz has no questions yet.')
-#             return redirect(url_for('dashboard'))
-        
-#         return render_template('take_quiz.html', quiz=quiz_data, questions=questions)
-        
-#     except Exception as e:
-#         flash(f'Error loading quiz: {e}')
-#         return redirect(url_for('dashboard'))
+   
 @app.route('/quiz/<quiz_id>/take')
 def take_quiz(quiz_id):
     if 'user_id' not in session:
@@ -2697,7 +2280,35 @@ def submit_quiz(quiz_id):
         
         attempt_ref = db.collection('quiz_attempts').add(attempt_data)
         attempt_id = attempt_ref[1].id
-        
+        # NEW: notifications
+        try:
+            # student: result
+            create_notification(
+                user_id=session['user_id'],
+                title='Quiz completed',
+                message=f"You scored {round(percentage, 2)}% on '{quiz_data.get('title', 'Quiz')}'",
+                notif_type='quiz',
+                link_url=url_for('view_attempt', attempt_id=attempt_id),
+                icon='check-circle',
+                metadata={'quiz_id': quiz_id, 'attempt_id': attempt_id}
+            )
+            # teacher: student attempted quiz
+            teacher_id = quiz_data.get('teacher_id')
+            if teacher_id:
+                create_notification(
+                    user_id=teacher_id,
+                    title='Quiz attempt',
+                    message=f"{session['username']} scored {round(percentage, 2)}% on '{quiz_data.get('title', 'Quiz')}'",
+                    notif_type='quiz',
+                    link_url=url_for('manage_quiz', quiz_id=quiz_id),
+                    icon='bell',
+                    metadata={'quiz_id': quiz_id, 'attempt_id': attempt_id},
+                    actor_id=session['user_id'],
+                    actor_name=session['username']
+                )
+        except Exception as ne:
+            print(f"Notify error on submit: {ne}")
+
         return jsonify({
             'success': True,
             'attempt_id': attempt_id,
@@ -2706,42 +2317,18 @@ def submit_quiz(quiz_id):
             'percentage': round(percentage, 2)
         })
         
+        # return jsonify({
+        #     'success': True,
+        #     'attempt_id': attempt_id,
+        #     'score': earned_points,
+        #     'total': total_points,
+        #     'percentage': round(percentage, 2)
+        # })
+        
     except Exception as e:
         print(f"Error submitting quiz: {e}")
         return jsonify({'success': False, 'message': 'Error submitting quiz'}), 500
 
-# @app.route('/quiz/<quiz_id>/results')
-# def quiz_results(quiz_id):
-#     if 'user_id' not in session:
-#         flash('Please log in to view results.')
-#         return redirect(url_for('login'))
-    
-#     try:
-#         # Get quiz details
-#         quiz_ref = db.collection('quizzes').document(quiz_id)
-#         quiz_doc = quiz_ref.get()
-        
-#         if not quiz_doc.exists:
-#             flash('Quiz not found.')
-#             return redirect(url_for('dashboard'))
-        
-#         quiz_data = quiz_doc.to_dict()
-#         quiz_data['id'] = quiz_doc.id
-        
-#         # Get user's attempts for this quiz
-#         attempts = []
-#         attempts_ref = db.collection('quiz_attempts').where('quiz_id', '==', quiz_id).where('user_id', '==', session['user_id']).order_by('submitted_at', direction=firestore.Query.DESCENDING)
-        
-#         for doc in attempts_ref.stream():
-#             attempt_data = doc.to_dict()
-#             attempt_data['id'] = doc.id
-#             attempts.append(attempt_data)
-        
-#         return render_template('quiz_results.html', quiz=quiz_data, attempts=attempts)
-        
-#     except Exception as e:
-#         flash(f'Error loading results: {e}')
-#         return redirect(url_for('dashboard'))
 
 # Add this debugging route to test if your Flask app is working
 @app.route('/debug/routes')
@@ -2838,50 +2425,7 @@ def quiz_results(quiz_id):
         print(f"ERROR in quiz_results: {e}")
         flash(f'Error loading results: {e}')
         return redirect(url_for('dashboard'))
-    
-# @app.route('/quiz-attempt/<attempt_id>')
-# def view_attempt(attempt_id):
-#     if 'user_id' not in session:
-#         flash('Please log in to view attempt details.')
-#         return redirect(url_for('login'))
-    
-#     try:
-#         # Get attempt details
-#         attempt_ref = db.collection('quiz_attempts').document(attempt_id)
-#         attempt_doc = attempt_ref.get()
-        
-#         if not attempt_doc.exists:
-#             flash('Attempt not found.')
-#             return redirect(url_for('dashboard'))
-        
-#         attempt_data = attempt_doc.to_dict()
-        
-#         # Verify user owns this attempt
-#         if attempt_data['user_id'] != session['user_id']:
-#             flash('Access denied.')
-#             return redirect(url_for('dashboard'))
-        
-#         # Get quiz details
-#         quiz_ref = db.collection('quizzes').document(attempt_data['quiz_id'])
-#         quiz_doc = quiz_ref.get()
-#         quiz_data = quiz_doc.to_dict() if quiz_doc.exists else {}
-        
-#         # Get questions with details
-#         questions = []
-#         questions_ref = db.collection('questions').where('quiz_id', '==', attempt_data['quiz_id']).order_by('created_at')
-#         for doc in questions_ref.stream():
-#             question_data = doc.to_dict()
-#             question_data['id'] = doc.id
-#             questions.append(question_data)
-        
-#         return render_template('attempt_detail.html', 
-#                              attempt=attempt_data, 
-#                              quiz=quiz_data, 
-#                              questions=questions)
-        
-#     except Exception as e:
-#         flash(f'Error loading attempt: {e}')
-#         return redirect(url_for('dashboard'))
+
 
 @app.route('/quiz-attempt/<attempt_id>')
 def view_attempt(attempt_id):
@@ -2943,61 +2487,6 @@ def view_attempt(attempt_id):
         flash(f'Error loading attempt: {e}')
         return redirect(url_for('dashboard'))
 
-# @app.route('/compare-attempts/<attempt1_id>/<attempt2_id>')
-# def compare_attempts(attempt1_id, attempt2_id):
-#     if 'user_id' not in session:
-#         flash('Please log in to compare attempts.')
-#         return redirect(url_for('login'))
-    
-#     try:
-#         # Get both attempts
-#         attempt1_ref = db.collection('quiz_attempts').document(attempt1_id)
-#         attempt1_doc = attempt1_ref.get()
-        
-#         attempt2_ref = db.collection('quiz_attempts').document(attempt2_id)
-#         attempt2_doc = attempt2_ref.get()
-        
-#         if not attempt1_doc.exists or not attempt2_doc.exists:
-#             flash('One or both attempts not found.')
-#             return redirect(url_for('dashboard'))
-        
-#         attempt1_data = attempt1_doc.to_dict()
-#         attempt1_data['id'] = attempt1_doc.id
-        
-#         attempt2_data = attempt2_doc.to_dict()
-#         attempt2_data['id'] = attempt2_doc.id
-        
-#         # Verify user owns both attempts
-#         if (attempt1_data['user_id'] != session['user_id'] or 
-#             attempt2_data['user_id'] != session['user_id']):
-#             flash('Access denied.')
-#             return redirect(url_for('dashboard'))
-        
-#         # Get quiz details
-#         quiz_ref = db.collection('quizzes').document(attempt1_data['quiz_id'])
-#         quiz_doc = quiz_ref.get()
-#         quiz_data = quiz_doc.to_dict() if quiz_doc.exists else None
-        
-#         # Get questions
-#         questions = []
-#         questions_ref = db.collection('questions').where('quiz_id', '==', attempt1_data['quiz_id']).order_by('created_at')
-#         for doc in questions_ref.stream():
-#             question_data = doc.to_dict()
-#             question_data['id'] = doc.id
-#             questions.append(question_data)
-        
-#         return render_template('compare_attempts.html', 
-#                              attempt1=attempt1_data, 
-#                              attempt2=attempt2_data,
-#                              quiz=quiz_data,
-#                              questions=questions,
-#                              username=session.get('username'),
-#                              role=session.get('role'))
-        
-#     except Exception as e:
-#         flash(f'Error comparing attempts: {e}')
-#         return redirect(url_for('dashboard'))
-
 @app.route('/subject/<subject_id>/enroll', methods=['POST'])
 def enroll_subject(subject_id):
     if 'user_id' not in session or session.get('role') != 'student':
@@ -3033,6 +2522,32 @@ def enroll_subject(subject_id):
         }
         
         enrollments_ref.add(enrollment_data)
+ # NEW: notifications
+        try:
+            # notify teacher
+            create_notification(
+                user_id=subject_data['teacher_id'],
+                title='New enrollment',
+                message=f"{session['username']} enrolled in {subject_data['name']}",
+                notif_type='enrollment',
+                link_url=url_for('view_subject', subject_id=subject_id),
+                icon='user-plus',
+                metadata={'subject_id': subject_id, 'student_id': session['user_id']},
+                actor_id=session['user_id'],
+                actor_name=session['username']
+            )
+            # confirm to student
+            create_notification(
+                user_id=session['user_id'],
+                title='Enrolled successfully',
+                message=f"You enrolled in {subject_data['name']}",
+                notif_type='enrollment',
+                link_url=url_for('view_subject', subject_id=subject_id),
+                icon='book-open',
+                metadata={'subject_id': subject_id}
+            )
+        except Exception as ne:
+            print(f"Notify error on enroll: {ne}")
         
         return jsonify({'success': True, 'message': 'Successfully enrolled in subject'})
         
@@ -3097,178 +2612,6 @@ def logout():
     flash('You have been logged out successfully.', 'success')
     return redirect(url_for('home'))
 
-# @app.route('/forgot-password', methods=['GET', 'POST'])
-# def forgot_password():
-#     if request.method == 'POST':
-#         email = request.form.get('email', '').strip()
-        
-#         if not email:
-#             flash('Please enter your email address.')
-#             return render_template('forgot_password.html')
-        
-#         try:
-#             # Check if user exists
-#             users_ref = db.collection('users')
-#             user_docs = users_ref.where('email', '==', email).get()
-            
-#             if not user_docs:
-#                 # Don't reveal if email exists or not for security
-#                 flash('If an account with that email exists, we\'ve sent you a password reset link.')
-#                 return redirect(url_for('login'))
-            
-#             user_doc = user_docs[0]
-#             user_data = user_doc.to_dict()
-#             user_id = user_doc.id
-            
-#             # Generate reset token
-#             reset_token = secrets.token_urlsafe(32)
-#             token_hash = hashlib.sha256(reset_token.encode()).hexdigest()
-            
-#             # Set token expiration (1 hour from now)
-#             expires_at = datetime.now() + timedelta(hours=1)
-            
-#             # Store reset token in database
-#             reset_data = {
-#                 'user_id': user_id,
-#                 'token_hash': token_hash,
-#                 'email': email,
-#                 'expires_at': expires_at,
-#                 'used': False,
-#                 'created_at': datetime.now()
-#             }
-            
-#             db.collection('password_resets').add(reset_data)
-            
-#             # Send reset email
-#             reset_url = url_for('reset_password', token=reset_token, _external=True)
-            
-#             msg = Message(
-#                 'Reset Your Quizera Password',
-#                 recipients=[email],
-#                 html=f'''
-#                 <html>
-#                 <body>
-#                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-#                         <h2 style="color: #2563eb;">Reset Your Password</h2>
-#                         <p>Hello {user_data.get('username', 'there')},</p>
-#                         <p>You requested to reset your password for your Quizera account. Click the button below to reset it:</p>
-#                         <div style="text-align: center; margin: 30px 0;">
-#                             <a href="{reset_url}" 
-#                                style="background-color: #2563eb; color: white; padding: 12px 24px; 
-#                                       text-decoration: none; border-radius: 5px; display: inline-block;">
-#                                 Reset Password
-#                             </a>
-#                         </div>
-#                         <p>Or copy and paste this link into your browser:</p>
-#                         <p><a href="{reset_url}">{reset_url}</a></p>
-#                         <p><strong>This link will expire in 1 hour.</strong></p>
-#                         <p>If you didn't request this password reset, please ignore this email.</p>
-#                         <hr style="margin: 30px 0; border: 1px solid #e5e5e5;">
-#                         <p style="color: #666; font-size: 12px;">
-#                             This is an automated message from Quizera. Please do not reply to this email.
-#                         </p>
-#                     </div>
-#                 </body>
-#                 </html>
-#                 '''
-#             )
-            
-#             mail.send(msg)
-#             flash('If an account with that email exists, we\'ve sent you a password reset link.')
-#             return redirect(url_for('login'))
-            
-#         except Exception as e:
-#             print(f"Error sending password reset: {e}")
-#             flash('An error occurred. Please try again later.')
-    
-#     return render_template('forgot_password.html')
-
-# @app.route('/reset-password/<token>', methods=['GET', 'POST'])
-# def reset_password(token):
-#     if request.method == 'GET':
-#         # Verify token exists and is valid
-#         token_hash = hashlib.sha256(token.encode()).hexdigest()
-        
-#         try:
-#             resets_ref = db.collection('password_resets')
-#             reset_docs = resets_ref.where('token_hash', '==', token_hash).where('used', '==', False).get()
-            
-#             if not reset_docs:
-#                 flash('Invalid or expired reset link.')
-#                 return redirect(url_for('forgot_password'))
-            
-#             reset_doc = reset_docs[0]
-#             reset_data = reset_doc.to_dict()
-            
-#             # Check if token is expired
-#             if datetime.now() > reset_data['expires_at']:
-#                 flash('This reset link has expired. Please request a new one.')
-#                 return redirect(url_for('forgot_password'))
-            
-#             return render_template('reset_password.html', token=token, email=reset_data.get('email'))
-            
-#         except Exception as e:
-#             print(f"Error validating reset token: {e}")
-#             flash('An error occurred. Please try again.')
-#             return redirect(url_for('forgot_password'))
-    
-#     elif request.method == 'POST':
-#         new_password = request.form.get('new_password', '').strip()
-#         confirm_password = request.form.get('confirm_password', '').strip()
-        
-#         if not new_password or not confirm_password:
-#             flash('Please fill in all fields.')
-#             return render_template('reset_password.html', token=token)
-        
-#         if len(new_password) < 6:
-#             flash('Password must be at least 6 characters long.')
-#             return render_template('reset_password.html', token=token)
-        
-#         if new_password != confirm_password:
-#             flash('Passwords do not match.')
-#             return render_template('reset_password.html', token=token)
-        
-#         try:
-#             token_hash = hashlib.sha256(token.encode()).hexdigest()
-            
-#             # Find and validate reset token
-#             resets_ref = db.collection('password_resets')
-#             reset_docs = resets_ref.where('token_hash', '==', token_hash).where('used', '==', False).get()
-            
-#             if not reset_docs:
-#                 flash('Invalid or expired reset link.')
-#                 return redirect(url_for('forgot_password'))
-            
-#             reset_doc = reset_docs[0]
-#             reset_data = reset_doc.to_dict()
-            
-#             # Check if token is expired
-#             if datetime.now() > reset_data['expires_at']:
-#                 flash('This reset link has expired. Please request a new one.')
-#                 return redirect(url_for('forgot_password'))
-            
-#             # Update user password
-#             user_ref = db.collection('users').document(reset_data['user_id'])
-#             hashed_password = generate_password_hash(new_password)
-            
-#             user_ref.update({
-#                 'password': hashed_password,
-#                 'password_updated_at': datetime.now()
-#             })
-            
-#             # Mark reset token as used
-#             reset_doc.reference.update({
-#                 'used': True,
-#                 'used_at': datetime.now()
-#             })
-            
-#             flash('Your password has been updated successfully! You can now log in.')
-#             return redirect(url_for('login'))
-            
-#         except Exception as e:
-#             print(f"Error resetting password: {e}")
-#             flash('An error occurred while resetting your password. Please try again.')
-#             return render_template('reset_password.html', token=token)
 
 # Optional: Cleanup expired reset tokens (run this periodically)
 @app.route('/admin/cleanup-expired-tokens', methods=['POST'])
@@ -3991,7 +3334,299 @@ def get_public_recent_activities(user_id, user_role, limit=10):
     except Exception as e:
         print(f"Error getting public activities: {e}")
         return []
+
+
+# ...existing code...
+
+
+# Helper: create a notification for a user
+# Updated create_notification function with better error handling
+def create_notification(
+    user_id,
+    title,
+    message,
+    notif_type='info',
+    link_url=None,
+    icon='bell',
+    metadata=None,
+    actor_id=None,
+    actor_name=None
+):
+    try:
+        from firebase_admin import firestore
+        
+        data = {
+            'user_id': str(user_id),  # Ensure it's a string
+            'title': title,
+            'message': message,
+            'type': notif_type,
+            'link_url': link_url,
+            'icon': icon,
+            'metadata': metadata or {},
+            'actor_id': actor_id,
+            'actor_name': actor_name,
+            'read': False,
+            'created_at': firestore.SERVER_TIMESTAMP  # Use server timestamp
+        }
+        
+        print(f"Debug: Creating notification for user {user_id}")  # Debug
+        
+        doc_ref, doc = db.collection('notifications').add(data)
+        print(f"Debug: Notification created with ID: {doc.id}")  # Debug
+        return doc.id
+        
+    except Exception as e:
+        print(f"Error creating notification: {e}")
+        import traceback
+        traceback.print_exc()  # Print full stack trace
+        return None
+
+# Updated notifications route with better debugging
+@app.route('/notifications')
+def notifications():
+    if 'user_id' not in session:
+        flash('Please log in to view notifications.')
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    print(f"Debug: Loading notifications for user: {user_id}")
+
+    try:
+        # Fetch latest 50 notifications for current user
+        query = (db.collection('notifications')
+                   .where('user_id', '==', str(user_id))  # Ensure string comparison
+                   .order_by('created_at', direction=firestore.Query.DESCENDING)
+                   .limit(50))
+        
+        docs = list(query.stream())
+        print(f"Debug: Found {len(docs)} notifications")  # Debug
+        
+        items = []
+        unread_count = 0
+        
+        for d in docs:
+            try:
+                n = d.to_dict()
+                n['id'] = d.id
+                
+                if not n.get('read'):
+                    unread_count += 1
+                
+                # Handle timestamp conversion
+                created_at = n.get('created_at')
+                if created_at:
+                    try:
+                        if hasattr(created_at, 'timestamp'):
+                            # Firestore timestamp
+                            dt = created_at
+                            n['created_at'] = dt.strftime('%Y-%m-%d %H:%M')
+                        elif hasattr(created_at, 'strftime'):
+                            # Python datetime
+                            n['created_at'] = created_at.strftime('%Y-%m-%d %H:%M')
+                        else:
+                            n['created_at'] = str(created_at)
+                    except Exception as te:
+                        print(f"Timestamp error: {te}")
+                        n['created_at'] = 'Unknown'
+                else:
+                    n['created_at'] = 'Unknown'
+                
+                items.append(n)
+                print(f"Debug: Added notification: {n['title']}")  # Debug
+                
+            except Exception as doc_error:
+                print(f"Error processing document {d.id}: {doc_error}")
+                continue
+
+        print(f"Debug: Returning {len(items)} notifications, {unread_count} unread")
+        
+        return render_template('notification.html',
+                               notifications=items,
+                               unread_count=unread_count,
+                               username=session.get('username'),
+                               role=session.get('role'))
+                               
+    except Exception as e:
+        print(f"Error loading notifications: {e}")
+        import traceback
+        traceback.print_exc()
+        flash('Error loading notifications.')
+        return redirect(url_for('dashboard'))
+
+# Test function to manually create a notification
+@app.route('/test-notification')
+def test_notification():
+    if 'user_id' not in session:
+        return "Please log in first"
     
+    # Create a test notification
+    notif_id = create_notification(
+        user_id=session['user_id'],
+        title='Test Notification',
+        message='This is a test notification to verify the system works.',
+        notif_type='test',
+        icon='test'
+    )
+    
+    if notif_id:
+        return f"Test notification created with ID: {notif_id}"
+    else:
+        return "Failed to create test notification"
+
+@app.route('/notifications/<notification_id>/read', methods=['POST'])
+def mark_notification_read(notification_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please log in'}), 401
+    try:
+        ref = db.collection('notifications').document(notification_id)
+        doc = ref.get()
+        if not doc.exists:
+            return jsonify({'success': False, 'message': 'Not found'}), 404
+        data = doc.to_dict()
+        if data.get('user_id') != session['user_id']:
+            return jsonify({'success': False, 'message': 'Forbidden'}), 403
+        ref.update({'read': True, 'read_at': datetime.now()})
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error marking notification read: {e}")
+        return jsonify({'success': False, 'message': 'Error'}), 500
+
+@app.route('/notifications/mark-all-read', methods=['POST'])
+def mark_all_notifications_read():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please log in'}), 401
+    try:
+        batch = db.batch()
+        q = (db.collection('notifications')
+               .where('user_id', '==', session['user_id'])
+               .where('read', '==', False))
+        docs = list(q.stream())
+        for d in docs:
+            batch.update(d.reference, {'read': True, 'read_at': datetime.now()})
+        if docs:
+            batch.commit()
+        return jsonify({'success': True, 'updated': len(docs)})
+    except Exception as e:
+        print(f"Error marking all notifications read: {e}")
+        return jsonify({'success': False, 'message': 'Error'}), 500
+
+# Add these routes to your app.py file
+
+@app.route('/notifications/<notification_id>', methods=['DELETE'])
+def delete_notification(notification_id):
+    """Delete a single notification"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please log in'}), 401
+    
+    try:
+        # Get the notification document
+        ref = db.collection('notifications').document(notification_id)
+        doc = ref.get()
+        
+        if not doc.exists:
+            return jsonify({'success': False, 'message': 'Notification not found'}), 404
+        
+        # Check if the notification belongs to the current user
+        data = doc.to_dict()
+        if data.get('user_id') != str(session['user_id']):
+            return jsonify({'success': False, 'message': 'Forbidden'}), 403
+        
+        # Delete the notification
+        ref.delete()
+        print(f"Debug: Deleted notification {notification_id} for user {session['user_id']}")
+        
+        return jsonify({'success': True, 'message': 'Notification deleted'})
+        
+    except Exception as e:
+        print(f"Error deleting notification: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': 'Error deleting notification'}), 500
+
+
+@app.route('/notifications/delete-all', methods=['DELETE'])
+def delete_all_notifications():
+    """Delete all notifications for the current user"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please log in'}), 401
+    
+    try:
+        # Get all notifications for the current user
+        query = (db.collection('notifications')
+                   .where('user_id', '==', str(session['user_id'])))
+        
+        docs = list(query.stream())
+        
+        if not docs:
+            return jsonify({'success': True, 'message': 'No notifications to delete', 'deleted': 0})
+        
+        # Use batch operation for better performance
+        batch = db.batch()
+        
+        for doc in docs:
+            batch.delete(doc.reference)
+        
+        # Commit the batch operation
+        batch.commit()
+        
+        deleted_count = len(docs)
+        print(f"Debug: Deleted {deleted_count} notifications for user {session['user_id']}")
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Deleted {deleted_count} notifications',
+            'deleted': deleted_count
+        })
+        
+    except Exception as e:
+        print(f"Error deleting all notifications: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': 'Error deleting notifications'}), 500
+
+
+# Optional: Add a route to delete only read notifications
+@app.route('/notifications/delete-read', methods=['DELETE'])
+def delete_read_notifications():
+    """Delete all read notifications for the current user"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please log in'}), 401
+    
+    try:
+        # Get all read notifications for the current user
+        query = (db.collection('notifications')
+                   .where('user_id', '==', str(session['user_id']))
+                   .where('read', '==', True))
+        
+        docs = list(query.stream())
+        
+        if not docs:
+            return jsonify({'success': True, 'message': 'No read notifications to delete', 'deleted': 0})
+        
+        # Use batch operation for better performance
+        batch = db.batch()
+        
+        for doc in docs:
+            batch.delete(doc.reference)
+        
+        # Commit the batch operation
+        batch.commit()
+        
+        deleted_count = len(docs)
+        print(f"Debug: Deleted {deleted_count} read notifications for user {session['user_id']}")
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Deleted {deleted_count} read notifications',
+            'deleted': deleted_count
+        })
+        
+    except Exception as e:
+        print(f"Error deleting read notifications: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': 'Error deleting notifications'}), 500
+
 if __name__ == '__main__':
     # app.run(debug=True)
     app.run(debug=True, host='0.0.0.0', port=5000)
