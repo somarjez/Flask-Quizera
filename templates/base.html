@@ -5,23 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Quizera - E-Learning Platform{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Dark mode script - must be in head to prevent flash
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
     <!-- Navigation -->
-    <nav class="bg-blue-600 text-white shadow-lg">
+    <nav class="bg-blue-600 dark:bg-gray-800 text-white shadow-lg transition-colors duration-300">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center space-x-4">
                     <h1 class="text-2xl font-bold">
-                        <a href="{{ url_for('home') }}" class="hover:text-blue-200 transition-colors">Quizera</a>
+                        <a href="{{ url_for('home') }}" class="hover:text-blue-200 dark:hover:text-blue-300 transition-colors">Quizera</a>
                     </h1>
                     {% if username %}
-                        <span class="text-blue-200">Welcome, {{ username }}!</span>
+                        <span class="text-blue-200 dark:text-gray-300">Welcome, {{ username }}!</span>
                     {% else %}
-                        <span class="text-blue-200">E-Learning Platform</span>
+                        <span class="text-blue-200 dark:text-gray-300">E-Learning Platform</span>
                     {% endif %}
                 </div>
                 
@@ -32,15 +41,15 @@
                         <input type="text" 
                                name="q" 
                                placeholder="Search students and teachers..." 
-                               class="w-full px-4 py-2 pl-10 pr-12 text-gray-700 bg-white rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
+                               class="w-full px-4 py-2 pl-10 pr-12 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 rounded-full border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-500 focus:border-transparent transition-colors duration-300"
                                value="{{ request.args.get('q', '') }}">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
                         <button type="submit" class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                            <svg class="w-5 h-5 text-blue-600 hover:text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </button>
@@ -49,8 +58,22 @@
                 {% endif %}
                 
                 <div class="flex items-center space-x-4">
+                    <!-- Dark Mode Toggle Button -->
+                    <button 
+                        id="darkModeToggle" 
+                        class="p-2 rounded-lg bg-blue-500 dark:bg-gray-700 hover:bg-blue-700 dark:hover:bg-gray-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-gray-500"
+                        title="Toggle dark mode"
+                    >
+                        <svg id="sunIcon" class="w-5 h-5 text-white dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <svg id="moonIcon" class="w-5 h-5 text-white hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                    </button>
+
                     <!-- Home Button (always visible) -->
-                    <a href="{{ url_for('home') }}" class="hover:text-blue-200 transition-colors flex items-center space-x-1">
+                    <a href="{{ url_for('home') }}" class="hover:text-blue-200 dark:hover:text-blue-300 transition-colors flex items-center space-x-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
@@ -59,7 +82,7 @@
                     
                     {% if username %}
                         <!-- Dashboard Button -->
-                        <a href="{{ url_for('dashboard') }}" class="hover:text-blue-200 transition-colors flex items-center space-x-1">
+                        <a href="{{ url_for('dashboard') }}" class="hover:text-blue-200 dark:hover:text-blue-300 transition-colors flex items-center space-x-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
                             </svg>
@@ -67,7 +90,7 @@
                         </a>
                         
                         <!-- Notifications Link -->
-                        <a href="{{ url_for('notifications') }}" class="hover:text-blue-200 transition-colors flex items-center space-x-1 relative">
+                        <a href="{{ url_for('notifications') }}" class="hover:text-blue-200 dark:hover:text-blue-300 transition-colors flex items-center space-x-1 relative">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                             </svg>
@@ -81,7 +104,7 @@
                         </a>
 
                         <!-- Profile Link -->
-                        <a href="{{ url_for('profile') }}" class="hover:text-blue-200 transition-colors flex items-center space-x-1">
+                        <a href="{{ url_for('profile') }}" class="hover:text-blue-200 dark:hover:text-blue-300 transition-colors flex items-center space-x-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
@@ -89,10 +112,10 @@
                         </a>
                         
                         <!-- Role Badge -->
-                        <span class="bg-blue-500 px-3 py-1 rounded-full text-sm">{{ role|title }}</span>
+                        <span class="bg-blue-500 dark:bg-gray-600 px-3 py-1 rounded-full text-sm transition-colors duration-300">{{ role|title }}</span>
                         
                         <!-- Logout -->
-                        <a href="{{ url_for('logout') }}" class="hover:text-blue-200 transition-colors flex items-center space-x-1">
+                        <a href="{{ url_for('logout') }}" class="hover:text-blue-200 dark:hover:text-blue-300 transition-colors flex items-center space-x-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                             </svg>
@@ -100,8 +123,8 @@
                         </a>
                     {% else %}
                         <!-- Login/Signup for guests -->
-                        <a href="{{ url_for('login') }}" class="bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded transition-colors">Login</a>
-                        <a href="{{ url_for('signup') }}" class="bg-green-500 hover:bg-green-700 px-4 py-2 rounded transition-colors">Sign Up</a>
+                        <a href="{{ url_for('login') }}" class="bg-blue-500 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 px-4 py-2 rounded transition-colors duration-300">Login</a>
+                        <a href="{{ url_for('signup') }}" class="bg-green-500 dark:bg-green-600 hover:bg-green-700 dark:hover:bg-green-700 px-4 py-2 rounded transition-colors duration-300">Sign Up</a>
                     {% endif %}
                 </div>
             </div>
@@ -143,28 +166,28 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-12 mt-16">
+    <footer class="bg-gray-800 dark:bg-gray-950 text-white py-12 mt-16 transition-colors duration-300">
         <div class="container mx-auto px-4">
             {% block footer %}
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div class="col-span-2">
                     <h3 class="text-2xl font-bold mb-4">Quizera</h3>
-                    <p class="text-gray-300 mb-4">
+                    <p class="text-gray-300 dark:text-gray-400 mb-4">
                         Empowering Computer Science students with interactive learning experiences 
                         and comprehensive educational resources.
                     </p>
                     <div class="flex space-x-4">
-                        <a href="#" class="text-gray-300 hover:text-white">
+                        <a href="#" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">
                             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
                             </svg>
                         </a>
-                        <a href="#" class="text-gray-300 hover:text-white">
+                        <a href="#" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">
                             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
                             </svg>
                         </a>
-                        <a href="#" class="text-gray-300 hover:text-white">
+                        <a href="#" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">
                             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                             </svg>
@@ -175,31 +198,61 @@
                 <div>
                     <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
                     <ul class="space-y-2">
-                        <li><a href="{{ url_for('home') }}" class="text-gray-300 hover:text-white">Home</a></li>
-                        <li><a href="{{ url_for('signup') }}" class="text-gray-300 hover:text-white">Sign Up</a></li>
-                        <li><a href="{{ url_for('login') }}" class="text-gray-300 hover:text-white">Login</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">About Us</a></li>
+                        <li><a href="{{ url_for('home') }}" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">Home</a></li>
+                        <li><a href="{{ url_for('signup') }}" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">Sign Up</a></li>
+                        <li><a href="{{ url_for('login') }}" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">Login</a></li>
+                        <li><a href="#" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">About Us</a></li>
                     </ul>
                 </div>
                 
                 <div>
                     <h4 class="text-lg font-semibold mb-4">Support</h4>
                     <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-300 hover:text-white">Help Center</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">Contact Us</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">Privacy Policy</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">Terms of Service</a></li>
+                        <li><a href="#" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">Help Center</a></li>
+                        <li><a href="#" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>
             
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center">
-                <p class="text-gray-300">&copy; 2024 Quizera. All rights reserved.</p>
-                <p class="text-gray-400 text-sm mt-2">Building the future of Computer Science education</p>
+            <div class="border-t border-gray-700 dark:border-gray-600 mt-8 pt-8 text-center">
+                <p class="text-gray-300 dark:text-gray-400">&copy; 2024 Quizera. All rights reserved.</p>
+                <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">Building the future of Computer Science education</p>
             </div>
             {% endblock %}
         </div>
     </footer>
+
+    <!-- Dark Mode Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const html = document.documentElement;
+            
+            // Check if dark mode is enabled
+            function isDarkMode() {
+                return html.classList.contains('dark');
+            }
+            
+            // Toggle dark mode
+            function toggleDarkMode() {
+                html.classList.toggle('dark');
+                const isDark = isDarkMode();
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                
+                // Optional: Dispatch custom event for other components to listen to
+                window.dispatchEvent(new CustomEvent('themeChanged', { 
+                    detail: { theme: isDark ? 'dark' : 'light' } 
+                }));
+            }
+            
+            // Add click event listener
+            if (darkModeToggle) {
+                darkModeToggle.addEventListener('click', toggleDarkMode);
+            }
+        });
+    </script>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block extra_scripts %}{% endblock %}
