@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block title %}Notifications{% endblock %}
+{% block head %}
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-4">
