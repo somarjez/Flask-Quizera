@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block title %}Games - Quizera{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+    .play-game-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    .play-game-btn:disabled:hover {
+        transform: none !important;
+        background-color: inherit;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- Games Header Section -->
+    <section class="bg-gradient-to-br from-green-600 via-teal-700 to-blue-800 py-20 relative overflow-hidden">
+        <!-- Background decoration -->
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-20 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+            <div class="absolute bottom-20 right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-white rounded-full blur-3xl"></div>
+        </div>
+        
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <h1 class="text-5xl font-bold text-white mb-6">Educational Games</h1>
+            <p class="text-xl text-green-100 mb-8 max-w-3xl mx-auto">
+                Learn while you play! Enhance your Computer Science skills with our collection of interactive educational games designed to make learning fun and engaging.
+            </p>
+            <div class="flex justify-center space-x-4">
+                <a href="{{ url_for('dashboard') }}" class="bg-white text-green-700 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                </a>
+                <a href="{{ url_for('home') }}#features" class="bg-transparent text-white px-8 py-3 rounded-lg text-lg font-semibold border-2 border-white hover:bg-white hover:text-green-700 transition-all transform hover:scale-105">
+                    <i class="fas fa-home mr-2"></i>Browse Subjects
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Games Section -->
+    <section class="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Available Games</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Choose from our collection of educational games designed to improve your programming and Computer Science skills.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Game 1: Typing Speed Test -->
+                <div class="game-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-br from-purple-500 to-pink-500 h-48 flex items-center justify-center relative">
+                        <!-- Game Icon/Illustration -->
+                        <div class="text-white text-6xl">
+                            <i class="fas fa-keyboard"></i>
+                        </div>
+                        <div class="absolute top-4 right-4 bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-3 py-1">
+                            <span class="text-white text-sm font-semibold">Popular</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Typing Speed Test</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Test your coding typing skills with real JavaScript, Python, and HTML snippets. Improve your programming speed and accuracy!</p>
+                        
+                        <!-- Game Stats -->
+                        <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4 flex-wrap gap-2">
+                            <span class="flex items-center bg-purple-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-code w-4 h-4 mr-1 text-purple-500"></i>
+                                Coding
+                            </span>
+                            <span class="flex items-center bg-blue-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-chart-line w-4 h-4 mr-1 text-blue-500"></i>
+                                WPM Tracking
+                            </span>
+                            <span class="flex items-center bg-green-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-language w-4 h-4 mr-1 text-green-500"></i>
+                                Multi-Lang
+                            </span>
+                        </div>
+
+                        <!-- Game Actions -->
+                        <div class="flex space-x-2">
+                            <button class="play-game-btn flex-1 bg-green-500 text-white px-4 py-3 rounded-lg text-sm font-semibold hover:bg-green-600 transition-all transform hover:scale-105 shadow-md"
+                                    data-game-id="typing_speed_test"
+                                    data-game-name="Typing Speed Test">
+                                <i class="fas fa-play mr-2"></i>
+                                Play Now
+                            </button>
+                            <button class="game-info-btn bg-gray-100 text-gray-600 px-4 py-3 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-all"
+                                    data-game-id="typing_speed_test"
+                                    data-game-name="Typing Speed Test"
+                                    data-game-description="Test your typing speed with real code snippets from JavaScript, Python, HTML/CSS, and programming keywords. Track your WPM, accuracy, and improve your coding efficiency!"
+                                    data-game-controls="Simply start typing the code that appears on screen. Choose difficulty levels and programming languages.">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game 2: Code Debugger -->
+                <div class="game-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-br from-red-500 to-pink-500 h-48 flex items-center justify-center relative">
+                        <!-- Game Icon/Illustration -->
+                        <div class="text-white text-6xl">
+                            <i class="fas fa-bug"></i>
+                        </div>
+                        <div class="absolute top-4 right-4 bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-3 py-1">
+                            <span class="text-white text-sm font-semibold">Challenge</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Code Debugger</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Find and fix bugs in JavaScript code snippets. Perfect for improving your debugging skills and understanding common programming errors!</p>
+                        
+                        <!-- Game Stats -->
+                        <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4 flex-wrap gap-2">
+                            <span class="flex items-center bg-red-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-search w-4 h-4 mr-1 text-red-500"></i>
+                                Bug Hunt
+                            </span>
+                            <span class="flex items-center bg-yellow-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-lightbulb w-4 h-4 mr-1 text-yellow-500"></i>
+                                Hints
+                            </span>
+                            <span class="flex items-center bg-purple-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-layer-group w-4 h-4 mr-1 text-purple-500"></i>
+                                Levels
+                            </span>
+                        </div>
+
+                        <!-- Game Actions -->
+                        <div class="flex space-x-2">
+                            <button class="play-game-btn flex-1 bg-green-500 text-white px-4 py-3 rounded-lg text-sm font-semibold hover:bg-green-600 transition-all transform hover:scale-105 shadow-md"
+                                    data-game-id="code_debugger_game"
+                                    data-game-name="Code Debugger">
+                                <i class="fas fa-play mr-2"></i>
+                                Play Now
+                            </button>
+                            <button class="game-info-btn bg-gray-100 text-gray-600 px-4 py-3 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-all"
+                                    data-game-id="code_debugger_game"
+                                    data-game-name="Code Debugger"
+                                    data-game-description="Hunt down bugs in JavaScript code! Click on the line that contains the error. Features multiple difficulty levels with hints to help you learn."
+                                    data-game-controls="Click on the line of code that contains the bug. Use hints if you get stuck. Progress through levels to face harder challenges.">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game 3: Fruit Catch -->
+                <div class="game-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-br from-orange-500 to-red-500 h-48 flex items-center justify-center relative">
+                        <!-- Game Icon/Illustration -->
+                        <div class="text-white text-6xl">
+                            <i class="fas fa-apple-alt"></i>
+                        </div>
+                        <div class="absolute top-4 right-4 bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-3 py-1">
+                            <span class="text-white text-sm font-semibold">Fun</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Fruit Catch Game</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Catch falling fruits and avoid obstacles! A fun arcade-style game that helps improve your reaction time and hand-eye coordination.</p>
+                        
+                        <!-- Game Stats -->
+                        <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4 flex-wrap gap-2">
+                            <span class="flex items-center bg-orange-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-gamepad w-4 h-4 mr-1 text-orange-500"></i>
+                                Arcade
+                            </span>
+                            <span class="flex items-center bg-blue-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-tachometer-alt w-4 h-4 mr-1 text-blue-500"></i>
+                                Reflexes
+                            </span>
+                            <span class="flex items-center bg-green-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-trophy w-4 h-4 mr-1 text-green-500"></i>
+                                High Score
+                            </span>
+                        </div>
+
+                        <!-- Game Actions -->
+                        <div class="flex space-x-2">
+                            <button class="play-game-btn flex-1 bg-green-500 text-white px-4 py-3 rounded-lg text-sm font-semibold hover:bg-green-600 transition-all transform hover:scale-105 shadow-md"
+                                    data-game-id="fruit_catch_game"
+                                    data-game-name="Fruit Catch Game">
+                                <i class="fas fa-play mr-2"></i>
+                                Play Now
+                            </button>
+                            <button class="game-info-btn bg-gray-100 text-gray-600 px-4 py-3 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-all"
+                                    data-game-id="fruit_catch_game"
+                                    data-game-name="Fruit Catch Game"
+                                    data-game-description="Catch falling fruits to score points while avoiding obstacles! Test your reflexes and aim for the highest score in this fun arcade-style game."
+                                    data-game-controls="Use arrow keys or mouse to move your basket. Catch fruits to score points and avoid bombs or other obstacles.">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coming Soon Card -->
+                <div class="game-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2 border border-gray-100 overflow-hidden opacity-75">
+                    <div class="bg-gradient-to-br from-gray-400 to-gray-600 h-48 flex items-center justify-center relative">
+                        <!-- Game Icon/Illustration -->
+                        <div class="text-white text-6xl">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <div class="absolute top-4 right-4 bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-3 py-1">
+                            <span class="text-white text-sm font-semibold">Soon</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Algorithm Racer</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Race against time while solving algorithm challenges! A fast-paced game combining coding logic with competitive gameplay.</p>
+                        
+                        <!-- Game Stats -->
+                        <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4 flex-wrap gap-2">
+                            <span class="flex items-center bg-gray-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-rocket w-4 h-4 mr-1 text-gray-500"></i>
+                                In Development
+                            </span>
+                        </div>
+
+                        <!-- Game Actions -->
+                        <div class="text-center">
+                            <button class="w-full bg-gray-300 text-gray-600 px-4 py-3 rounded-lg text-sm font-semibold cursor-not-allowed" disabled>
+                                <i class="fas fa-clock mr-2"></i>
+                                Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coming Soon Card 2 -->
+                <div class="game-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2 border border-gray-100 overflow-hidden opacity-75">
+                    <div class="bg-gradient-to-br from-gray-400 to-gray-600 h-48 flex items-center justify-center relative">
+                        <!-- Game Icon/Illustration -->
+                        <div class="text-white text-6xl">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="absolute top-4 right-4 bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-3 py-1">
+                            <span class="text-white text-sm font-semibold">Soon</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Logic Puzzle Master</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Solve complex logic puzzles and Boolean algebra challenges to advance through increasingly difficult levels.</p>
+                        
+                        <!-- Game Stats -->
+                        <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4 flex-wrap gap-2">
+                            <span class="flex items-center bg-gray-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-rocket w-4 h-4 mr-1 text-gray-500"></i>
+                                In Development
+                            </span>
+                        </div>
+
+                        <!-- Game Actions -->
+                        <div class="text-center">
+                            <button class="w-full bg-gray-300 text-gray-600 px-4 py-3 rounded-lg text-sm font-semibold cursor-not-allowed" disabled>
+                                <i class="fas fa-clock mr-2"></i>
+                                Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coming Soon Card 3 -->
+                <div class="game-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2 border border-gray-100 overflow-hidden opacity-75">
+                    <div class="bg-gradient-to-br from-gray-400 to-gray-600 h-48 flex items-center justify-center relative">
+                        <!-- Game Icon/Illustration -->
+                        <div class="text-white text-6xl">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <div class="absolute top-4 right-4 bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-3 py-1">
+                            <span class="text-white text-sm font-semibold">Soon</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Data Structure Builder</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Build and manipulate data structures like trees, graphs, and linked lists through interactive visual challenges.</p>
+                        
+                        <!-- Game Stats -->
+                        <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4 flex-wrap gap-2">
+                            <span class="flex items-center bg-gray-50 px-3 py-1 rounded-lg">
+                                <i class="fas fa-rocket w-4 h-4 mr-1 text-gray-500"></i>
+                                In Development
+                            </span>
+                        </div>
+
+                        <!-- Game Actions -->
+                        <div class="text-center">
+                            <button class="w-full bg-gray-300 text-gray-600 px-4 py-3 rounded-lg text-sm font-semibold cursor-not-allowed" disabled>
+                                <i class="fas fa-clock mr-2"></i>
+                                Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Game Benefits Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Why Play Educational Games?</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Discover the benefits of learning through play and how our games can enhance your Computer Science education.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Benefit 1 -->
+                <div class="text-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-brain text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-800">Enhanced Learning</h3>
+                    <p class="text-gray-600 leading-relaxed">Interactive games make complex concepts easier to understand and remember through hands-on practice.</p>
+                </div>
+
+                <!-- Benefit 2 -->
+                <div class="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                    <div class="bg-gradient-to-br from-green-500 to-emerald-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-chart-line text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-800">Skill Development</h3>
+                    <p class="text-gray-600 leading-relaxed">Improve practical skills like typing speed, debugging, and problem-solving through engaging gameplay.</p>
+                </div>
+
+                <!-- Benefit 3 -->
+                <div class="text-center p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                    <div class="bg-gradient-to-br from-purple-500 to-pink-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-trophy text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-800">Motivation & Fun</h3>
+                    <p class="text-gray-600 leading-relaxed">Stay motivated and engaged with gamified learning that makes studying enjoyable and rewarding.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Game Info Modal -->
+    <div id="gameInfoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-8 max-w-lg w-full mx-4 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-semibold text-gray-800" id="gameInfoTitle">Game Information</h3>
+                <button id="closeGameInfo" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mb-6">
+                <h4 class="text-lg font-medium text-gray-700 mb-2">Description</h4>
+                <p id="gameInfoDescription" class="text-gray-600 leading-relaxed"></p>
+            </div>
+            
+            <div class="mb-6">
+                <h4 class="text-lg font-medium text-gray-700 mb-2">How to Play</h4>
+                <p id="gameInfoControls" class="text-gray-600 leading-relaxed"></p>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button id="closeGameInfoBtn" class="px-6 py-3 text-gray-600 hover:text-gray-800 font-semibold transition-colors">Close</button>
+                <button id="playFromInfo" class="px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-all transform hover:scale-105 shadow-md">
+                    <i class="fas fa-play mr-2"></i>
+                    Play Game
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Status Modal -->
+    <div id="gameStatusModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-gamepad text-green-500 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Game Launched!</h3>
+                <p id="gameStatusText" class="text-gray-600 mb-6 leading-relaxed"></p>
+                <button id="closeGameStatus" class="px-6 py-3 bg-indigo-500 text-white rounded-lg font-semibold hover:bg-indigo-600 transition-all transform hover:scale-105 shadow-md">
+                    Got it!
+                </button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Game functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Play Game buttons
+    document.querySelectorAll('.play-game-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const gameId = this.getAttribute('data-game-id');
+            const gameName = this.getAttribute('data-game-name');
+            playGame(gameId, gameName);
+        });
+    });
+
+    // Game Info buttons
+    document.querySelectorAll('.game-info-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const gameName = this.getAttribute('data-game-name');
+            const gameDescription = this.getAttribute('data-game-description');
+            const gameControls = this.getAttribute('data-game-controls');
+            const gameId = this.getAttribute('data-game-id');
+            
+            showGameInfo(gameName, gameDescription, gameControls, gameId);
+        });
+    });
+
+    // Modal close buttons
+    document.getElementById('closeGameInfo').addEventListener('click', closeGameInfo);
+    document.getElementById('closeGameInfoBtn').addEventListener('click', closeGameInfo);
+    document.getElementById('closeGameStatus').addEventListener('click', closeGameStatus);
+    
+    // Play from info modal
+    document.getElementById('playFromInfo').addEventListener('click', function() {
+        const gameId = this.getAttribute('data-game-id');
+        const gameName = this.getAttribute('data-game-name');
+        closeGameInfo();
+        playGame(gameId, gameName);
+    });
+
+    // Close modals when clicking outside
+    document.getElementById('gameInfoModal').addEventListener('click', function(e) {
+        if (e.target === this) closeGameInfo();
+    });
+    
+    document.getElementById('gameStatusModal').addEventListener('click', function(e) {
+        if (e.target === this) closeGameStatus();
+    });
+});
+
+function playGame(gameId, gameName) {
+    // Show loading state
+    const playButtons = document.querySelectorAll('.play-game-btn');
+    playButtons.forEach(btn => {
+        if (btn.getAttribute('data-game-id') === gameId) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
+            btn.disabled = true;
+        }
+    });
+
+    // Simulate game launch (replace with actual game launch logic)
+    setTimeout(() => {
+        // Reset button state
+        playButtons.forEach(btn => {
+            if (btn.getAttribute('data-game-id') === gameId) {
+                btn.innerHTML = '<i class="fas fa-play mr-2"></i>Play Now';
+                btn.disabled = false;
+            }
+        });
+
+        // Show game launch status
+        showGameStatus(`${gameName} is now launching in a new window! If the game doesn't open automatically, please check if pop-ups are blocked.`);
+        
+        // Here you would implement the actual game launch logic
+        // For example: window.open(`/games/${gameId}`, '_blank');
+        console.log(`Launching game: ${gameId}`);
+        
+        // Open game using your existing route structure
+        window.open(`/game/${gameId}`, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+    }, 1500);
+}
+
+function showGameInfo(gameName, gameDescription, gameControls, gameId) {
+    document.getElementById('gameInfoTitle').textContent = gameName;
+    document.getElementById('gameInfoDescription').textContent = gameDescription;
+    document.getElementById('gameInfoControls').textContent = gameControls;
+    
+    // Set game data for play button in modal
+    const playFromInfoBtn = document.getElementById('playFromInfo');
+    playFromInfoBtn.setAttribute('data-game-id', gameId);
+    playFromInfoBtn.setAttribute('data-game-name', gameName);
+    
+    document.getElementById('gameInfoModal').classList.remove('hidden');
+}
+
+function closeGameInfo() {
+    document.getElementById('gameInfoModal').classList.add('hidden');
+}
+
+function showGameStatus(message) {
+    document.getElementById('gameStatusText').textContent = message;
+    document.getElementById('gameStatusModal').classList.remove('hidden');
+}
+
+function closeGameStatus() {
+    document.getElementById('gameStatusModal').classList.add('hidden');
+}
+</script>
+{% endblock %}
