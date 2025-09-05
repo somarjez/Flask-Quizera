@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Warriors - Typing Battle</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 3s ease infinite;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .game-mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 1rem 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #4ecdc4;
+            transform: scale(1.05);
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .timer-selector {
+            display: none;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .timer-selector.show {
+            display: flex;
+        }
+
+        .timer-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .timer-btn.active {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border-color: #ff6b6b;
+        }
+
+        .timer-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .battlefield {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timer-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 1rem;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: none;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .timer-display.warning {
+            animation: pulse-warning 1s infinite;
+        }
+
+        .timer-display.critical {
+            animation: pulse-critical 0.5s infinite;
+        }
+
+        @keyframes pulse-warning {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes pulse-critical {
+            0%, 100% { transform: scale(1); background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+            50% { transform: scale(1.15); background: linear-gradient(135deg, #ff0000, #cc0000); }
+        }
+
+        .challenge-display {
+            background: #1e1e1e;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            border-left: 4px solid #4ecdc4;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .challenge-type {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .code-line {
+            margin: 0.5rem 0;
+            position: relative;
+        }
+
+        .char {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .char.correct {
+            background: rgba(72, 187, 120, 0.3);
+            color: #48bb78;
+        }
+
+        .char.incorrect {
+            background: rgba(245, 101, 101, 0.3);
+            color: #f56565;
+            animation: shake 0.3s ease;
+        }
+
+        .char.current {
+            background: #4ecdc4;
+            color: #000;
+            animation: pulse 1s infinite;
+        }
+
+        .char.pending {
+            color: #a0aec0;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .input-terminal {
+            background: #0d1117;
+            border: 2px solid #30363d;
+            border-radius: 10px;
+            padding: 1rem;
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            font-family: inherit;
+            width: 100%;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-terminal:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4ecdc4;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+
+        .progress-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .results-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 3rem;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .results-title {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+            border-radius: 15px;
+        }
+
+        .combo-counter {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 1rem;
+            border-radius: 15px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .floating-score {
+            position: absolute;
+            color: #4ecdc4;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 0.5rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .stats-panel {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .timer-display {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 1rem;
+                display: block !important;
+            }
+
+            .combo-counter {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1><i class="fas fa-terminal"></i> Code Warriors</h1>
+            <p>Battle through coding challenges and prove your typing mastery!</p>
+        </div>
+
+        <div class="game-mode-selector">
+            <button class="mode-btn active" data-mode="sprint">Sprint Mode</button>
+            <button class="mode-btn" data-mode="timer">Timer Challenge</button>
+            <button class="mode-btn" data-mode="survival">Survival Mode</button>
+            <button class="mode-btn" data-mode="challenge">Daily Challenge</button>
+        </div>
+
+        <div class="timer-selector" id="timerSelector">
+            <button class="timer-btn active" data-time="30">30s</button>
+            <button class="timer-btn" data-time="60">1 min</button>
+            <button class="timer-btn" data-time="120">2 min</button>
+            <button class="timer-btn" data-time="300">5 min</button>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-value" id="wpm">0</div>
+                <div class="stat-label">WPM</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="accuracy">100%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="level">1</div>
+                <div class="stat-label">Level</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="score">0</div>
+                <div class="stat-label">Score</div>
+            </div>
+        </div>
+
+        <div class="battlefield">
+            <div class="timer-display" id="timerDisplay">
+                <i class="fas fa-clock"></i> <span id="timeLeft">30</span>s
+            </div>
+
+            <div class="combo-counter" id="comboCounter">
+                Combo: <span id="comboValue">0</span>
+            </div>
+            
+            <div class="challenge-display" id="challengeDisplay">
+                <div class="challenge-type" id="challengeType">JavaScript</div>
+                <div id="codeToType">Click "Start Battle" to begin your coding adventure!</div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <input type="text" id="codeInput" class="input-terminal" placeholder="Type the code here..." disabled>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="startBtn">
+                <i class="fas fa-rocket"></i> Start Battle
+            </button>
+            <button class="btn btn-secondary" id="resetBtn">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+            <button class="btn btn-secondary" id="nextBtn" style="display: none;">
+                <i class="fas fa-arrow-right"></i> Next Challenge
+            </button>
+        </div>
+    </div>
+
+    <div class="results-modal" id="resultsModal">
+        <div class="results-content">
+            <h2 class="results-title"><i class="fas fa-trophy"></i> Battle Complete!</h2>
+            <div class="results-grid">
+                <div class="result-item">
+                    <div class="stat-value" id="finalWPM">0</div>
+                    <div class="stat-label">Final WPM</div>
+                </div>
+                <div class="result-item">
+                    <div class="stat-value" id="finalAccuracy">0%</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+                <div class="result-item">
+                    <div class="stat-value" id="finalLevel">1</div>
+                    <div class="stat-label">Level Reached</div>
+                </div>
+                <div class="result-item">
+                    <div class="stat-value" id="finalScore">0</div>
+                    <div class="stat-label">Total Score</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="closeResults()">Continue Training</button>
+        </div>
+    </div>
+
+    <script>
+        class CodeWarriors {
+            constructor() {
+                this.currentChallenge = '';
+                this.currentIndex = 0;
+                this.isActive = false;
+                this.score = 0;
+                this.level = 1;
+                this.combo = 0;
+                this.errors = 0;
+                this.totalChars = 0;
+                this.startTime = null;
+                this.mode = 'sprint';
+                this.challengesCompleted = 0;
+                this.timerDuration = 30; // seconds
+                this.timeLeft = 30;
+                this.timerInterval = null;
+                
+                this.challenges = {
+                    beginner: [
+                        'const name = "John";',
+                        'let age = 25;',
+                        'console.log("Hello");',
+                        'if (true) { return; }',
+                        'function add(a, b) { return a + b; }'
+                    ],
+                    intermediate: [
+                        'const users = users.filter(user => user.active);',
+                        'async function fetchData() { return await api.get("/data"); }',
+                        'const { name, age } = person;',
+                        'array.map(item => ({ ...item, processed: true }))',
+                        'try { const result = await operation(); } catch (error) { console.error(error); }'
+                    ],
+                    advanced: [
+                        'class Component extends React.Component { componentDidMount() { this.fetchData(); } }',
+                        'const memoizedCallback = useCallback(() => { doSomething(a, b); }, [a, b]);',
+                        'interface User { id: number; name: string; email?: string; }',
+                        'const reducer = (state, action) => { switch(action.type) { case "INCREMENT": return { count: state.count + 1 }; default: return state; } }',
+                        'Promise.all([fetch("/api/users"), fetch("/api/posts")]).then(([users, posts]) => ({ users: users.json(), posts: posts.json() }))'
+                    ]
+                };
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.generateChallenge();
+            }
+            
+            initializeElements() {
+                this.challengeDisplay = document.getElementById('challengeDisplay');
+                this.codeToType = document.getElementById('codeToType');
+                this.codeInput = document.getElementById('codeInput');
+                this.startBtn = document.getElementById('startBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.nextBtn = document.getElementById('nextBtn');
+                this.challengeType = document.getElementById('challengeType');
+                this.comboCounter = document.getElementById('comboCounter');
+                this.comboValue = document.getElementById('comboValue');
+                this.progressFill = document.getElementById('progressFill');
+                this.resultsModal = document.getElementById('resultsModal');
+                this.timerDisplay = document.getElementById('timerDisplay');
+                this.timeLeft = document.getElementById('timeLeft');
+                this.timerSelector = document.getElementById('timerSelector');
+                
+                // Stats elements
+                this.wpmElement = document.getElementById('wpm');
+                this.accuracyElement = document.getElementById('accuracy');
+                this.levelElement = document.getElementById('level');
+                this.scoreElement = document.getElementById('score');
+                
+                // Mode buttons
+                this.modeButtons = document.querySelectorAll('.mode-btn');
+                this.timerButtons = document.querySelectorAll('.timer-btn');
+            }
+            
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.startBattle());
+                this.resetBtn.addEventListener('click', () => this.resetGame());
+                this.nextBtn.addEventListener('click', () => this.nextChallenge());
+                this.codeInput.addEventListener('input', (e) => this.handleInput(e));
+                this.codeInput.addEventListener('keydown', (e) => this.handleKeydown(e));
+                
+                this.modeButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => this.changeMode(e));
+                });
+
+                this.timerButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => this.changeTimer(e));
+                });
+            }
+            
+            changeMode(e) {
+                this.modeButtons.forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                this.mode = e.target.dataset.mode;
+                
+                // Show timer selector for timer mode
+                if (this.mode === 'timer') {
+                    this.timerSelector.classList.add('show');
+                } else {
+                    this.timerSelector.classList.remove('show');
+                }
+                
+                this.resetGame();
+            }
+
+            changeTimer(e) {
+                this.timerButtons.forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                this.timerDuration = parseInt(e.target.dataset.time);
+                this.timeLeft.textContent = this.timerDuration;
+            }
+            
+            generateChallenge() {
+                let difficulty = 'beginner';
+                if (this.level > 5) difficulty = 'intermediate';
+                if (this.level > 10) difficulty = 'advanced';
+                
+                const challenges = this.challenges[difficulty];
+                this.currentChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+                this.currentIndex = 0;
+                
+                this.challengeType.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+                this.updateDisplay();
+            }
+            
+            updateDisplay() {
+                let html = '';
+                for (let i = 0; i < this.currentChallenge.length; i++) {
+                    const char = this.currentChallenge[i];
+                    let className = 'char pending';
+                    
+                    if (i < this.currentIndex) {
+                        const userChar = this.codeInput.value[i];
+                        className = char === userChar ? 'char correct' : 'char incorrect';
+                    } else if (i === this.currentIndex) {
+                        className = 'char current';
+                    }
+                    
+                    html += `<span class="${className}">${char === ' ' ? '&nbsp;' : char}</span>`;
+                }
+                
+                this.codeToType.innerHTML = html;
+                this.updateProgress();
+            }
+            
+            updateProgress() {
+                const progress = (this.currentIndex / this.currentChallenge.length) * 100;
+                this.progressFill.style.width = `${progress}%`;
+            }
+
+            startTimer() {
+                this.timeLeft.textContent = this.timerDuration;
+                this.timerDisplay.style.display = 'block';
+                this.timerDisplay.className = 'timer-display';
+                
+                this.timerInterval = setInterval(() => {
+                    this.timerDuration--;
+                    this.timeLeft.textContent = this.timerDuration;
+                    
+                    // Add warning effects
+                    if (this.timerDuration <= 10) {
+                        this.timerDisplay.classList.add('critical');
+                    } else if (this.timerDuration <= 30) {
+                        this.timerDisplay.classList.add('warning');
+                    }
+                    
+                    if (this.timerDuration <= 0) {
+                        this.endGame();
+                    }
+                }, 1000);
+            }
+
+            stopTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+            
+            startBattle() {
+                this.isActive = true;
+                this.startTime = Date.now();
+                this.codeInput.disabled = false;
+                this.codeInput.focus();
+                this.startBtn.disabled = true;
+                this.nextBtn.style.display = 'none';
+                
+                if (this.mode === 'timer') {
+                    this.startTimer();
+                } else {
+                    this.timerDisplay.style.display = 'none';
+                }
+                
+                this.generateChallenge();
+            }
+            
+            handleInput(e) {
+                if (!this.isActive) return;
+                
+                const inputValue = e.target.value;
+                
+                if (inputValue.length <= this.currentChallenge.length) {
+                    this.currentIndex = inputValue.length;
+                    this.updateDisplay();
+                    this.checkCharacter(inputValue);
+                    this.updateStats();
+                    
+                    if (inputValue === this.currentChallenge) {
+                        this.completeChallenge();
+                    }
+                }
+            }
+            
+            handleKeydown(e) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    this.codeInput.value += '    '; // 4 spaces for tab
+                    this.handleInput(e);
+                }
+            }
+            
+            checkCharacter(inputValue) {
+                const lastChar = inputValue[inputValue.length - 1];
+                const expectedChar = this.currentChallenge[inputValue.length - 1];
+                
+                if (lastChar === expectedChar) {
+                    this.combo++;
+                    this.score += this.combo * this.level;
+                    this.showFloatingScore(`+${this.combo * this.level}`);
+                    
+                    if (this.combo > 5) {
+                        this.comboCounter.style.display = 'block';
+                        this.comboValue.textContent = this.combo;
+                    }
+                } else {
+                    this.combo = 0;
+                    this.errors++;
+                    this.comboCounter.style.display = 'none';
+                }
+                
+                this.totalChars++;
+            }
+            
+            showFloatingScore(text) {
+                const element = document.createElement('div');
+                element.className = 'floating-score';
+                element.textContent = text;
+                element.style.left = Math.random() * 200 + 'px';
+                element.style.top = '50%';
+                
+                this.challengeDisplay.appendChild(element);
+                setTimeout(() => element.remove(), 1000);
+            }
+            
+            completeChallenge() {
+                this.challengesCompleted++;
+                this.level = Math.floor(this.challengesCompleted / 3) + 1;
+                this.score += 100 * this.level;
+                
+                this.codeInput.value = '';
+                this.currentIndex = 0;
+                
+                if (this.mode === 'sprint' && this.challengesCompleted >= 10) {
+                    this.endGame();
+                } else if (this.mode === 'timer') {
+                    // In timer mode, continue until time runs out
+                    this.nextChallenge();
+                } else {
+                    this.nextBtn.style.display = 'inline-block';
+                    this.showFloatingScore('Challenge Complete!');
+                }
+            }
+            
+            nextChallenge() {
+                this.generateChallenge();
+                this.codeInput.focus();
+                this.nextBtn.style.display = 'none';
+            }
+            
+            updateStats() {
+                if (!this.startTime) return;
+                
+                const timeElapsed = (Date.now() - this.startTime) / 1000 / 60;
+                const wordsTyped = this.totalChars / 5;
+                const wpm = Math.round(wordsTyped / timeElapsed) || 0;
+                const accuracy = this.totalChars > 0 ? Math.round(((this.totalChars - this.errors) / this.totalChars) * 100) : 100;
+                
+                this.wpmElement.textContent = wpm;
+                this.accuracyElement.textContent = `${accuracy}%`;
+                this.levelElement.textContent = this.level;
+                this.scoreElement.textContent = this.score.toLocaleString();
+            }
+            
+            endGame() {
+                this.isActive = false;
+                this.stopTimer();
+                this.codeInput.disabled = true;
+                this.startBtn.disabled = false;
+                this.showResults();
+            }
+            
+            showResults() {
+                const timeElapsed = (Date.now() - this.startTime) / 1000 / 60;
+                const wordsTyped = this.totalChars / 5;
+                const finalWPM = Math.round(wordsTyped / timeElapsed) || 0;
+                const finalAccuracy = this.totalChars > 0 ? Math.round(((this.totalChars - this.errors) / this.totalChars) * 100) : 100;
+                
+                document.getElementById('finalWPM').textContent = finalWPM;
+                document.getElementById('finalAccuracy').textContent = `${finalAccuracy}%`;
+                document.getElementById('finalLevel').textContent = this.level;
+                document.getElementById('finalScore').textContent = this.score.toLocaleString();
+                
+                this.resultsModal.style.display = 'flex';
+            }
+            
+            resetGame() {
+                this.isActive = false;
+                this.stopTimer();
+                this.currentIndex = 0;
+                this.startTime = null;
+                this.score = 0;
+                this.level = 1;
+                this.combo = 0;
+                this.errors = 0;
+                this.totalChars = 0;
+                this.challengesCompleted = 0;
+                
+                // Reset timer
+                this.timerDuration = parseInt(document.querySelector('.timer-btn.active').dataset.time);
+                this.timeLeft.textContent = this.timerDuration;
+                this.timerDisplay.style.display = 'none';
+                this.timerDisplay.className = 'timer-display';
+                
+                this.codeInput.value = '';
+                this.codeInput.disabled = true;
+                this.startBtn.disabled = false;
+                this.nextBtn.style.display = 'none';
+                this.comboCounter.style.display = 'none';
+                
+                this.wpmElement.textContent = '0';
+                this.accuracyElement.textContent = '100%';
+                this.levelElement.textContent = '1';
+                this.scoreElement.textContent = '0';
+                this.progressFill.style.width = '0%';
+                
+                this.generateChallenge();
+            }
+        }
+        
+        function closeResults() {
+            document.getElementById('resultsModal').style.display = 'none';
+        }
+        
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', () => {
+            new CodeWarriors();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Debugger Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .game-container {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 900px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: #00ff88;
+            font-size: 2.5rem;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+            margin-bottom: 0.5rem;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .lives {
+            color: #ff6b6b;
+            font-size: 1.2rem;
+        }
+
+        .code-container {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 2px solid #333;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .language-tag {
+            background: #ff6b6b;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .difficulty {
+            background: #4ecdc4;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .code-content {
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            color: #f8f8f2;
+        }
+
+        .line {
+            display: block;
+            padding: 0.2rem 0;
+            position: relative;
+        }
+
+        .line-number {
+            color: #666;
+            margin-right: 1rem;
+            user-select: none;
+            display: inline-block;
+            width: 30px;
+        }
+
+        .clickable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0 2px;
+            border-radius: 3px;
+            border: 1px solid transparent;
+        }
+
+        .clickable:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #666;
+        }
+
+        .bug {
+            /* No special styling - bugs are hidden among normal elements */
+        }
+
+        .bug.found {
+            background: rgba(0, 255, 136, 0.3);
+            border-color: #00ff88;
+            animation: bugFound 0.5s ease;
+            pointer-events: none;
+        }
+
+        .wrong-click {
+            background: rgba(255, 0, 0, 0.5);
+            animation: wrongClick 0.5s ease;
+        }
+
+        .hint-highlight {
+            box-shadow: 0 0 15px rgba(255, 255, 0, 0.8) !important;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes bugFound {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes wrongClick {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.05); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 0, 0.8); }
+            50% { box-shadow: 0 0 25px rgba(255, 255, 0, 1); }
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 0.5rem;
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-gold {
+            background: linear-gradient(45deg, #ffd700, #ffb300);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-gold:hover {
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .feedback {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .feedback.success {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+        }
+
+        .feedback.error {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        .progress-bar {
+            background: #333;
+            border-radius: 10px;
+            height: 10px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .keyword { color: #ff79c6; }
+        .string { color: #f1fa8c; }
+        .number { color: #bd93f9; }
+        .comment { color: #6272a4; }
+        .function { color: #50fa7b; }
+        .operator { color: #ff6b6b; }
+
+        .game-over, .congratulations {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: rgba(255, 0, 0, 0.1);
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            color: #ff6b6b;
+        }
+
+        .congratulations-content {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            color: #ffd700;
+            animation: celebrationGlow 2s infinite;
+        }
+
+        @keyframes celebrationGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🐛 Code Debugger Game</h1>
+            <p>Find and fix the bugs in the code!</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="level">1</div>
+                <div>Level</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="score">0</div>
+                <div>Score</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="bugsFound">0</div>
+                <div>Bugs Found</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalBugs">0</div>
+                <div>Total Bugs</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value lives" id="lives">❤️❤️❤️</div>
+                <div>Lives</div>
+            </div>
+        </div>
+
+        <div class="code-container">
+            <div class="code-header">
+                <span class="language-tag" id="language">JavaScript</span>
+                <span class="difficulty" id="difficulty">Easy</span>
+            </div>
+            <div class="code-content" id="codeContent"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="feedback" id="feedback" style="display: none;"></div>
+
+        <div class="controls">
+            <button class="btn" onclick="nextLevel()">Next Level</button>
+            <button class="btn" onclick="resetGame()">Reset Game</button>
+            <button class="btn" onclick="showHint()" id="hintBtn">Hint</button>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver" style="display: none;">
+        <div class="game-over-content">
+            <h2>💀 Game Over!</h2>
+            <p>You ran out of lives!</p>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button class="btn" onclick="resetGame()" style="margin-top: 1rem;">Play Again</button>
+        </div>
+    </div>
+
+    <div class="congratulations" id="congratulations" style="display: none;">
+        <div class="congratulations-content">
+            <h2>🎉 Congratulations!</h2>
+            <p>You've completed all 70 levels!</p>
+            <p>🏆 Final Score: <span id="congratsScore">0</span></p>
+            <p>🐛 Total Bugs Found: <span id="congratsBugs">0</span></p>
+            <p>You are a true Code Debugging Master!</p>
+            <button class="btn btn-gold" onclick="resetGame()" style="margin-top: 1rem;">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLevel = 1;
+        let score = 0;
+        let bugsFound = 0;
+        let totalBugs = 0;
+        let lives = 3;
+        let currentBugs = [];
+        let foundBugs = new Set();
+        let clickableElements = [];
+        let hintUsed = false;
+        let totalBugsFoundAllTime = 0;
+
+        const allLevels = [
+            // EASY LEVELS (1-25)
+            {
+                language: "JavaScript",
+                difficulty: "Easy",
+                code: `function <span class="clickable">hello</span>() {
+    <span class="clickable">console</span>.<span class="clickable">log</span>(<span class="clickable bug" data-error="Missing quotes around string">"Hello World</span>);
+    return <span class="clickable bug" data-error="Should be 'true' not 'tru'">tru</span>;
+}
+
+let <span class="clickable">x</span> = <span class="clickable">10</span>;
+let <span class="clickable">y</span> = <span class="clickable bug" data-error="Missing semicolon">20</span>;
+<span class="clickable">console</span>.<span class="clickable">log</span>(<span class="clickable">x</span> + <span class="clickable">y</span>);`,
+                bugs: 2
+            },
+            {
+                language: "Python",
+                difficulty: "Easy",
+                code: `def <span class="clickable">greet</span>(<span class="clickable">name</span>):
+    <span class="clickable bug" data-error="Missing colon after if statement">if name</span>
+        <span class="clickable">print</span>(<span class="clickable">f</span><span class="clickable">"Hello {name}"</span>)
+    
+<span class="clickable">greet</span>(<span class="clickable bug" data-error="Missing quotes around string">Alice</span>)`,
+                bugs: 2
+            },
+            {
+                language: "Java",
+                difficulty: "Easy",
+                code: `public class <span class="clickable">Test</span> {
+    public static void <span class="clickable">main</span>(<span class="clickable">String</span>[] <span class="clickable">args</span>) {
+        <span class="clickable">int</span> <span class="clickable">x</span> = <span class="clickable bug" data-error="Missing semicolon">5</span>
+        <span class="clickable">System</span>.<span class="clickable">out</span>.<span class="clickable">println</span>(<span class="clickable">x</span>);
+    }
+}`,
+                bugs: 1
+            },
+            {
+                language: "C++",
+                difficulty: "Easy",
+                code: `#include <<span class="clickable">iostream</span>>
+using namespace <span class="clickable">std</span>;
+
+int <span class="clickable">main</span>() {
+    <span class="clickable">cout</span> << <span class="clickable bug" data-error="Missing quotes around string">Hello World</span>;
+    <span class="clickable bug" data-error="Missing 'return 0;'">}</span>`,
+                bugs: 2
+            },
+            {
+                language: "JavaScript",
+                difficulty: "Easy",
+                code: `let <span class="clickable">x</span> = <span class="clickable">10</span>;
+let <span class="clickable">y</span> = <span class="clickable bug" data-error="Missing semicolon">20</span>
+<span class="clickable">console</span>.<span class="clickable">log</span>(<span class="clickable">x</span> + <span class="clickable">y</span>);`,
+                bugs: 1
+            },
+            {
+                language: "Python",
+                difficulty: "Easy",
+                code: `<span class="clickable">numbers</span> = [<span class="clickable">1</span>, <span class="clickable">2</span>, <span class="clickable">3</span>]
+for <span class="clickable">num</span> in <span class="clickable">numbers</span>:
+<span class="clickable bug" data-error="Missing indentation">print(num)</span>`,
+                bugs: 1
+            },
+            {
+                language: "HTML",
+                difficulty: "Easy",
+                code: `<<span class="clickable">html</span>>
+<<span class="clickable">head</span>>
+    <<span class="clickable">title</span>><span class="clickable">My Page</span></<span class="clickable">title</span>>
+</<span class="clickable">head</span>>
+<<span class="clickable">body</span>>
+    <<span class="clickable bug" data-error="Missing closing tag">h1</span>><span class="clickable">Welcome</span>
+</<span class="clickable">body</span>>
+</<span class="clickable">html</span>>`,
+                bugs: 1
+            },
+            {
+                language: "CSS",
+                difficulty: "Easy",
+                code: `<span class="clickable">body</span> {
+    <span class="clickable">background-color</span>: <span class="clickable bug" data-error="Missing semicolon">blue</span>
+    <span class="clickable">color</span>: <span class="clickable">white</span>;
+}`,
+                bugs: 1
+            },
+            {
+                language: "PHP",
+                difficulty: "Easy",
+                code: `<span class="clickable bug" data-error="Missing opening PHP tag"><?</span>
+<span class="clickable">echo</span> <span class="clickable">"Hello World"</span>;
+<span class="clickable">?></span>`,
+                bugs: 1
+            },
+            {
+                language: "Ruby",
+                difficulty: "Easy",
+                code: `<span class="clickable">name</span> = <span class="clickable">"Alice"</span>
+<span class="clickable bug" data-error="Should be 'puts' not 'put'">put</span> <span class="clickable">"Hello #{name}"</span>`,
+                bugs: 1
+            },
+            {
+                language: "JavaScript",
+                difficulty: "Easy",
+                code: `function <span class="clickable">add</span>(<span class="clickable">a</span>, <span class="clickable">b</span>) {
+    return <span class="clickable">a</span> <span class="clickable bug" data-error="Wrong operator, should be '+'">-</span> <span class="clickable">b</span>;
+}
+<span class="clickable">console</span>.<span class="clickable">log</span>(<span class="clickable">add</span>(<span class="clickable">5</span>, <span class="clickable">3</span>));`,
+                bugs: 1
+            },
+            {
+                language: "Python",
+                difficulty: "Easy",
+                code: `<span class="clickable">age</span> = <span class="clickable">18</span>
+if <span class="clickable">age</span> <span class="clickable bug" data-error="Should be '>=' not '=>'">=> 18</span>:
+    <span class="clickable">print</span>(<span class="clickable">"Adult"</span>)`,
+                bugs: 1
+            },
+            {
+                language: "Java",
+                difficulty: "Easy",
+                code: `public class <span class="clickable">Hello</span> {
+    public static void <span class="clickable">main</span>(<span class="clickable">String</span>[] <span class="clickable">args</span>) {
+        <span class="clickable bug" data-error="Should be 'String' not 'string'">string</span> <span class="clickable">message</span> = <span class="clickable">"Hello"</span>;
+        <span class="clickable">System</span>.<span class="clickable">out</span>.<span class="clickable">println</span>(<span class="clickable">message</span>);
+    }
+}`,
+                bugs: 1
+            },
+            {
+                language: "C",
+                difficulty: "Easy",
+                code: `#include <<span class="clickable">stdio.h</span>>
+
+int <span class="clickable">main</span>() {
+    <span class="clickable">printf</span>(<span class="clickable bug" data-error="Missing quotes around string">Hello World</span>);
+    return <span class="clickable">0</span>;
+}`,
+                bugs: 1
+            },
+            {
+                language: "JavaScript",
+                difficulty: "Easy",
+                code: `let <span class="clickable">arr</span> = [<span class="clickable">1</span>, <span class="clickable">2</span>, <span class="clickable">3</span>];
+<span class="clickable">console</span>.<span class="clickable">log</span>(<span class="clickable">arr</span>.<span class="clickable bug" data-error="Should be 'length' not 'lenght'">lenght</span>);`,
+                bugs: 1
+            },
+            {
+                language: "Python",
+                difficulty: "Easy",
+                code: `<span class="clickable">x</span> = <span class="clickable">5</span>
+<span class="clickable">y</span> = <span class="clickable">10</span>
+<span class="clickable bug" data-error="Undefined variable 'z', should be 'y'">print(x + z)</span>`,
+                bugs: 1
+            },
+            {
+                language: "SQL",
+                difficulty: "Easy",
+                code: `<span class="clickable">SELECT</span> * <span class="clickable">FROM</span> <span class="clickable">users</span> 
+<span class="clickable bug" data-error="Should be 'WHERE' not 'WERE'">WERE</span> <span class="clickable">age</span> > <span class="clickable">18</span>;`,
+                bugs: 1
+            },
+            {
+                language: "Go",
+                difficulty: "Easy",
+                code: `package <span class="clickable">main</span>
+
+import <span class="clickable">"fmt"</span>
+
+func <span class="clickable">main</span>() {
+    <span class="clickable">fmt</span>.<span class="clickable bug" data-error="Should be 'Println' not 'Printl'">Printl</span>(<span class="clickable">"Hello, World!"</span>)
+}`,
+                bugs: 1
+            },
+            {
+                language: "Swift",
+                difficulty: "Easy",
+                code: `let <span class="clickable">name</span> = <span class="clickable">"Swift"</span>
+<span class="clickable bug" data-error="Should be 'print' not 'Print'">Print</span>(<span class="clickable">"Hello, \\(name)!"</span>)`,
+                bugs: 1
+            },
+            {
+                language: "Kotlin",
+                difficulty: "Easy",
+                code: `fun <span class="clickable">main</span>() {
+    val <span class="clickable">message</span> = <span class="clickable">"Hello World"</span>
+    <span class="clickable bug" data-error="Should be 'println' not 'printLn'">printLn</span>(<span class="clickable">message</span>)
+}`,
+                bugs: 1
+            },
+            {
+                language: "Rust",
+                difficulty: "Easy",
+                code: `fn <span class="clickable">main</span>() {
+    <span class="clickable bug" data-error="Should be 'println!' not 'print!'">print!</span>(<span class="clickable">"Hello, world!"</span>);
+}`,
+                bugs: 1
+            },
+            {
+                language: "Dart",
+                difficulty: "Easy",
+                code: `void <span class="clickable">main</span>() {
+    <span class="clickable">String</span> <span class="clickable">name</span> = <span class="clickable">'Dart'</span>;
+    <span class="clickable bug" data-error="Should be 'print' not 'Print'">Print</span>(<span class="clickable">'Hello $name'</span>);
+}`,
+                bugs: 1
+            },
+            {
+                language: "TypeScript",
+                difficulty: "Easy",
+                code: `function <span class="clickable">greet</span>(<span class="clickable">name</span>: <span class="clickable">string</span>): <span class="clickable bug" data-error="Should be 'string' not 'String'">String</span> {
+    return <span class="clickable">\`Hello, \${name}!\`</span>;
+}`,
+                bugs: 1
+            },
+            {
+                language: "Scala",
+                difficulty: "Easy",
+                code: `object <span class="clickable">HelloWorld</span> {
+    def <span class="clickable">main</span>(<span class="clickable">args</span>: <span class="clickable">Array</span>[<span class="clickable">String</span>]): <span class="clickable">Unit</span> = {
+        <span class="clickable bug" data-error="Should be 'println' not 'print'">print</span>(<span class="clickable">"Hello, World!"</span>)
+    }
+}`,
+                bugs: 1
+            },
+            {
+                language: "Perl",
+                difficulty: "Easy",
+                code: `<span class="clickable bug" data-error="Missing 'use strict;'">my</span> <span class="clickable">$name</span> = <span class="clickable">"Perl"</span>;
+<span class="clickable">print</span> <span class="clickable">"Hello, $name\\n"</span>;`,
+                bugs: 1
+            },
+
+            // MEDIUM LEVELS (26-45)
+            {
+                language: "JavaScript",
+                difficulty: "Medium",
+                code: `const <span class="clickable">users</span> = [<span class="clickable">"Alice"</span>, <span class="clickable">"Bob"</span>];
+for(<span class="clickable">let</span> <span class="clickable">i</span> = <span class="clickable">0</span>; <span class="clickable">i</span> <span class="clickable bug" data-error="Should be '<' not '<='"><=</span> <span class="clickable">users</span>.<span class="clickable">length</span>; <span class="clickable">i</span><span class="clickable">++</span>) {
+    <span class="clickable">console</span>.<span class="clickable">log</span>(<span class="clickable">users</span>[<span class="clickable">i</span>]);
+}
+
+function <span class="clickable">calculateSum</span>(<span class="clickable">a</span>, <span class="clickable">b</span>) {
+    return <span class="clickable">a</span> <span class="clickable bug" data-error="Wrong operator, should be '+'">-</span> <span class="clickable">b</span>;
+}`,
+                bugs: 2
+            },
+            {
+                language: "Python",
+                difficulty: "Medium",
+                code: `def <span class="clickable">fibonacci</span>(<span class="clickable">n</span>):
+    if <span class="clickable">n</span> <span class="clickable bug" data-error="Should be '<=' not '<'"><</span> <span class="clickable">1</span>:
+        return <span class="clickable">n</span>
+    return <span class="clickable">fibonacci</span>(<span class="clickable">n</span>-<span class="clickable">1</span>) + <span class="clickable">fibonacci</span>(<span class="clickable">n</span>-<span class="clickable bug" data-error="Should be '2' not '1'">1</span>)`,
+                bugs: 2
+            },
+            {
+                language: "Java",
+                difficulty: "Medium",
+                code: `public class <span class="clickable">Calculator</span> {
+    public <span class="clickable bug" data-error="Should be 'static' method">int</span> <span class="clickable">divide</span>(<span class="clickable">int</span> <span class="clickable">a</span>, <span class="clickable">int</span> <span class="clickable">b</span>) {
+        <span class="clickable bug" data-error="No division by zero check">return a / b;</span>
+    }
+}`,
+                bugs: 2
+            },
+            {
+                language: "C++",
+                difficulty: "Medium",
+                code: `#include <<span class="clickable">iostream</span>>
+#include <<span class="clickable bug" data-error="Should be 'vector' not 'Vector'">Vector</span>>
+using namespace <span class="clickable">std</span>;
+
+int <span class="clickable">main</span>() {
+    <span class="clickable">vector</span><<span class="clickable">int</span>> <span class="clickable">nums</span> = {<span class="clickable">1</span>, <span class="clickable">2</span>, <span class="clickable">3</span>};
+    for(<span class="clickable">int</span> <span class="clickable">i</span> = <span class="clickable">0</span>; <span class="clickable">i</span> <span class="clickable bug" data-error="Should be '<' not '<='"><=</span> <span class="clickable">nums</span>.<span class="clickable">size</span>(); <span class="clickable">i</span><span class="clickable">++</span>) {
+        <span class="clickable">cout</span> << <span class="clickable">nums</span>[<span class="clickable">i</span>] << <span class="clickable">" "</span>;
+    }
+    return <span class="clickable">0</span>;
+}`,
+                bugs: 2
+            },
+            {
+                language: "Python",
+                difficulty: "Medium",
+                code: `class <span class="clickable">Person</span>:
+    def <span class="clickable">__init__</span>(<span class="clickable bug" data-error="Missing 'self' parameter">name</span>, <span class="clickable">age</span>):
+        <span class="clickable">self</span>.<span class="clickable">name</span> = <span class="clickable">name</span>
+        <span class="clickable">self</span>.<span class="clickable">age</span> = <span class="clickable">age</span>
+    
+    def <span class="clickable">greet</span>(<span class="clickable">self</span>):
+        return <span class="clickable">f</span><span class="clickable bug" data-error="Wrong variable name, should be 'self.name'">"Hello, I'm {name}"</span>`,
+                bugs: 2
+            },
+            {
+                language: "JavaScript",
+                difficulty: "Medium",
+                code: `function <span class="clickable">mergeArrays</span>(<span class="clickable">arr1</span>, <span class="clickable">arr2</span>) {
+    let <span class="clickable">result</span> = [];
+    <span class="clickable">result</span>.<span class="clickable bug" data-error="Should use spread operator ...arr1">push(arr1)</span>;
+    <span class="clickable">result</span>.<span class="clickable bug" data-error="Should use spread operator ...arr2">push(arr2)</span>;
+    return <span class="clickable">result</span>;
+}`,
+                bugs: 2
+            },
+            {
+                language: "SQL",
+                difficulty: "Medium",
+                code: `<span class="clickable">SELECT</span> <span class="clickable">u</span>.<span class="clickable">name</span>, <span class="clickable">COUNT</span>(<span class="clickable">o</span>.<span class="clickable">id</span>) <span class="clickable">as</span> <span class="clickable">order_count</span>
+<span class="clickable">FROM</span> <span class="clickable">users</span> <span class="clickable">u</span>
+<span class="clickable bug" data-error="Should be 'LEFT JOIN' not 'JOIN'">JOIN</span> <span class="clickable">orders</span> <span class="clickable">o</span> <span class="clickable">ON</span> <span class="clickable">u</span>.<span class="clickable">id</span> = <span class="clickable">o</span>.<span class="clickable">user_id</span>
+<span class="clickable">GROUP BY</span> <span class="clickable">u</span>.<span class="clickable bug" data-error="Should group by 'u.id' not 'u.name'">name</span>;`,
+                bugs: 2
+            },
+            {
+                language: "React",
+                difficulty: "Medium",
+                code: `function <span class="clickable">UserCard</span>(<span class="clickable bug" data-error="Should destructure props">{props}</span>) {
+    return (
+        <<span class="clickable">div</span>>
+            <<span class="clickable">h2</span>><span class="clickable bug" data-error="Should be props.name">{name}</span></<span class="clickable">h2</span>>
+            <<span class="clickable">p</span>><span class="clickable">Age: {props.age}</span></<span class="clickable">p</span>>
+        </<span class="clickable">div</span>>
+    );
+}`,
+                bugs: 2
+            },
+            {
+                language: "PHP",
+                difficulty: "Medium",
+                code: `<?<span class="clickable">php</span>
+class <span class="clickable">Database</span> {
+    private <span class="clickable">$connection</span>;
+    
+    public function <span class="clickable">connect</span>() {
+        <span class="clickable">$this</span>-><span class="clickable">connection</span> = <span class="clickable">new</span> <span class="clickable">PDO</span>(<span class="clickable">"mysql:host=localhost"</span>);
+        return <span class="clickable bug" data-error="Should return '$this->connection'">connection</span>;
+    }
+    
+    public function <span class="clickable">query</span>(<span class="clickable">$sql</span>) {
+        return <span class="clickable">$this</span>-><span class="clickable bug" data-error="Should be '$this->connection'">$connection</span>-><span class="clickable">query</span>(<span class="clickable">$sql</span>);
+    }
+}
+<span class="clickable">?></span>`,
+                bugs: 2
+            },
+            {
+                language: "Go",
+                difficulty: "Medium",
+                code: `package <span class="clickable">main</span>
+
+import <span class="clickable">"fmt"</span>
+
+func <span class="clickable">divide</span>(<span class="clickable">a</span>, <span class="clickable">b</span> <span class="clickable">float64</span>) <span class="clickable bug" data-error="Should return (float64, error)">float64</span> {
+    <span class="clickable bug" data-error="Missing division by zero check">if b == 0 {
+        return 0
+    }</span>
+    return <span class="clickable">a</span> / <span class="clickable">b</span>
+}`,
+                bugs: 2
+            },
+            {
+                language: "Ruby",
+                difficulty: "Medium",
+                code: `class <span class="clickable">BankAccount</span>
+    <span class="clickable">attr_accessor</span> :<span class="clickable">balance</span>
+    
+    def <span class="clickable">initialize</span>(<span class="clickable">initial_balance</span>)
+        <span class="clickable bug" data-error="Should use instance variable @balance">balance</span> = <span class="clickable">initial_balance</span>
+    end
+    
+    def <span class="clickable">withdraw</span>(<span class="clickable">amount</span>)
+        <span class="clickable bug" data-error="No sufficient funds check">@balance -= amount</span>
+    end
+end`,
+                bugs: 2
+            },
+            {
+                language: "Swift",
+                difficulty: "Medium",
+                code: `struct <span class="clickable">Rectangle</span> {
+    let <span class="clickable">width</span>: <span class="clickable">Double</span>
+    let <span class="clickable">height</span>: <span class="clickable">Double</span>
+    
+    func <span class="clickable">area</span>() -> <span class="clickable">Double</span> {
+        return <span class="clickable">width</span> <span class="clickable bug" data-error="Wrong operator, should be '*'">+</span> <span class="clickable">height</span>
+    }
+    
+    <span class="clickable bug" data-error="Should be 'mutating func'">func</span> <span class="clickable">scale</span>(<span class="clickable">factor</span>: <span class="clickable">Double</span>) {
+        <span class="clickable">width</span> *= <span class="clickable">factor</span>
+        <span class="clickable">height</span> *= <span class="clickable">factor</span>
+    }
+}`,
+                bugs: 2
+            },
+            {
+                language: "Kotlin",
+                difficulty: "Medium",
+                code: `data class <span class="clickable">User</span>(<span class="clickable">val</span> <span class="clickable">name</span>: <span class="clickable">String</span>, <span class="clickable">val</span> <span class="clickable">age</span>: <span class="clickable">Int</span>)
+
+fun <span class="clickable">findOldestUser</span>(<span class="clickable">users</span>: <span class="clickable">List</span><<span class="clickable">User</span>>): <span class="clickable bug" data-error="Should be 'User?' for nullable">User</span> {
+    <span class="clickable bug" data-error="Should use maxByOrNull instead of maxBy">return users.maxBy { it.age }</span>
+}`,
+                bugs: 2
+            },
+            {
+                language: "TypeScript",
+                difficulty: "Medium",
+                code: `interface <span class="clickable">ApiResponse</span><<span class="clickable">T</span>> {
+    <span class="clickable">data</span>: <span class="clickable">T</span>;
+    <span class="clickable">success</span>: <span class="clickable">boolean</span>;
+}
+
+async function <span class="clickable">fetchUser</span>(<span class="clickable">id</span>: <span class="clickable">number</span>): <span class="clickable">Promise</span><<span class="clickable bug" data-error="Should be 'ApiResponse<User>'">User</span>> {
+    const <span class="clickable">response</span> = await <span class="clickable">fetch</span>(<span class="clickable">\`/api/users/\${id}\`</span>);
+    return <span class="clickable bug" data-error="Should parse JSON">response</span>;
+}`,
+                bugs: 2
+            },
+            {
+                language: "Rust",
+                difficulty: "Medium",
+                code: `fn <span class="clickable">find_max</span>(<span class="clickable">numbers</span>: <span class="clickable">Vec</span><<span class="clickable">i32</span>>) -> <span class="clickable bug" data-error="Should be 'Option<i32>'">i32</span> {
+    <span class="clickable">let</span> mut <span class="clickable">max</span> = <span class="clickable bug" data-error="Should handle empty vector">numbers[0]</span>;
+    for <span class="clickable">num</span> in <span class="clickable">numbers</span> {
+        if <span class="clickable">num</span> > <span class="clickable">max</span> {
+            <span class="clickable">max</span> = <span class="clickable">num</span>;
+        }
+    }
+    <span class="clickable">max</span>
+}`,
+                bugs: 2
+            },
+            {
+                language: "C#",
+                difficulty: "Medium",
+                code: `public class <span class="clickable">StringHelper</span> {
+    public static <span class="clickable bug" data-error="Should be 'bool' not 'boolean'">boolean</span> <span class="clickable">IsEmpty</span>(<span class="clickable">string</span> <span class="clickable">str</span>) {
+        return <span class="clickable">str</span> <span class="clickable bug" data-error="Should use 'is null' or '==' for null check">== null</span> || <span class="clickable">str</span>.<span class="clickable">Length</span> == <span class="clickable">0</span>;
+    }
+    
+    public static <span class="clickable">string</span> <span class="clickable">Reverse</span>(<span class="clickable">string</span> <span class="clickable">input</span>) {
+        <span class="clickable">char</span>[] <span class="clickable">chars</span> = <span class="clickable">input</span>.<span class="clickable">ToCharArray</span>();
+        <span class="clickable">Array</span>.<span class="clickable">Reverse</span>(<span class="clickable">chars</span>);
+        return new <span class="clickable">string</span>(<span class="clickable">chars</span>);
+    }
+}`,
+                bugs: 2
+            },
+            {
+                language: "Scala",
+                difficulty: "Medium",
+                code: `case class <span class="clickable">Person</span>(<span class="clickable">name</span>: <span class="clickable">String</span>, <span class="clickable">age</span>: <span class="clickable">Int</span>)
+
+object <span class="clickable">PersonUtils</span> {
+    def <span class="clickable">filterAdults</span>(<span class="clickable">people</span>: <span class="clickable">List</span>[<span class="clickable">Person</span>]): <span class="clickable">List</span>[<span class="clickable">Person</span>] = {
+        <span class="clickable">people</span>.<span class="clickable bug" data-error="Should use 'filter' not 'map'">map</span>(<span class="clickable">p</span> => <span class="clickable">p</span>.<span class="clickable">age</span> >= <span class="clickable">18</span>)
+    }
+    
+    def <span class="clickable">averageAge</span>(<span class="clickable">people</span>: <span class="clickable">List</span>[<span class="clickable">Person</span>]): <span class="clickable">Double</span> = {
+        <span class="clickable">people</span>.<span class="clickable">map</span>(<span class="clickable">_</span>.<span class="clickable">age</span>).<span class="clickable bug" data-error="Should use 'sum' not 'reduce'">reduce(_ + _)</span> / <span class="clickable">people</span>.<span class="clickable">length</span>
+    }
+}`,
+                bugs: 2
+            },
+            {
+                language: "Dart",
+                difficulty: "Medium",
+                code: `class <span class="clickable">ShoppingCart</span> {
+    <span class="clickable">List</span><<span class="clickable">String</span>> <span class="clickable">_items</span> = [];
+    
+    void <span class="clickable">addItem</span>(<span class="clickable">String</span> <span class="clickable">item</span>) {
+        <span class="clickable">_items</span>.<span class="clickable">add</span>(<span class="clickable">item</span>);
+    }
+    
+    <span class="clickable bug" data-error="Should be 'bool' not 'Boolean'">Boolean</span> <span class="clickable">removeItem</span>(<span class="clickable">String</span> <span class="clickable">item</span>) {
+        return <span class="clickable">_items</span>.<span class="clickable bug" data-error="Should be 'remove' not 'delete'">delete</span>(<span class="clickable">item</span>);
+    }
+    
+    <span class="clickable">int</span> get <span class="clickable">itemCount</span> => <span class="clickable">_items</span>.<span class="clickable">length</span>;
+}`,
+                bugs: 2
+            },
+            {
+                language: "Perl",
+                difficulty: "Medium",
+                code: `use strict;
+use warnings;
+
+sub <span class="clickable">calculate_factorial</span> {
+    my (<span class="clickable">$n</span>) = <span class="clickable">@_</span>;
+    
+    <span class="clickable bug" data-error="Should check if n <= 1">if ($n == 0) {</span>
+        return <span class="clickable">1</span>;
+    }
+    
+    return <span class="clickable">$n</span> * <span class="clickable">calculate_factorial</span>(<span class="clickable">$n</span> - <span class="clickable">1</span>);
+}
+
+my <span class="clickable">$result</span> = <span class="clickable">calculate_factorial</span>(<span class="clickable">5</span>);
+<span class="clickable">print</span> <span class="clickable bug" data-error="Missing newline \\n">"Factorial: $result"</span>;`,
+                bugs: 2
+            },
+
+            // HARD LEVELS (46-70)
+            {
+                language: "JavaScript",
+                difficulty: "Hard",
+                code: `class <span class="clickable">EventEmitter</span> {
+    constructor() {
+        <span class="clickable">this</span>.<span class="clickable">events</span> = {};
+    }
+    
+    <span class="clickable">on</span>(<span class="clickable">event</span>, <span class="clickable">callback</span>) {
+        if (!<span class="clickable">this</span>.<span class="clickable">events</span>[<span class="clickable">event</span>]) {
+            <span class="clickable">this</span>.<span class="clickable">events</span>[<span class="clickable">event</span>] = [];
+        }
+        <span class="clickable">this</span>.<span class="clickable">events</span>[<span class="clickable">event</span>].<span class="clickable">push</span>(<span class="clickable">callback</span>);
+    }
+    
+    <span class="clickable">emit</span>(<span class="clickable">event</span>, <span class="clickable">...args</span>) {
+        if (<span class="clickable">this</span>.<span class="clickable">events</span>[<span class="clickable">event</span>]) {
+            <span class="clickable">this</span>.<span class="clickable">events</span>[<span class="clickable">event</span>].<span class="clickable bug" data-error="Should use 'forEach' or 'for...of'">map</span>(<span class="clickable">callback</span> => <span class="clickable">callback</span>(<span class="clickable">...args</span>));
+        }
+    }
+    
+    <span class="clickable">off</span>(<span class="clickable">event</span>, <span class="clickable">callback</span>) {
+        if (<span class="clickable">this</span>.<span class="clickable">events</span>[<span class="clickable">event</span>]) {
+            <span class="clickable">this</span>.<span class="clickable">events</span>[<span class="clickable">event</span>] = <span class="clickable">this</span>.<span class="clickable">events</span>[<span class="clickable">event</span>].<span class="clickable bug" data-error="Callback comparison won't work for function objects">filter(cb => cb !== callback)</span>;
+        }
+    }
+}`,
+                bugs: 2
+            },
+            {
+                language: "Python",
+                difficulty: "Hard",
+                code: `import <span class="clickable">threading</span>
+import <span class="clickable">time</span>
+
+class <span class="clickable">ThreadSafeCounter</span>:
+    def <span class="clickable">__init__</span>(<span class="clickable">self</span>):
+        <span class="clickable">self</span>.<span class="clickable">_count</span> = <span class="clickable">0</span>
+        <span class="clickable bug" data-error="Missing thread lock">self._lock = threading.Lock()</span>
+    
+    def <span class="clickable">increment</span>(<span class="clickable">self</span>):
+        <span class="clickable bug" data-error="Should use lock for thread safety">self._count += 1</span>
+    
+    def <span class="clickable">get_count</span>(<span class="clickable">self</span>):
+        return <span class="clickable">self</span>.<span class="clickable">_count</span>
+
+def <span class="clickable">worker</span>(<span class="clickable">counter</span>):
+    for <span class="clickable">_</span> in <span class="clickable">range</span>(<span class="clickable">1000</span>):
+        <span class="clickable">counter</span>.<span class="clickable">increment</span>()`,
+                bugs: 2
+            },
+            {
+                language: "Java",
+                difficulty: "Hard",
+                code: `import <span class="clickable">java.util.*</span>;
+
+public class <span class="clickable">GenericRepository</span><<span class="clickable">T</span>> {
+    private <span class="clickable">List</span><<span class="clickable">T</span>> <span class="clickable">items</span> = new <span class="clickable">ArrayList</span><<>();
+    
+    public void <span class="clickable">add</span>(<span class="clickable">T</span> <span class="clickable">item</span>) {
+        <span class="clickable bug" data-error="Should check for null">items.add(item)</span>;
+    }
+    
+    public <span class="clickable">Optional</span><<span class="clickable">T</span>> <span class="clickable">findById</span>(<span class="clickable">int</span> <span class="clickable">id</span>) {
+        <span class="clickable bug" data-error="No proper ID handling for generic type">if (id >= 0 && id < items.size()) {
+            return Optional.of(items.get(id));
+        }</span>
+        return <span class="clickable">Optional</span>.<span class="clickable">empty</span>();
+    }
+    
+    public <span class="clickable">List</span><<span class="clickable">T</span>> <span class="clickable">getAll</span>() {
+        return <span class="clickable">items</span>; <span class="clickable bug" data-error="Should return defensive copy">// Exposes internal list</span>
+    }
+}`,
+                bugs: 3
+            },
+            {
+                language: "C++",
+                difficulty: "Hard",
+                code: `#include <<span class="clickable">iostream</span>>
+#include <<span class="clickable">memory</span>>
+
+class <span class="clickable">Node</span> {
+public:
+    <span class="clickable">int</span> <span class="clickable">data</span>;
+    <span class="clickable">std::shared_ptr</span><<span class="clickable">Node</span>> <span class="clickable">next</span>;
+    
+    <span class="clickable">Node</span>(<span class="clickable">int</span> <span class="clickable">value</span>) : <span class="clickable">data</span>(<span class="clickable">value</span>), <span class="clickable">next</span>(<span class="clickable">nullptr</span>) {}
+};
+
+class <span class="clickable">LinkedList</span> {
+private:
+    <span class="clickable">std::shared_ptr</span><<span class="clickable">Node</span>> <span class="clickable">head</span>;
+    
+public:
+    void <span class="clickable">insert</span>(<span class="clickable">int</span> <span class="clickable">value</span>) {
+        auto <span class="clickable">newNode</span> = <span class="clickable">std::make_shared</span><<span class="clickable">Node</span>>(<span class="clickable">value</span>);
+        <span class="clickable">newNode</span>-><span class="clickable bug" data-error="Creates circular reference">next = head</span>;
+        <span class="clickable">head</span> = <span class="clickable">newNode</span>;
+    }
+    
+    void <span class="clickable">remove</span>(<span class="clickable">int</span> <span class="clickable">value</span>) {
+        <span class="clickable bug" data-error="Doesn't handle head removal">if (head && head->data == value) {
+            head = head->next;
+            return;
+        }</span>
+        
+        auto <span class="clickable">current</span> = <span class="clickable">head</span>;
+        while (<span class="clickable">current</span> && <span class="clickable">current</span>-><span class="clickable">next</span>) {
+            if (<span class="clickable">current</span>-><span class="clickable">next</span>-><span class="clickable">data</span> == <span class="clickable">value</span>) {
+                <span class="clickable">current</span>-><span class="clickable">next</span> = <span class="clickable">current</span>-><span class="clickable">next</span>-><span class="clickable">next</span>;
+                <span class="clickable bug" data-error="Missing break statement">return;</span>
+            }
+            <span class="clickable">current</span> = <span class="clickable">current</span>-><span class="clickable">next</span>;
+        }
+    }
+};`,
+                bugs: 3
+            },
+            {
+                language: "React",
+                difficulty: "Hard",
+                code: `import <span class="clickable">React</span>, { <span class="clickable">useState</span>, <span class="clickable">useEffect</span> } from <span class="clickable">'react'</span>;
+
+function <span class="clickable">UserProfile</span>({ <span class="clickable">userId</span> }) {
+    const [<span class="clickable">user</span>, <span class="clickable">setUser</span>] = <span class="clickable">useState</span>(<span class="clickable">null</span>);
+    const [<span class="clickable">loading</span>, <span class="clickable">setLoading</span>] = <span class="clickable">useState</span>(<span class="clickable">false</span>);
+    
+    <span class="clickable">useEffect</span>(() => {
+        <span class="clickable">setLoading</span>(<span class="clickable">true</span>);
+        <span class="clickable">fetch</span>(<span class="clickable">\`/api/users/\${userId}\`</span>)
+            .<span class="clickable">then</span>(<span class="clickable">response</span> => <span class="clickable">response</span>.<span class="clickable">json</span>())
+            .<span class="clickable">then</span>(<span class="clickable">userData</span> => {
+                <span class="clickable">setUser</span>(<span class="clickable">userData</span>);
+                <span class="clickable">setLoading</span>(<span class="clickable">false</span>);
+            });
+    }, <span class="clickable bug" data-error="Missing userId dependency">[userId]</span>);
+    
+    <span class="clickable bug" data-error="Should handle cleanup for cancelled requests">useEffect(() => {
+        return () => {
+            // Cleanup
+        };
+    }, []);</span>
+    
+    if (<span class="clickable">loading</span>) return <<span class="clickable">div</span>><span class="clickable">Loading...</span></<span class="clickable">div</span>>;
+    if (!<span class="clickable">user</span>) return <<span class="clickable">div</span>><span class="clickable">User not found</span></<span class="clickable">div</span>>;
+    
+    return (
+        <<span class="clickable">div</span>>
+            <<span class="clickable">h1</span>><span class="clickable">{user.name}</span></<span class="clickable">h1</span>>
+            <<span class="clickable">p</span>><span class="clickable">{user.email}</span></<span class="clickable">p</span>>
+        </<span class="clickable">div</span>>
+    );
+}`,
+                bugs: 2
+            },
+            {
+                language: "Python",
+                difficulty: "Hard",
+                code: `import <span class="clickable">asyncio</span>
+import <span class="clickable">aiohttp</span>
+
+class <span class="clickable">AsyncWebScraper</span>:
+    def <span class="clickable">__init__</span>(<span class="clickable">self</span>, <span class="clickable">max_concurrent</span>=<span class="clickable">10</span>):
+        <span class="clickable">self</span>.<span class="clickable">semaphore</span> = <span class="clickable">asyncio</span>.<span class="clickable">Semaphore</span>(<span class="clickable">max_concurrent</span>)
+        <span class="clickable bug" data-error="Should initialize session in async context">self.session = aiohttp.ClientSession()</span>
+    
+    async def <span class="clickable">fetch</span>(<span class="clickable">self</span>, <span class="clickable">url</span>):
+        async with <span class="clickable">self</span>.<span class="clickable">semaphore</span>:
+            async with <span class="clickable">self</span>.<span class="clickable">session</span>.<span class="clickable">get</span>(<span class="clickable">url</span>) as <span class="clickable">response</span>:
+                return await <span class="clickable">response</span>.<span class="clickable">text</span>()
+    
+    async def <span class="clickable">fetch_all</span>(<span class="clickable">self</span>, <span class="clickable">urls</span>):
+        <span class="clickable">tasks</span> = [<span class="clickable">self</span>.<span class="clickable">fetch</span>(<span class="clickable">url</span>) for <span class="clickable">url</span> in <span class="clickable">urls</span>]
+        return await <span class="clickable">asyncio</span>.<span class="clickable">gather</span>(<span class="clickable">*tasks</span>)
+    
+    <span class="clickable bug" data-error="Should be async def">def</span> <span class="clickable">close</span>(<span class="clickable">self</span>):
+        await <span class="clickable">self</span>.<span class="clickable">session</span>.<span class="clickable">close</span>()`,
+                bugs: 2
+            },
+            {
+                language: "Rust",
+                difficulty: "Hard",
+                code: `use <span class="clickable">std::collections::HashMap</span>;
+use <span class="clickable">std::sync::{Arc, Mutex}</span>;
+use <span class="clickable">std::thread</span>;
+
+pub struct <span class="clickable">ThreadSafeCache</span><<span class="clickable">K</span>, <span class="clickable">V</span>> {
+    <span class="clickable">data</span>: <span class="clickable">Arc</span><<span class="clickable">Mutex</span><<span class="clickable">HashMap</span><<span class="clickable">K</span>, <span class="clickable">V</span>>>>,
+}
+
+impl<<span class="clickable">K</span>, <span class="clickable">V</span>> <span class="clickable">ThreadSafeCache</span><<span class="clickable">K</span>, <span class="clickable">V</span>>
+where
+    <span class="clickable">K</span>: <span class="clickable bug" data-error="Missing Clone trait">Eq + std::hash::Hash</span>,
+    <span class="clickable">V</span>: <span class="clickable">Clone</span>,
+{
+    pub fn <span class="clickable">new</span>() -> <span class="clickable">Self</span> {
+        <span class="clickable">ThreadSafeCache</span> {
+            <span class="clickable">data</span>: <span class="clickable">Arc</span>::<span class="clickable">new</span>(<span class="clickable">Mutex</span>::<span class="clickable">new</span>(<span class="clickable">HashMap</span>::<span class="clickable">new</span>()),
+        }
+    }
+    
+    pub fn <span class="clickable">insert</span>(&self, <span class="clickable">key</span>: <span class="clickable">K</span>, <span class="clickable">value</span>: <span class="clickable">V</span>) {
+        let mut <span class="clickable">map</span> = self.<span class="clickable">data</span>.<span class="clickable">lock</span>().unwrap();
+        <span class="clickable">map</span>.<span class="clickable">insert</span>(<span class="clickable">key</span>, <span class="clickable">value</span>);
+    }
+    
+    pub fn <span class="clickable">get</span>(&self, <span class="clickable">key</span>: <span class="clickable">K</span>) -> Option<<span class="clickable">V</span>>
+    where
+        <span class="clickable">K</span>: <span class="clickable bug" data-error="Missing Clone trait">Clone</span>,
+    {
+        let <span class="clickable">map</span> = self.<span class="clickable">data</span>.<span class="clickable">lock</span>().unwrap();
+        <span class="clickable">map</span>.<span class="clickable">get</span>(&<span class="clickable">key</span>)
+    }
+}`,
+                bugs: 2
+            }
+        ];
+
+        let randomizedLevels = [];
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function initializeGame() {
+            randomizedLevels = shuffleArray(allLevels);
+        }
+
+        function loadLevel(level) {
+            const levelData = randomizedLevels[(level - 1) % randomizedLevels.length];
+            currentBugs = [];
+            clickableElements = [];
+            foundBugs.clear();
+            hintUsed = false;
+            
+            document.getElementById('language').textContent = levelData.language;
+            document.getElementById('difficulty').textContent = levelData.difficulty;
+            document.getElementById('codeContent').innerHTML = addLineNumbers(levelData.code);
+            
+            // Find all clickable elements
+            const clickables = document.querySelectorAll('.clickable');
+            clickables.forEach((element, index) => {
+                clickableElements.push(element);
+                element.addEventListener('click', () => handleElementClick(element, index));
+                
+                // If it's a bug, add to currentBugs
+                if (element.classList.contains('bug')) {
+                    currentBugs.push({
+                        element: element,
+                        error: element.dataset.error,
+                        index: index
+                    });
+                }
+            });
+            
+            totalBugs = levelData.bugs;
+            updateStats();
+            updateProgress();
+            hideFeedback();
+        }
+
+        function addLineNumbers(code) {
+            const lines = code.split('\n');
+            return lines.map((line, index) => 
+                `<span class="line"><span class="line-number">${index + 1}</span>${line}</span>`
+            ).join('');
+        }
+
+        function handleElementClick(element, elementIndex) {
+            // Clear any existing highlights
+            clearHints();
+            
+            if (element.classList.contains('found')) return;
+            
+            if (element.classList.contains('bug')) {
+                // Correct bug found
+                const bugIndex = currentBugs.findIndex(bug => bug.element === element);
+                if (bugIndex !== -1 && !foundBugs.has(bugIndex)) {
+                    foundBugs.add(bugIndex);
+                    element.classList.add('found');
+                    
+                    bugsFound++;
+                    score += 10 * currentLevel;
+                    
+                    showFeedback(`✅ Bug found: ${element.dataset.error}`, 'success');
+                    updateStats();
+                    updateProgress();
+                    
+                    if (foundBugs.size === totalBugs) {
+                        setTimeout(() => {
+                            showFeedback(`🎉 Level ${currentLevel} completed! All bugs found!`, 'success');
+                        }, 500);
+                    }
+                }
+            } else {
+                // Wrong selection - deduct life
+                lives--;
+                element.classList.add('wrong-click');
+                
+                showFeedback(`❌ Wrong selection! Life lost. ${lives} lives remaining.`, 'error');
+                updateStats();
+                
+                setTimeout(() => {
+                    element.classList.remove('wrong-click');
+                }, 500);
+                
+                if (lives <= 0) {
+                    gameOver();
+                }
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('level').textContent = currentLevel;
+            document.getElementById('score').textContent = score;
+            document.getElementById('bugsFound').textContent = foundBugs.size;
+            document.getElementById('totalBugs').textContent = totalBugs;
+            
+            const heartsDisplay = '❤️'.repeat(lives) + '💔'.repeat(3 - lives);
+            document.getElementById('lives').textContent = heartsDisplay;
+        }
+
+        function updateProgress() {
+            const progress = (foundBugs.size / totalBugs) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function showFeedback(message, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.className = `feedback ${type}`;
+            feedback.style.display = 'block';
+        }
+
+        function hideFeedback() {
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        function clearHints() {
+            document.querySelectorAll('.hint-highlight').forEach(el => {
+                el.classList.remove('hint-highlight');
+            });
+        }
+
+        function showHint() {
+            if (foundBugs.size === totalBugs) {
+                showFeedback('🎯 All bugs already found!', 'success');
+                return;
+            }
+            
+            if (hintUsed) {
+                showFeedback('💡 Hint already used for this level!', 'error');
+                return;
+            }
+            
+            // Find first unfound bug
+            for (let i = 0; i < currentBugs.length; i++) {
+                if (!foundBugs.has(i)) {
+                    const bug = currentBugs[i];
+                    bug.element.classList.add('hint-highlight');
+                    showFeedback(`💡 Hint: ${bug.error}`, 'success');
+                    hintUsed = true;
+                    
+                    // Remove highlight after 5 seconds
+                    setTimeout(() => {
+                        bug.element.classList.remove('hint-highlight');
+                    }, 5000);
+                    break;
+                }
+            }
+            
+            score = Math.max(0, score - 5); // Penalty for using hint
+            updateStats();
+        }
+
+        function nextLevel() {
+            if (foundBugs.size < totalBugs) {
+                showFeedback('❌ Find all bugs before proceeding to the next level!', 'error');
+                return;
+            }
+            
+            currentLevel++;
+            score += 50; // Bonus for completing level
+            lives = Math.min(3, lives + 1); // Restore one life per level (max 3)
+            loadLevel(currentLevel);
+            showFeedback(`🚀 Welcome to Level ${currentLevel}! Life restored!`, 'success');
+        }
+
+        function resetGame() {
+            currentLevel = 1;
+            score = 0;
+            bugsFound = 0;
+            lives = 3;
+            foundBugs.clear();
+            document.getElementById('gameOver').style.display = 'none';
+            initializeGame(); // Re-randomize levels
+            loadLevel(currentLevel);
+            showFeedback('🔄 Game reset! Good luck!', 'success');
+        }
+
+        function gameOver() {
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'flex';
+            showFeedback('💀 Game Over! You ran out of lives!', 'error');
+        }
+
+        // Initialize game
+        initializeGame();
+        loadLevel(currentLevel);
+    </script>
+</body>
+
+</html>
