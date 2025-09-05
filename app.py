@@ -14,11 +14,16 @@ import secrets
 from datetime import datetime, timezone, timedelta 
 import hashlib
 from google.cloud.firestore_v1 import FieldFilter
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit
+import subprocess
+import threading
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
 mail = Mail(app)
+socketio = SocketIO(app)
 
 class User:
     def __init__(self, user_id, username, email, role):
@@ -1431,7 +1436,7 @@ def edit_topic(topic_id):
             
             if not title:
                 flash('Topic title is required.')
-                return render_template('edit_topic.html', topic=topic_data)
+                return render_template('edit_topic.html', topic=topic_data, username=session.get('username'), role=session.get('role))'))
             
             update_data = {
                 'title': title,
@@ -1442,10 +1447,10 @@ def edit_topic(topic_id):
             
             topic_ref.update(update_data)
             flash('Topic updated successfully!')
-            return redirect(url_for('view_topic', topic_id=topic_id))
-        
-        return render_template('edit_topic.html', topic=topic_data)
-        
+            return redirect(url_for('view_topic', topic_id=topic_id, username=session.get('username'), role=session.get('role')))
+
+        return render_template('edit_topic.html', topic=topic_data, username=session.get('username'), role=session.get('role'))
+
     except Exception as e:
         flash(f'Error accessing topic: {e}')
         return redirect(url_for('dashboard'))
@@ -3626,6 +3631,72 @@ def delete_read_notifications():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': 'Error deleting notifications'}), 500
+
+
+@app.route('/game/<game_id>')
+def serve_game(game_id):
+    """Serve individual game pages"""
+    if not session.get('user_id'):
+        flash('Please log in to play games.', 'error')
+        return redirect(url_for('login'))
+    
+    # Map game IDs to their template files
+    games = {
+        'fruit_catch_game': 'games/fruit_catch.html',
+        'typing_speed_test': 'games/typing_speed_test.html', 
+        'code_debugger_game': 'games/code_debugger.html'
+    }
+    
+    if game_id in games:
+        return render_template(games[game_id])
+    else:
+        flash(f'Game "{game_id}" not found.', 'error')
+        return redirect(url_for('dashboard'))  # or wherever your games are listed
+
+# Optional: Keep the old /run/<game_name> route for backward compatibility
+@app.route('/run/<game_name>')
+def run_game(game_name):
+    """Legacy route - redirects to the new game route"""
+    # Map old game names to new game IDs
+    game_mapping = {
+        "Game Fruit Catch": "fruit_catch_game",
+        "Typing Speed Test": "typing_speed_test",
+        "Code Debugger": "code_debugger_game"
+    }
+    
+    if game_name in game_mapping:
+        return redirect(url_for('serve_game', game_id=game_mapping[game_name]))
+    else:
+        flash(f'Game "{game_name}" not found.', 'error')
+        return redirect(url_for('dashboard'))  # or wherever your games are listed
+    
+@app.route('/games')
+def view_games():
+    """Display the games page - works with your existing route structure"""
+    try:
+        # Get session data (adapt to your session structure)
+        username = session.get('username', 'User')
+        role = session.get('role', 'student')
+        user_id = session.get('user_id')
+        
+        # If you don't have username in session but have user_id, you might need to query database
+        if not username and user_id:
+            # Query your database to get username from user_id
+            # cursor = mysql.connection.cursor()
+            # cursor.execute("SELECT username, role FROM users WHERE id = %s", (user_id,))
+            # user_data = cursor.fetchone()
+            # if user_data:
+            #     username = user_data[0]
+            #     role = user_data[1]
+            # cursor.close()
+            pass
+        
+        return render_template('view_games.html', 
+                             username=session.get('username'), 
+                             role=session.get('role'))
+    except Exception as e:
+        flash(f'Error loading games: {str(e)}', 'error')
+        return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
     # app.run(debug=True)
